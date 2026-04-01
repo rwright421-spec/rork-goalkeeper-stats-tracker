@@ -9,28 +9,13 @@ import { ThemeColors } from '@/constants/themes';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { GoalkeeperProfile } from '@/types/game';
 
-function getRelativeTime(dateStr: string | undefined): string {
-  if (!dateStr) return '';
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diffMs = now - then;
-  const diffMin = Math.floor(diffMs / 60000);
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 30) return `${diffDay}d ago`;
-  return new Date(dateStr).toLocaleDateString();
-}
-
 export default function GoalkeeperSelectScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const {
     profiles, isLoading, createProfile, updateProfile, deleteProfile,
-    selectProfile, selectGuest, userId, getLastEditedByName,
+    selectProfile, selectGuest, userId,
   } = useGoalkeepers();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
@@ -157,10 +142,7 @@ export default function GoalkeeperSelectScreen() {
       );
     }
 
-    const isOwner = item.ownerId === userId;
-    const canDelete = !item.isShared || isOwner;
-    const lastEditedName = getLastEditedByName(item.lastEditedBy);
-    const relTime = getRelativeTime(item.updatedAt);
+    const canDelete = true;
 
     return (
       <TouchableOpacity
@@ -168,28 +150,18 @@ export default function GoalkeeperSelectScreen() {
         onPress={() => handleSelectProfile(item.id)}
         activeOpacity={0.7}
       >
-        <View style={[styles.profileAvatar, item.isShared && styles.profileAvatarShared]}>
+        <View style={styles.profileAvatar}>
           <Text style={styles.profileInitial}>{item.name.charAt(0).toUpperCase()}</Text>
         </View>
         <View style={styles.profileInfo}>
           <View style={styles.profileNameRow}>
             <Text style={styles.profileName} numberOfLines={1}>{item.name}</Text>
-            {item.isShared && (
-              <View style={styles.sharedBadge}>
-                <Cloud size={9} color={colors.primary} />
-                <Text style={styles.sharedBadgeText}>Shared</Text>
-              </View>
-            )}
           </View>
           <Text style={styles.profileDate}>
             {item.birthYear ? `Born ${item.birthYear} · ` : ''}
             Created {new Date(item.createdAt).toLocaleDateString()}
           </Text>
-          {item.isShared && lastEditedName && relTime ? (
-            <Text style={styles.lastEditedText}>
-              Last edited by {lastEditedName} · {relTime}
-            </Text>
-          ) : null}
+
         </View>
         <TouchableOpacity
           style={styles.profileEditBtn}
@@ -212,7 +184,7 @@ export default function GoalkeeperSelectScreen() {
         <ChevronRight size={18} color={colors.textMuted} />
       </TouchableOpacity>
     );
-  }, [handleSelectProfile, handleDeleteProfile, handleEditProfile, handleCancelEdit, handleSaveEdit, editingProfile, editName, editBirthYear, userId, getLastEditedByName, styles, colors]);
+  }, [handleSelectProfile, handleDeleteProfile, handleEditProfile, handleCancelEdit, handleSaveEdit, editingProfile, editName, editBirthYear, styles, colors]);
 
   const keyExtractor = useCallback((item: GoalkeeperProfile) => item.id, []);
 
