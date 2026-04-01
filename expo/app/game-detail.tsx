@@ -8,7 +8,7 @@ import { Share2, FileText, FileSpreadsheet, Calendar, Trophy, Pencil, MoreVertic
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { useGames } from '@/contexts/GameContext';
-import { KeeperData, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced } from '@/types/game';
+import { KeeperData, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate } from '@/types/game';
 import { formatGameAsText, formatGameAsCSV } from '@/utils/export';
 import MoveGameModal from '@/components/MoveGameModal';
 
@@ -82,6 +82,17 @@ function KeeperDetailBlock({ keeper, label, color, colors }: { keeper: KeeperDat
           <Text style={styles.overallLabel}>Save %</Text>
         </View>
       </View>
+
+      {getTotalOneVsOneFaced(keeper) > 0 && (
+        <View style={styles.distSection}>
+          <Text style={styles.distTitle}>1v1 Situations</Text>
+          <View style={styles.distGrid}>
+            <View style={styles.distItem}><Text style={styles.distValue}>{getTotalOneVsOneFaced(keeper)}</Text><Text style={styles.distLabel}>1v1 Faced</Text></View>
+            <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.primary }]}>{getTotalOneVsOneSaved(keeper)}</Text><Text style={styles.distLabel}>1v1 Saved</Text></View>
+            <View style={styles.distItem}><Text style={[styles.distValue, { color: '#F59E0B' }]}>{getOneVsOneSaveRate(getTotalOneVsOneFaced(keeper), getTotalOneVsOneSaved(keeper)) ?? '—'}%</Text><Text style={styles.distLabel}>1v1 Save Rate</Text></View>
+          </View>
+        </View>
+      )}
 
       <View style={styles.halvesRow}>
         <View style={styles.halfCard}>

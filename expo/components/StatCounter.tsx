@@ -11,6 +11,7 @@ interface StatCounterProps {
   onIncrement: () => void;
   onDecrement: () => void;
   accentColor?: string;
+  disableIncrement?: boolean;
 }
 
 export default React.memo(function StatCounter({
@@ -19,6 +20,7 @@ export default React.memo(function StatCounter({
   onIncrement,
   onDecrement,
   accentColor,
+  disableIncrement,
 }: StatCounterProps) {
   const colors = useColors();
   const finalAccent = accentColor ?? colors.primary;
@@ -33,10 +35,11 @@ export default React.memo(function StatCounter({
   }, [scaleAnim]);
 
   const handleIncrement = useCallback(() => {
+    if (disableIncrement) return;
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     pulse();
     onIncrement();
-  }, [onIncrement, pulse]);
+  }, [onIncrement, pulse, disableIncrement]);
 
   const handleDecrement = useCallback(() => {
     if (value > 0) {
@@ -63,8 +66,9 @@ export default React.memo(function StatCounter({
         </Animated.View>
         <TouchableOpacity
           testID={`${label}-increment`}
-          style={[styles.button, styles.incrementButton]}
+          style={[styles.button, styles.incrementButton, disableIncrement && styles.buttonDisabled]}
           onPress={handleIncrement}
+          disabled={disableIncrement}
           activeOpacity={0.7}
         >
           <Plus size={18} color={colors.primary} strokeWidth={2.5} />

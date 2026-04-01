@@ -43,6 +43,8 @@ export interface HalfStats {
   goalsAgainst: number;
   distribution: DistributionStats;
   penalties: PenaltyStats;
+  oneVsOneFaced: number;
+  oneVsOneSaved: number;
 }
 
 export interface ShootoutStats {
@@ -99,7 +101,7 @@ function createEmptyPenalties(): PenaltyStats {
 }
 
 function createEmptyHalf(): HalfStats {
-  return { saves: 0, goalsAgainst: 0, distribution: createEmptyDistribution(), penalties: createEmptyPenalties() };
+  return { saves: 0, goalsAgainst: 0, distribution: createEmptyDistribution(), penalties: createEmptyPenalties(), oneVsOneFaced: 0, oneVsOneSaved: 0 };
 }
 
 export function createEmptyKeeperData(): KeeperData {
@@ -154,6 +156,8 @@ export function normalizeHalf(half?: Partial<HalfStats>): HalfStats {
     goalsAgainst: half?.goalsAgainst ?? 0,
     distribution: safeDistribution(half?.distribution),
     penalties: safePenalties((half as HalfStats)?.penalties),
+    oneVsOneFaced: half?.oneVsOneFaced ?? 0,
+    oneVsOneSaved: half?.oneVsOneSaved ?? 0,
   };
 }
 
@@ -217,4 +221,17 @@ export function getTotalPenalties(keeper: KeeperData): PenaltyStats {
 
 export function getShootoutShotsFaced(shootout: ShootoutStats): number {
   return shootout.saves + shootout.goalsAgainst;
+}
+
+export function getTotalOneVsOneFaced(keeper: KeeperData): number {
+  return keeper.firstHalf.oneVsOneFaced + keeper.secondHalf.oneVsOneFaced;
+}
+
+export function getTotalOneVsOneSaved(keeper: KeeperData): number {
+  return keeper.firstHalf.oneVsOneSaved + keeper.secondHalf.oneVsOneSaved;
+}
+
+export function getOneVsOneSaveRate(faced: number, saved: number): number | null {
+  if (faced === 0) return null;
+  return Math.round((saved / faced) * 100);
 }

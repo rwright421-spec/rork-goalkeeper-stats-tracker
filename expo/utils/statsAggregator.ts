@@ -13,6 +13,9 @@ export interface AggregatedStats {
   shootout: ShootoutStats;
   avgSavesPerGame: number;
   avgGoalsAgainstPerGame: number;
+  oneVsOneFaced: number;
+  oneVsOneSaved: number;
+  oneVsOneSaveRate: number | null;
 }
 
 function emptyDistribution(): DistributionStats {
@@ -65,6 +68,8 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
   const penalties = emptyPenalties();
   const shootout = emptyShootout();
 
+  let oneVsOneFaced = 0;
+  let oneVsOneSaved = 0;
   let gamesPlayed = 0;
 
   for (const game of games) {
@@ -92,6 +97,8 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
       gameGA += keeper.firstHalf.goalsAgainst + keeper.firstHalf.penalties.penaltiesFaced;
       addHalfDistribution(distribution, keeper.firstHalf);
       addHalfPenalties(penalties, keeper.firstHalf);
+      oneVsOneFaced += keeper.firstHalf.oneVsOneFaced ?? 0;
+      oneVsOneSaved += keeper.firstHalf.oneVsOneSaved ?? 0;
     }
 
     if (profilePlaysSecondHalf) {
@@ -99,6 +106,8 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
       gameGA += keeper.secondHalf.goalsAgainst + keeper.secondHalf.penalties.penaltiesFaced;
       addHalfDistribution(distribution, keeper.secondHalf);
       addHalfPenalties(penalties, keeper.secondHalf);
+      oneVsOneFaced += keeper.secondHalf.oneVsOneFaced ?? 0;
+      oneVsOneSaved += keeper.secondHalf.oneVsOneSaved ?? 0;
     }
 
     if (keeper.shootout) {
@@ -124,6 +133,9 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
     shootout,
     avgSavesPerGame: gamesPlayed > 0 ? Math.round((totalSaves / gamesPlayed) * 10) / 10 : 0,
     avgGoalsAgainstPerGame: gamesPlayed > 0 ? Math.round((totalGoalsAgainst / gamesPlayed) * 10) / 10 : 0,
+    oneVsOneFaced,
+    oneVsOneSaved,
+    oneVsOneSaveRate: oneVsOneFaced > 0 ? Math.round((oneVsOneSaved / oneVsOneFaced) * 100) : null,
   };
 }
 

@@ -5,7 +5,7 @@ import StatCounter from '@/components/StatCounter';
 import SavePercentageBadge from '@/components/SavePercentageBadge';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
-import { KeeperData, DistributionStats, PenaltyStats, GoalkeeperProfile, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getShotsFaced, getTotalShotsFaced, getShootoutShotsFaced } from '@/types/game';
+import { KeeperData, DistributionStats, PenaltyStats, GoalkeeperProfile, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getShotsFaced, getTotalShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate } from '@/types/game';
 import KeeperSelectorSheet, { KeeperSelectorButton, KeeperSelectionState } from '@/components/KeeperSelectorSheet';
 
 interface KeeperStatsSectionProps {
@@ -120,12 +120,22 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
     onUpdate({ ...keeper, [half]: { ...keeper[half], penalties: { ...keeper[half].penalties, [stat]: newVal } } });
   }, [keeper, onUpdate]);
 
+  const updateHalfOneVsOne = useCallback((half: 'firstHalf' | 'secondHalf', stat: 'oneVsOneFaced' | 'oneVsOneSaved', delta: number) => {
+    const current = keeper[half][stat];
+    const newVal = Math.max(0, current + delta);
+    if (stat === 'oneVsOneSaved' && delta > 0 && newVal > keeper[half].oneVsOneFaced) return;
+    onUpdate({ ...keeper, [half]: { ...keeper[half], [stat]: newVal } });
+  }, [keeper, onUpdate]);
+
   const totalSaves = getTotalSaves(keeper);
   const totalGA = getTotalGoalsAgainst(keeper);
   const totalShotsFaced = getTotalShotsFaced(keeper);
   const overallPct = getOverallSavePercentage(keeper);
   const totalDist = getTotalDistribution(keeper);
   const totalPen = getTotalPenalties(keeper);
+  const totalOneVsOneFaced = getTotalOneVsOneFaced(keeper);
+  const totalOneVsOneSaved = getTotalOneVsOneSaved(keeper);
+  const oneVsOneSaveRate = getOneVsOneSaveRate(totalOneVsOneFaced, totalOneVsOneSaved);
 
   const renderHalfSection = useCallback((halfKey: 'firstHalf' | 'secondHalf', title: string) => {
     const half = keeper[halfKey];
@@ -162,6 +172,15 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
           </View>
         </View>
         <View style={styles.halfDivider} />
+        <Text style={styles.subSectionTitle}>1v1 Situations</Text>
+        <Text style={styles.oneVsOneHint}>These are a subset of your saves and goals above — do not re-count them</Text>
+        <View style={styles.distributionGrid}>
+          <View style={styles.distributionRow}>
+            <StatCounter label="1v1 Faced" value={half.oneVsOneFaced} onIncrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneFaced', 1)} onDecrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneFaced', -1)} accentColor="#F59E0B" />
+            <StatCounter label="1v1 Saved" value={half.oneVsOneSaved} onIncrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneSaved', 1)} onDecrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneSaved', -1)} accentColor={colors.primary} disableIncrement={half.oneVsOneSaved >= half.oneVsOneFaced} />
+          </View>
+        </View>
+        <View style={styles.halfDivider} />
         <Text style={styles.subSectionTitle}>Penalties</Text>
         <View style={styles.distributionGrid}>
           <View style={styles.distributionRow}>
@@ -175,7 +194,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         </View>
       </View>
     );
-  }, [keeper, updateHalf, updateHalfDistribution, updateHalfPenalty, styles, colors]);
+  }, [keeper, updateHalf, updateHalfDistribution, updateHalfPenalty, updateHalfOneVsOne, styles, colors]);
 
   return (
     <View style={styles.container}>
@@ -336,6 +355,17 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
           <View style={styles.totalDistItem}><Text style={styles.totalDistValue}>{totalDist.drives}</Text><Text style={styles.totalDistLabel}>Drives</Text></View>
           <View style={styles.totalDistItem}><Text style={styles.totalDistValue}>{totalDist.dropBacks}</Text><Text style={styles.totalDistLabel}>Drop Backs</Text></View>
         </View>
+        {totalOneVsOneFaced > 0 && (
+          <>
+            <View style={styles.halfDivider} />
+            <Text style={styles.subSectionTitle}>1v1 Situations</Text>
+            <View style={styles.totalDistRow}>
+              <View style={styles.totalDistItem}><Text style={styles.totalDistValue}>{totalOneVsOneFaced}</Text><Text style={styles.totalDistLabel}>1v1 Faced</Text></View>
+              <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: colors.primary }]}>{totalOneVsOneSaved}</Text><Text style={styles.totalDistLabel}>1v1 Saved</Text></View>
+              <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: '#F59E0B' }]}>{oneVsOneSaveRate !== null ? `${oneVsOneSaveRate}%` : '—'}</Text><Text style={styles.totalDistLabel}>1v1 Save Rate</Text></View>
+            </View>
+          </>
+        )}
         <View style={styles.halfDivider} />
         <Text style={styles.subSectionTitle}>Total Penalties</Text>
         <View style={styles.totalDistRow}>
@@ -425,5 +455,6 @@ function createStyles(c: ThemeColors) {
     notesSummary: { fontSize: 12, color: c.textSecondary, fontWeight: '500' as const, maxWidth: 200 },
     notesInput: { backgroundColor: c.background, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: c.text, fontSize: 15, borderWidth: 1, borderColor: c.border, marginTop: 12, minHeight: 80 },
     shootoutHint: { fontSize: 11, color: c.textMuted, fontStyle: 'italic' as const, textAlign: 'center' as const, marginBottom: 14, paddingHorizontal: 8 },
+    oneVsOneHint: { fontSize: 10, color: c.textMuted, fontStyle: 'italic' as const, textAlign: 'center' as const, marginBottom: 12, paddingHorizontal: 8 },
   });
 }
