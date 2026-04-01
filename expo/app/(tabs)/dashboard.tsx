@@ -302,7 +302,8 @@ export default function DashboardScreen() {
               onPress={handleSwitchGoalkeeper}
               activeOpacity={0.7}
             >
-              <ArrowLeftRight size={16} color={colors.primary} />
+              <ArrowLeftRight size={13} color={colors.primary} />
+              <Text style={styles.switchBtnText}>Switch Goalkeeper</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -738,14 +739,20 @@ function createStyles(c: ThemeColors) {
       borderColor: c.primary,
     },
     switchBtn: {
-      width: 38,
-      height: 38,
-      borderRadius: 11,
-      backgroundColor: c.primaryGlow,
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
+      gap: 4,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 8,
+      backgroundColor: c.primaryGlow,
       borderWidth: 1,
       borderColor: 'rgba(16, 185, 129, 0.2)',
+    },
+    switchBtnText: {
+      fontSize: 11,
+      fontWeight: '600' as const,
+      color: c.primary,
     },
     quickStatsRow: {
       flexDirection: 'row',
