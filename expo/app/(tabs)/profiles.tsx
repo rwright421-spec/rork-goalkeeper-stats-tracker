@@ -1,8 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ArrowLeftRight, Users, Pencil, Share2, KeyRound, Cloud, ChevronRight, XCircle, LogOut } from 'lucide-react-native';
-import { Alert } from 'react-native';
+import { ArrowLeftRight, Users, Pencil, ChevronRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
@@ -14,7 +13,7 @@ export default function ProfilesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { activeProfile, isGuest, clearSelection, userId, stopSharing, leaveSharedProfile, updateProfile } = useGoalkeepers();
+  const { activeProfile, isGuest, clearSelection, updateProfile } = useGoalkeepers();
   const { activeTeam, viewAllGames, clearTeamSelection } = useTeams();
 
   const [editingProfileMode, setEditingProfileMode] = useState(false);
@@ -77,91 +76,7 @@ export default function ProfilesScreen() {
     setEditProfileYearPickerOpen(false);
   }, []);
 
-  const handleShareProfile = useCallback(() => {
-    if (!activeProfile) return;
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: '/share-profile' as any, params: { profileId: activeProfile.id } });
-  }, [activeProfile, router]);
 
-  const handleJoinProfile = useCallback(() => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/join-profile');
-  }, [router]);
-
-  const handleManageMembers = useCallback(() => {
-    if (!activeProfile) return;
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: '/manage-members' as any, params: { profileId: activeProfile.id } });
-  }, [activeProfile, router]);
-
-  const isSharedByMe = activeProfile?.isShared === true && 
-    (!activeProfile.ownerId || !userId || activeProfile.ownerId === userId);
-  const isSharedWithMe = activeProfile?.isShared === true && 
-    !!activeProfile.ownerId && !!userId && activeProfile.ownerId !== userId;
-
-  console.log('[Profiles] isShared:', activeProfile?.isShared, 'ownerId:', JSON.stringify(activeProfile?.ownerId), 'userId:', JSON.stringify(userId), 'isSharedByMe:', isSharedByMe, 'isSharedWithMe:', isSharedWithMe);
-
-  const handleStopSharing = useCallback(() => {
-    if (!activeProfile) return;
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(
-      'Stop Sharing',
-      `This will disable cloud sharing for "${activeProfile.name}". Other members will lose access. Your local data will be kept. Continue?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Stop Sharing',
-          style: 'destructive',
-          onPress: async () => {
-            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            const ok = await stopSharing(activeProfile.id);
-            if (ok) {
-              void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              Alert.alert('Sharing Disabled', 'This profile is now local only.');
-            } else {
-              Alert.alert('Error', 'Could not disable sharing. Please try again.');
-            }
-          },
-        },
-      ]
-    );
-  }, [activeProfile, stopSharing]);
-
-  const handleLeaveProfile = useCallback(() => {
-    if (!activeProfile) return;
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(
-      'Leave Profile',
-      `This will remove "${activeProfile.name}" from your device and you will no longer have access. Continue?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Leave',
-          style: 'destructive',
-          onPress: async () => {
-            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-            const ok = await leaveSharedProfile(activeProfile.id);
-            if (ok) {
-              void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-              clearSelection();
-              clearTeamSelection();
-              Alert.alert('Left Profile', 'You no longer have access to this shared profile.', [
-                { text: 'OK', onPress: () => {
-                  if (Platform.OS === 'web') {
-                    router.replace('/');
-                  } else {
-                    router.dismissAll();
-                  }
-                }},
-              ]);
-            } else {
-              Alert.alert('Error', 'Could not leave profile. Please try again.');
-            }
-          },
-        },
-      ]
-    );
-  }, [activeProfile, leaveSharedProfile, clearSelection, clearTeamSelection, router]);
 
   return (
     <View style={styles.container}>
@@ -245,7 +160,7 @@ export default function ProfilesScreen() {
           </View>
         ) : (
           <View style={styles.profileCard}>
-            <View style={[styles.profileAvatar, activeProfile?.isShared && styles.profileAvatarShared]}>
+            <View style={styles.profileAvatar}>
               <Text style={styles.profileInitial}>
                 {displayName.charAt(0).toUpperCase()}
               </Text>
@@ -253,12 +168,6 @@ export default function ProfilesScreen() {
             <View style={styles.profileInfo}>
               <View style={styles.profileNameRow}>
                 <Text style={styles.profileName}>{displayName}</Text>
-                {activeProfile?.isShared && (
-                  <View style={styles.sharedBadge}>
-                    <Cloud size={10} color={colors.primary} />
-                    <Text style={styles.sharedBadgeText}>Shared</Text>
-                  </View>
-                )}
               </View>
               <Text style={styles.profileMeta}>
                 {isGuest ? 'Guest Mode' : teamLabel}
@@ -327,104 +236,7 @@ export default function ProfilesScreen() {
             </TouchableOpacity>
           )}
 
-          {!isGuest && activeProfile && (
-            <TouchableOpacity
-              testID="share-profile-quick-btn"
-              style={styles.actionRow}
-              onPress={handleShareProfile}
-              activeOpacity={0.7}
-            >
-              <View style={[styles.actionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
-                <Share2 size={18} color="#3B82F6" />
-              </View>
-              <View style={styles.actionTextContainer}>
-                <Text style={styles.actionTitle}>Share Profile</Text>
-                <Text style={styles.actionSubtitle}>Invite others to collaborate</Text>
-              </View>
-              <ChevronRight size={18} color={colors.textMuted} />
-            </TouchableOpacity>
-          )}
         </View>
-
-        {!isGuest && (
-          <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionHeaderText}>Sharing</Text>
-            </View>
-
-            <View style={styles.actionsSection}>
-              {activeProfile?.isShared && !isSharedWithMe && (
-                <TouchableOpacity
-                  testID="manage-members-btn"
-                  style={styles.actionRow}
-                  onPress={handleManageMembers}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.actionIcon, { backgroundColor: colors.primaryGlow }]}>
-                    <Users size={18} color={colors.primary} />
-                  </View>
-                  <View style={styles.actionTextContainer}>
-                    <Text style={styles.actionTitle}>Manage Members</Text>
-                    <Text style={styles.actionSubtitle}>View or remove editors</Text>
-                  </View>
-                  <ChevronRight size={18} color={colors.textMuted} />
-                </TouchableOpacity>
-              )}
-
-              <TouchableOpacity
-                testID="join-profile-btn"
-                style={styles.actionRow}
-                onPress={handleJoinProfile}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.actionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
-                  <KeyRound size={18} color="#3B82F6" />
-                </View>
-                <View style={styles.actionTextContainer}>
-                  <Text style={styles.actionTitle}>Join a Shared Profile</Text>
-                  <Text style={styles.actionSubtitle}>Enter an invite code</Text>
-                </View>
-                <ChevronRight size={18} color={colors.textMuted} />
-              </TouchableOpacity>
-
-              {activeProfile?.isShared && !isSharedWithMe && (
-                <TouchableOpacity
-                  testID="stop-sharing-btn"
-                  style={styles.actionRow}
-                  onPress={handleStopSharing}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.actionIcon, { backgroundColor: 'rgba(248, 81, 73, 0.1)' }]}>
-                    <XCircle size={18} color="#F85149" />
-                  </View>
-                  <View style={styles.actionTextContainer}>
-                    <Text style={[styles.actionTitle, { color: '#F85149' }]}>Stop Sharing</Text>
-                    <Text style={styles.actionSubtitle}>Disable cloud sharing for this profile</Text>
-                  </View>
-                  <ChevronRight size={18} color={colors.textMuted} />
-                </TouchableOpacity>
-              )}
-
-              {activeProfile?.isShared && isSharedWithMe && (
-                <TouchableOpacity
-                  testID="leave-profile-btn"
-                  style={styles.actionRow}
-                  onPress={handleLeaveProfile}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.actionIcon, { backgroundColor: 'rgba(248, 81, 73, 0.1)' }]}>
-                    <LogOut size={18} color="#F85149" />
-                  </View>
-                  <View style={styles.actionTextContainer}>
-                    <Text style={[styles.actionTitle, { color: '#F85149' }]}>Leave Shared Profile</Text>
-                    <Text style={styles.actionSubtitle}>Remove this profile from your device</Text>
-                  </View>
-                  <ChevronRight size={18} color={colors.textMuted} />
-                </TouchableOpacity>
-              )}
-            </View>
-          </>
-        )}
       </ScrollView>
     </View>
   );
@@ -464,10 +276,6 @@ function createStyles(c: ThemeColors) {
       borderWidth: 1.5,
       borderColor: 'rgba(16, 185, 129, 0.3)',
     },
-    profileAvatarShared: {
-      borderColor: 'rgba(59, 130, 246, 0.4)',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-    },
     profileInitial: {
       fontSize: 24,
       fontWeight: '800' as const,
@@ -485,20 +293,6 @@ function createStyles(c: ThemeColors) {
       fontSize: 20,
       fontWeight: '800' as const,
       color: c.text,
-    },
-    sharedBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      backgroundColor: c.primaryGlow,
-      paddingHorizontal: 8,
-      paddingVertical: 3,
-      borderRadius: 6,
-    },
-    sharedBadgeText: {
-      fontSize: 10,
-      fontWeight: '700' as const,
-      color: c.primary,
     },
     profileMeta: {
       fontSize: 14,

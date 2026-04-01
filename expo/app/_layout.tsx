@@ -23,9 +23,7 @@ function RootLayoutNav() {
       <Stack.Screen name="new-game" options={{ title: "New Game", headerShown: false }} />
       <Stack.Screen name="game-tracking" options={{ title: "Track Game", headerShown: false }} />
       <Stack.Screen name="game-detail" options={{ title: "Game Detail", headerShown: false }} />
-      <Stack.Screen name="share-profile" options={{ title: "Share Profile", presentation: "modal" }} />
-      <Stack.Screen name="join-profile" options={{ title: "Join Profile", presentation: "modal" }} />
-      <Stack.Screen name="manage-members" options={{ title: "Members", presentation: "modal" }} />
+
     </Stack>
   );
 }

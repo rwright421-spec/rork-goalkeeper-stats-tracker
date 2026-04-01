@@ -15,9 +15,6 @@ import {
   Plus,
   ChevronRight,
   Users,
-  Share2,
-  KeyRound,
-  Cloud,
   Pencil,
   Trash2,
   ArrowLeftRight,
@@ -44,7 +41,7 @@ export default function DashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { activeProfile, isGuest, clearSelection, userId, updateProfile } = useGoalkeepers();
+  const { activeProfile, isGuest, clearSelection, updateProfile } = useGoalkeepers();
   const {
     teams,
     isLoading: teamsLoading,
@@ -72,7 +69,6 @@ export default function DashboardScreen() {
 
   const styles = useMemo(() => createStyles(colors), [colors]);
   const displayName = isGuest ? 'Guest' : (activeProfile?.name ?? 'Goalkeeper');
-  const isOwner = activeProfile?.ownerId === userId;
 
   const careerSavesPct = useMemo(() => {
     let saves = 0;
@@ -107,23 +103,6 @@ export default function DashboardScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push('/new-game');
   }, [router]);
-
-  const handleShareProfile = useCallback(() => {
-    if (!activeProfile) return;
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: '/share-profile' as any, params: { profileId: activeProfile.id } });
-  }, [activeProfile, router]);
-
-  const handleJoinProfile = useCallback(() => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push('/join-profile');
-  }, [router]);
-
-  const handleManageMembers = useCallback(() => {
-    if (!activeProfile) return;
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push({ pathname: '/manage-members' as any, params: { profileId: activeProfile.id } });
-  }, [activeProfile, router]);
 
   const handleStartEditProfile = useCallback(() => {
     if (!activeProfile) return;
@@ -299,7 +278,7 @@ export default function DashboardScreen() {
           </View>
         ) : (
           <View style={styles.profileHeader}>
-            <View style={[styles.profileAvatar, activeProfile?.isShared && styles.profileAvatarShared]}>
+            <View style={styles.profileAvatar}>
               <Text style={styles.profileInitial}>
                 {displayName.charAt(0).toUpperCase()}
               </Text>
@@ -307,12 +286,6 @@ export default function DashboardScreen() {
             <View style={styles.profileInfo}>
               <View style={styles.profileNameRow}>
                 <Text style={styles.profileName}>{displayName}</Text>
-                {activeProfile?.isShared && (
-                  <View style={styles.sharedBadge}>
-                    <Cloud size={10} color={colors.primary} />
-                    <Text style={styles.sharedBadgeText}>Shared</Text>
-                  </View>
-                )}
               </View>
               <Text style={styles.profileMeta}>
                 {isGuest
@@ -660,66 +633,14 @@ export default function DashboardScreen() {
           </>
         )}
 
-        {!isGuest && (
+        {!isGuest && activeProfile && (
           <>
             <View style={styles.sectionHeader}>
-              <Share2 size={14} color={colors.textMuted} />
-              <Text style={styles.sectionHeaderText}>Profile & Sharing</Text>
+              <Pencil size={14} color={colors.textMuted} />
+              <Text style={styles.sectionHeaderText}>Profile</Text>
             </View>
 
             <View style={styles.actionsCard}>
-              {activeProfile && (
-                <TouchableOpacity
-                  testID="share-profile-btn"
-                  style={styles.actionRow}
-                  onPress={handleShareProfile}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.actionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
-                    <Share2 size={16} color="#3B82F6" />
-                  </View>
-                  <View style={styles.actionTextContainer}>
-                    <Text style={styles.actionTitle}>Share Profile</Text>
-                    <Text style={styles.actionSubtitle}>Invite others to collaborate</Text>
-                  </View>
-                  <ChevronRight size={16} color={colors.textMuted} />
-                </TouchableOpacity>
-              )}
-
-              {activeProfile?.isShared && isOwner && (
-                <TouchableOpacity
-                  testID="manage-members-btn"
-                  style={styles.actionRow}
-                  onPress={handleManageMembers}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.actionIcon, { backgroundColor: colors.primaryGlow }]}>
-                    <Users size={16} color={colors.primary} />
-                  </View>
-                  <View style={styles.actionTextContainer}>
-                    <Text style={styles.actionTitle}>Manage Members</Text>
-                    <Text style={styles.actionSubtitle}>View or remove editors</Text>
-                  </View>
-                  <ChevronRight size={16} color={colors.textMuted} />
-                </TouchableOpacity>
-              )}
-
-              <TouchableOpacity
-                testID="join-profile-btn"
-                style={styles.actionRow}
-                onPress={handleJoinProfile}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.actionIcon, { backgroundColor: 'rgba(59, 130, 246, 0.12)' }]}>
-                  <KeyRound size={16} color="#3B82F6" />
-                </View>
-                <View style={styles.actionTextContainer}>
-                  <Text style={styles.actionTitle}>Join a Shared Profile</Text>
-                  <Text style={styles.actionSubtitle}>Enter an invite code</Text>
-                </View>
-                <ChevronRight size={16} color={colors.textMuted} />
-              </TouchableOpacity>
-
               <TouchableOpacity
                 testID="edit-profile-btn"
                 style={[styles.actionRow, { borderBottomWidth: 0 }]}
@@ -778,10 +699,6 @@ function createStyles(c: ThemeColors) {
       borderWidth: 1.5,
       borderColor: 'rgba(16, 185, 129, 0.3)',
     },
-    profileAvatarShared: {
-      borderColor: 'rgba(59, 130, 246, 0.4)',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-    },
     profileInitial: {
       fontSize: 22,
       fontWeight: '800' as const,
@@ -799,20 +716,6 @@ function createStyles(c: ThemeColors) {
       fontSize: 20,
       fontWeight: '800' as const,
       color: c.text,
-    },
-    sharedBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 4,
-      backgroundColor: c.primaryGlow,
-      paddingHorizontal: 7,
-      paddingVertical: 3,
-      borderRadius: 6,
-    },
-    sharedBadgeText: {
-      fontSize: 10,
-      fontWeight: '700' as const,
-      color: c.primary,
     },
     profileMeta: {
       fontSize: 13,
