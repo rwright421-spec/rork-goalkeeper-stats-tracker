@@ -1,4 +1,4 @@
-import { SavedGame, KeeperData, DistributionStats, PenaltyStats, HalfStats, ShootoutStats, calculateSavePercentage, normalizeKeeper } from '@/types/game';
+import { SavedGame, KeeperData, DistributionStats, PenaltyStats, HalfStats, ShootoutStats, calculateSavePercentage, normalizeKeeper, getHalfLengthForAgeGroup } from '@/types/game';
 import { Team } from '@/types/game';
 
 export interface AggregatedStats {
@@ -16,6 +16,8 @@ export interface AggregatedStats {
   oneVsOneFaced: number;
   oneVsOneSaved: number;
   oneVsOneSaveRate: number | null;
+  totalEstimatedMinutes: number;
+  gaa: number | null;
 }
 
 function emptyDistribution(): DistributionStats {
@@ -71,6 +73,7 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
   let oneVsOneFaced = 0;
   let oneVsOneSaved = 0;
   let gamesPlayed = 0;
+  let totalEstimatedMinutes = 0;
 
   for (const game of games) {
     const keeper = getKeeperFromGame(game);
@@ -88,6 +91,11 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
       keeper.secondHalfKeeperProfileId, keeper.secondHalfKeeperIsLinked,
       keeper.secondHalfName || keeper.name || '',
     );
+
+    const ageGroup = game.setup.ageGroup || '';
+    const halfLength = getHalfLengthForAgeGroup(ageGroup);
+    const halvesPlayed = keeper.halvesPlayed ?? 2;
+    totalEstimatedMinutes += halvesPlayed * halfLength;
 
     let gameSaves = 0;
     let gameGA = 0;
@@ -136,6 +144,8 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
     oneVsOneFaced,
     oneVsOneSaved,
     oneVsOneSaveRate: oneVsOneFaced > 0 ? Math.round((oneVsOneSaved / oneVsOneFaced) * 100) : null,
+    totalEstimatedMinutes,
+    gaa: totalEstimatedMinutes > 0 ? Math.round((totalGoalsAgainst / totalEstimatedMinutes) * 90 * 100) / 100 : null,
   };
 }
 

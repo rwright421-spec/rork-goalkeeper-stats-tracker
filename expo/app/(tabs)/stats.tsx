@@ -125,6 +125,13 @@ function StatsBlock({ stats, expanded }: { stats: AggregatedStats; expanded?: bo
             <Text style={[blockStyles.statValue, { color: '#F59E0B' }]}>{stats.oneVsOneSaveRate !== null ? `${stats.oneVsOneSaveRate}%` : '—'}</Text>
           </View>
         )}
+        {stats.gaa !== null && stats.gamesPlayed > 0 && (
+          <View style={blockStyles.statRow}>
+            <View style={[blockStyles.statDot, { backgroundColor: '#EC4899' }]} />
+            <Text style={blockStyles.statLabel}>GAA</Text>
+            <Text style={[blockStyles.statValue, { color: '#EC4899' }]}>{stats.gaa.toFixed(2)}</Text>
+          </View>
+        )}
       </View>
 
       <View style={blockStyles.avgRow}>
@@ -137,6 +144,15 @@ function StatsBlock({ stats, expanded }: { stats: AggregatedStats; expanded?: bo
           <Text style={blockStyles.avgValue}>{stats.avgGoalsAgainstPerGame}</Text>
           <Text style={blockStyles.avgLabel}>Avg GA/Game</Text>
         </View>
+        {stats.gaa !== null && stats.gamesPlayed > 0 && (
+          <>
+            <View style={blockStyles.avgDivider} />
+            <View style={blockStyles.avgItem}>
+              <Text style={blockStyles.avgValue}>{stats.gaa.toFixed(2)}</Text>
+              <Text style={blockStyles.avgLabel}>GAA</Text>
+            </View>
+          </>
+        )}
       </View>
 
       {(expanded !== false) && (
@@ -860,7 +876,7 @@ export default function GoalkeeperStatsScreen() {
                       <Text style={styles.customResultsTitle}>Selected Stats</Text>
                       <Text style={styles.customResultsCount}>{selectedGameIds.size} game{selectedGameIds.size !== 1 ? 's' : ''}</Text>
                     </View>
-                    <StatsBlock stats={groupedStats[0]?.stats ?? { gamesPlayed: 0, totalSaves: 0, totalGoalsAgainst: 0, totalShotsFaced: 0, savePercentage: 0, cleanSheets: 0, distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 }, penalties: { penaltiesFaced: 0, penaltiesSaved: 0, redCards: 0, yellowCards: 0 }, shootout: { saves: 0, goalsAgainst: 0 }, avgSavesPerGame: 0, avgGoalsAgainstPerGame: 0, oneVsOneFaced: 0, oneVsOneSaved: 0, oneVsOneSaveRate: null }} />
+                    <StatsBlock stats={groupedStats[0]?.stats ?? { gamesPlayed: 0, totalSaves: 0, totalGoalsAgainst: 0, totalShotsFaced: 0, savePercentage: 0, cleanSheets: 0, distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 }, penalties: { penaltiesFaced: 0, penaltiesSaved: 0, redCards: 0, yellowCards: 0 }, shootout: { saves: 0, goalsAgainst: 0 }, avgSavesPerGame: 0, avgGoalsAgainstPerGame: 0, oneVsOneFaced: 0, oneVsOneSaved: 0, oneVsOneSaveRate: null, totalEstimatedMinutes: 0, gaa: null }} />
                   </View>
                 )}
               </View>

@@ -8,11 +8,11 @@ import { Share2, FileText, FileSpreadsheet, Calendar, Trophy, Pencil, MoreVertic
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { useGames } from '@/contexts/GameContext';
-import { KeeperData, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate } from '@/types/game';
+import { KeeperData, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, getHalfLengthForAgeGroup } from '@/types/game';
 import { formatGameAsText, formatGameAsCSV } from '@/utils/export';
 import MoveGameModal from '@/components/MoveGameModal';
 
-function KeeperDetailBlock({ keeper, label, color, colors }: { keeper: KeeperData; label: string; color: string; colors: ThemeColors }) {
+function KeeperDetailBlock({ keeper, label, color, colors, ageGroup }: { keeper: KeeperData; label: string; color: string; colors: ThemeColors; ageGroup?: string }) {
   const totalSaves = getTotalSaves(keeper);
   const totalGA = getTotalGoalsAgainst(keeper);
   const totalSF = getTotalShotsFaced(keeper);
@@ -93,6 +93,28 @@ function KeeperDetailBlock({ keeper, label, color, colors }: { keeper: KeeperDat
           </View>
         </View>
       )}
+
+      {(() => {
+        const halvesPlayed = keeper.halvesPlayed ?? 2;
+        const halfLength = getHalfLengthForAgeGroup(ageGroup ?? '');
+        const estMinutes = halvesPlayed * halfLength;
+        const ga = totalGA;
+        if (estMinutes > 0) {
+          const gaa = Math.round((ga / estMinutes) * 90 * 100) / 100;
+          return (
+            <View style={[styles.distSection, { marginTop: 14 }]}>
+              <Text style={styles.distTitle}>Goals Against Average</Text>
+              <View style={styles.distGrid}>
+                <View style={styles.distItem}><Text style={[styles.distValue, { color: '#EC4899' }]}>{gaa.toFixed(2)}</Text><Text style={styles.distLabel}>GAA</Text></View>
+                <View style={styles.distItem}><Text style={styles.distValue}>{estMinutes}</Text><Text style={styles.distLabel}>Est. Minutes</Text></View>
+                <View style={styles.distItem}><Text style={styles.distValue}>{halvesPlayed}</Text><Text style={styles.distLabel}>Halves Played</Text></View>
+              </View>
+              <Text style={{ fontSize: 10, color: colors.textMuted, fontStyle: 'italic' as const, textAlign: 'center' as const, marginTop: 10 }}>Estimated from age group and halves played</Text>
+            </View>
+          );
+        }
+        return null;
+      })()}
 
       <View style={styles.halvesRow}>
         <View style={styles.halfCard}>
@@ -262,8 +284,8 @@ export default function GameDetailScreen() {
           <View style={styles.gameInfoRow}><Trophy size={14} color={colors.primary} /><Text style={styles.gameInfoGame}>vs {game.setup.gameName}</Text></View>
         </View>
 
-        {game.homeKeeper ? <KeeperDetailBlock keeper={game.homeKeeper} label="HOME" color={colors.cardHome} colors={colors} /> : null}
-        {game.awayKeeper ? <KeeperDetailBlock keeper={game.awayKeeper} label="AWAY" color={colors.cardAway} colors={colors} /> : null}
+        {game.homeKeeper ? <KeeperDetailBlock keeper={game.homeKeeper} label="HOME" color={colors.cardHome} colors={colors} ageGroup={game.setup.ageGroup} /> : null}
+        {game.awayKeeper ? <KeeperDetailBlock keeper={game.awayKeeper} label="AWAY" color={colors.cardAway} colors={colors} ageGroup={game.setup.ageGroup} /> : null}
 
         {game.finalScore ? (
           <View style={styles.finalScoreCard}>

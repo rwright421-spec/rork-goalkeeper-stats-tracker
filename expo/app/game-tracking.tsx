@@ -296,8 +296,8 @@ export default function GameTrackingScreen() {
       ) : null}
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        {(hasHome && activeTab === 'home') || (hasHome && !showTabs) ? <KeeperStatsSection label="HOME" keeper={homeKeeper} onUpdate={setHomeKeeper} accentColor={colors.cardHome} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} /> : null}
-        {(hasAway && activeTab === 'away') || (hasAway && !showTabs) ? <KeeperStatsSection label="AWAY" keeper={awayKeeper} onUpdate={setAwayKeeper} accentColor={colors.cardAway} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} /> : null}
+        {(hasHome && activeTab === 'home') || (hasHome && !showTabs) ? <KeeperStatsSection label="HOME" keeper={homeKeeper} onUpdate={setHomeKeeper} accentColor={colors.cardHome} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} /> : null}
+        {(hasAway && activeTab === 'away') || (hasAway && !showTabs) ? <KeeperStatsSection label="AWAY" keeper={awayKeeper} onUpdate={setAwayKeeper} accentColor={colors.cardAway} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} /> : null}
 
         {showTabs ? (
           <TouchableOpacity style={styles.switchButton} onPress={() => { void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveTab(activeTab === 'home' ? 'away' : 'home'); }} activeOpacity={0.7}>

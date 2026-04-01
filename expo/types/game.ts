@@ -2,6 +2,20 @@ export type KeeperSelection = 'home' | 'away' | 'both';
 
 export type AgeGroup = 'U8' | 'U9' | 'U10' | 'U11' | 'U12' | 'U13' | 'U14' | 'U15' | 'U16' | 'U17' | 'U18' | 'U19' | '';
 
+export const AGE_GROUP_HALF_LENGTHS: Record<string, number> = {
+  U8: 25, U9: 25, U10: 25,
+  U11: 30, U12: 30,
+  U13: 35, U14: 35,
+  U15: 40, U16: 40,
+  U17: 45, U18: 45, U19: 45,
+};
+
+export const DEFAULT_HALF_LENGTH = 40;
+
+export function getHalfLengthForAgeGroup(ageGroup: string): number {
+  return AGE_GROUP_HALF_LENGTHS[ageGroup] || DEFAULT_HALF_LENGTH;
+}
+
 export interface GoalkeeperProfile {
   id: string;
   name: string;
@@ -67,6 +81,7 @@ export interface KeeperData {
   keeperIsLinked?: boolean;
   secondHalfKeeperProfileId?: string | null;
   secondHalfKeeperIsLinked?: boolean;
+  halvesPlayed?: number;
 }
 
 export interface FinalScore {
@@ -115,6 +130,7 @@ export function createEmptyKeeperData(): KeeperData {
     notes: '',
     firstHalf: createEmptyHalf(),
     secondHalf: createEmptyHalf(),
+    halvesPlayed: 2,
   };
 }
 
@@ -177,6 +193,7 @@ export function normalizeKeeper(keeper?: Partial<KeeperData>): KeeperData {
     keeperIsLinked: keeper?.keeperIsLinked ?? false,
     secondHalfKeeperProfileId: keeper?.secondHalfKeeperProfileId ?? null,
     secondHalfKeeperIsLinked: keeper?.secondHalfKeeperIsLinked ?? false,
+    halvesPlayed: keeper?.halvesPlayed ?? 2,
   };
 }
 

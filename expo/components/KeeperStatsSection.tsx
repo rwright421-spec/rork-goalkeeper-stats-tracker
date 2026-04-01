@@ -5,7 +5,7 @@ import StatCounter from '@/components/StatCounter';
 import SavePercentageBadge from '@/components/SavePercentageBadge';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
-import { KeeperData, DistributionStats, PenaltyStats, GoalkeeperProfile, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getShotsFaced, getTotalShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate } from '@/types/game';
+import { KeeperData, DistributionStats, PenaltyStats, GoalkeeperProfile, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getShotsFaced, getTotalShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, getHalfLengthForAgeGroup } from '@/types/game';
 import KeeperSelectorSheet, { KeeperSelectorButton, KeeperSelectionState } from '@/components/KeeperSelectorSheet';
 
 interface KeeperStatsSectionProps {
@@ -16,13 +16,14 @@ interface KeeperStatsSectionProps {
   showShootout?: boolean;
   profiles?: GoalkeeperProfile[];
   onCreateProfile?: (name: string, birthYear: string) => GoalkeeperProfile;
+  ageGroup?: string;
 }
 
 const currentYear = new Date().getFullYear();
 const YEARS: string[] = [];
 for (let y = currentYear; y >= 1975; y--) { YEARS.push(String(y)); }
 
-export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate, accentColor, showShootout, profiles, onCreateProfile }: KeeperStatsSectionProps) {
+export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate, accentColor, showShootout, profiles, onCreateProfile, ageGroup }: KeeperStatsSectionProps) {
   const colors = useColors();
   const [yearPickerOpen, setYearPickerOpen] = React.useState(false);
   const [secondHalfYearPickerOpen, setSecondHalfYearPickerOpen] = React.useState(false);
@@ -299,6 +300,31 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
 
       {renderHalfSection('secondHalf', '2nd Half')}
 
+      <View style={styles.halvesPlayedSection}>
+        <Text style={styles.halvesPlayedLabel}>Halves Played</Text>
+        <View style={styles.halvesPlayedToggle}>
+          <TouchableOpacity
+            testID={`${label}-halves-1`}
+            style={[styles.halvesPlayedOption, (keeper.halvesPlayed ?? 2) === 1 && styles.halvesPlayedOptionActive]}
+            onPress={() => onUpdate({ ...keeper, halvesPlayed: 1 })}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.halvesPlayedOptionText, (keeper.halvesPlayed ?? 2) === 1 && styles.halvesPlayedOptionTextActive]}>1</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            testID={`${label}-halves-2`}
+            style={[styles.halvesPlayedOption, (keeper.halvesPlayed ?? 2) === 2 && styles.halvesPlayedOptionActive]}
+            onPress={() => onUpdate({ ...keeper, halvesPlayed: 2 })}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.halvesPlayedOptionText, (keeper.halvesPlayed ?? 2) === 2 && styles.halvesPlayedOptionTextActive]}>2</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.halvesPlayedHint}>
+          Est. {(keeper.halvesPlayed ?? 2) * getHalfLengthForAgeGroup(ageGroup ?? '')} min ({getHalfLengthForAgeGroup(ageGroup ?? '')} min/half{ageGroup ? ` for ${ageGroup}` : ''})
+        </Text>
+      </View>
+
       {showShootout && (
         <View style={styles.halfSection}>
           <Text style={styles.sectionTitle}>Shootout</Text>
@@ -456,5 +482,13 @@ function createStyles(c: ThemeColors) {
     notesInput: { backgroundColor: c.background, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: c.text, fontSize: 15, borderWidth: 1, borderColor: c.border, marginTop: 12, minHeight: 80 },
     shootoutHint: { fontSize: 11, color: c.textMuted, fontStyle: 'italic' as const, textAlign: 'center' as const, marginBottom: 14, paddingHorizontal: 8 },
     oneVsOneHint: { fontSize: 10, color: c.textMuted, fontStyle: 'italic' as const, textAlign: 'center' as const, marginBottom: 12, paddingHorizontal: 8 },
+    halvesPlayedSection: { backgroundColor: c.surface, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: c.border, alignItems: 'center' as const },
+    halvesPlayedLabel: { fontSize: 12, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 0.8, marginBottom: 10 },
+    halvesPlayedToggle: { flexDirection: 'row' as const, gap: 8, marginBottom: 8 },
+    halvesPlayedOption: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10, backgroundColor: c.background, borderWidth: 1, borderColor: c.border },
+    halvesPlayedOptionActive: { backgroundColor: c.primaryGlow, borderColor: 'rgba(16, 185, 129, 0.4)' },
+    halvesPlayedOptionText: { fontSize: 16, fontWeight: '700' as const, color: c.textMuted },
+    halvesPlayedOptionTextActive: { color: c.primary },
+    halvesPlayedHint: { fontSize: 10, color: c.textMuted, fontStyle: 'italic' as const },
   });
 }
