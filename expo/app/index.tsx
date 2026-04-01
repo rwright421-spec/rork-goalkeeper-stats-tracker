@@ -1,6 +1,7 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Shield, UserPlus, Users, UserX, Trash2, ChevronRight, Pencil, Cloud } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -9,10 +10,31 @@ import { ThemeColors } from '@/constants/themes';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { GoalkeeperProfile } from '@/types/game';
 
+const ONBOARDING_KEY = 'onboarding_complete';
+
 export default function GoalkeeperSelectScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    void (async () => {
+      try {
+        const value = await AsyncStorage.getItem(ONBOARDING_KEY);
+        if (mounted && value !== 'true') {
+          console.log('[Index] Onboarding not complete, redirecting');
+          router.replace('/onboarding');
+          return;
+        }
+      } catch (e) {
+        console.log('[Index] Error checking onboarding flag:', e);
+      }
+      if (mounted) setOnboardingChecked(true);
+    })();
+    return () => { mounted = false; };
+  }, [router]);
   const {
     profiles, isLoading, createProfile, updateProfile, deleteProfile,
     selectProfile, selectGuest, userId,
@@ -187,6 +209,14 @@ export default function GoalkeeperSelectScreen() {
   }, [handleSelectProfile, handleDeleteProfile, handleEditProfile, handleCancelEdit, handleSaveEdit, editingProfile, editName, editBirthYear, styles, colors]);
 
   const keyExtractor = useCallback((item: GoalkeeperProfile) => item.id, []);
+
+  if (!onboardingChecked) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

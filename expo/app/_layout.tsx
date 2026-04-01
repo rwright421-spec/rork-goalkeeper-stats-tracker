@@ -23,7 +23,7 @@ function RootLayoutNav() {
       <Stack.Screen name="new-game" options={{ title: "New Game", headerShown: false }} />
       <Stack.Screen name="game-tracking" options={{ title: "Track Game", headerShown: false }} />
       <Stack.Screen name="game-detail" options={{ title: "Game Detail", headerShown: false }} />
-
+      <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
     </Stack>
   );
 }
