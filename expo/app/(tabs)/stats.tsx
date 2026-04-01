@@ -115,7 +115,7 @@ function StatsBlock({ stats, expanded }: { stats: AggregatedStats; expanded?: bo
         </View>
         <View style={blockStyles.statRow}>
           <View style={[blockStyles.statDot, { backgroundColor: '#3B82F6' }]} />
-          <Text style={blockStyles.statLabel}>Shots Faced</Text>
+          <Text style={blockStyles.statLabel}>Shots on Target</Text>
           <Text style={[blockStyles.statValue, { color: '#3B82F6' }]}>{stats.totalShotsFaced}</Text>
         </View>
 
@@ -209,7 +209,7 @@ function StatsBlock({ stats, expanded }: { stats: AggregatedStats; expanded?: bo
                   </View>
                   <View style={blockStyles.distItem}>
                     <Text style={[blockStyles.distValue, { color: '#3B82F6' }]}>{stats.shootout.saves + stats.shootout.goalsAgainst}</Text>
-                    <Text style={blockStyles.distLabel}>Shots Faced</Text>
+                    <Text style={blockStyles.distLabel}>Shots on Target</Text>
                   </View>
                 </View>
               </View>

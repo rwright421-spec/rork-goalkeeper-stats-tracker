@@ -140,7 +140,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
           <StatCounter label="Goals Against" value={half.goalsAgainst} onIncrement={() => updateHalf(halfKey, 'goalsAgainst', 1)} onDecrement={() => updateHalf(halfKey, 'goalsAgainst', -1)} accentColor={colors.danger} />
         </View>
         <View style={styles.shotsFacedRow}>
-          <Text style={styles.shotsFacedLabel}>Shots Faced</Text>
+          <Text style={styles.shotsFacedLabel}>Shots on Target</Text>
           <Text style={styles.shotsFacedValue}>{halfShotsFaced}</Text>
         </View>
         <View style={styles.savePercentageRow}>
@@ -297,7 +297,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
               accentColor={colors.danger} />
           </View>
           <View style={styles.shotsFacedRow}>
-            <Text style={styles.shotsFacedLabel}>Shots Faced</Text>
+            <Text style={styles.shotsFacedLabel}>Shots on Target</Text>
             <Text style={styles.shotsFacedValue}>{getShootoutShotsFaced(keeper.shootout ?? { saves: 0, goalsAgainst: 0 })}</Text>
           </View>
           <View style={styles.savePercentageRow}>
@@ -324,7 +324,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         <View style={styles.totalStatsRow}>
           <View style={styles.totalStatItem}><Text style={[styles.totalStatValue, { color: colors.primary }]}>{totalSaves}</Text><Text style={styles.totalStatLabel}>Saves</Text></View>
           <View style={styles.totalStatItem}><Text style={[styles.totalStatValue, { color: colors.danger }]}>{totalGA}</Text><Text style={styles.totalStatLabel}>Goals Against</Text></View>
-          <View style={styles.totalStatItem}><Text style={[styles.totalStatValue, { color: colors.accent }]}>{totalShotsFaced}</Text><Text style={styles.totalStatLabel}>Shots Faced</Text></View>
+          <View style={styles.totalStatItem}><Text style={[styles.totalStatValue, { color: colors.accent }]}>{totalShotsFaced}</Text><Text style={styles.totalStatLabel}>Shots on Target</Text></View>
           <View style={styles.totalStatItem}><Text style={[styles.totalStatValue, { color: overallPct >= 50 ? colors.primary : colors.warning }]}>{overallPct}%</Text><Text style={styles.totalStatLabel}>Save %</Text></View>
         </View>
         <View style={styles.halfDivider} />

@@ -75,7 +75,7 @@ function KeeperDetailBlock({ keeper, label, color, colors }: { keeper: KeeperDat
         </View>
         <View style={styles.overallStat}>
           <Text style={[styles.overallValue, { color: '#3B82F6' }]}>{totalSF}</Text>
-          <Text style={styles.overallLabel}>Shots Faced</Text>
+          <Text style={styles.overallLabel}>Shots on Target</Text>
         </View>
         <View style={styles.overallStat}>
           <Text style={[styles.overallValue, { color: overallPct >= 50 ? colors.primary : colors.warning }]}>{overallPct}%</Text>
@@ -88,7 +88,7 @@ function KeeperDetailBlock({ keeper, label, color, colors }: { keeper: KeeperDat
           <Text style={styles.halfCardTitle}>1st Half</Text>
           <Text style={styles.halfStat}>Saves: {keeper.firstHalf.saves}</Text>
           <Text style={styles.halfStat}>GA: {keeper.firstHalf.goalsAgainst}</Text>
-          <Text style={styles.halfStat}>Shots Faced: {getShotsFaced(keeper.firstHalf.saves, keeper.firstHalf.goalsAgainst)}</Text>
+          <Text style={styles.halfStat}>Shots on Target: {getShotsFaced(keeper.firstHalf.saves, keeper.firstHalf.goalsAgainst)}</Text>
           <Text style={[styles.halfPct, { color: h1Pct >= 50 ? colors.primary : colors.warning }]}>SV%: {h1Pct}%</Text>
           <View style={styles.halfDistRow}>
             <Text style={styles.halfDistItem}>Cr: {keeper.firstHalf.distribution.handledCrosses}</Text>
@@ -102,7 +102,7 @@ function KeeperDetailBlock({ keeper, label, color, colors }: { keeper: KeeperDat
           <Text style={styles.halfCardTitle}>2nd Half</Text>
           <Text style={styles.halfStat}>Saves: {keeper.secondHalf.saves}</Text>
           <Text style={styles.halfStat}>GA: {keeper.secondHalf.goalsAgainst}</Text>
-          <Text style={styles.halfStat}>Shots Faced: {getShotsFaced(keeper.secondHalf.saves, keeper.secondHalf.goalsAgainst)}</Text>
+          <Text style={styles.halfStat}>Shots on Target: {getShotsFaced(keeper.secondHalf.saves, keeper.secondHalf.goalsAgainst)}</Text>
           <Text style={[styles.halfPct, { color: h2Pct >= 50 ? colors.primary : colors.warning }]}>SV%: {h2Pct}%</Text>
           <View style={styles.halfDistRow}>
             <Text style={styles.halfDistItem}>Cr: {keeper.secondHalf.distribution.handledCrosses}</Text>
@@ -141,7 +141,7 @@ function KeeperDetailBlock({ keeper, label, color, colors }: { keeper: KeeperDat
           <View style={styles.distGrid}>
             <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.primary }]}>{keeper.shootout.saves}</Text><Text style={styles.distLabel}>Saves</Text></View>
             <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.danger }]}>{keeper.shootout.goalsAgainst}</Text><Text style={styles.distLabel}>Goals Against</Text></View>
-            <View style={styles.distItem}><Text style={[styles.distValue, { color: '#3B82F6' }]}>{getShootoutShotsFaced(keeper.shootout)}</Text><Text style={styles.distLabel}>Shots Faced</Text></View>
+            <View style={styles.distItem}><Text style={[styles.distValue, { color: '#3B82F6' }]}>{getShootoutShotsFaced(keeper.shootout)}</Text><Text style={styles.distLabel}>Shots on Target</Text></View>
           </View>
         </View>
       ) : null}

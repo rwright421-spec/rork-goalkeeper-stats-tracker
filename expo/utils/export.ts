@@ -31,19 +31,19 @@ Team: ${keeper.teamName}`;
 1st Half:
   Saves: ${keeper.firstHalf.saves}
   Goals Against: ${keeper.firstHalf.goalsAgainst}
-  Shots Faced: ${getShotsFaced(keeper.firstHalf.saves, keeper.firstHalf.goalsAgainst)}
+  Shots on Target: ${getShotsFaced(keeper.firstHalf.saves, keeper.firstHalf.goalsAgainst)}
   Save %: ${h1Pct}%
 
 2nd Half:
   Saves: ${keeper.secondHalf.saves}
   Goals Against: ${keeper.secondHalf.goalsAgainst}
-  Shots Faced: ${getShotsFaced(keeper.secondHalf.saves, keeper.secondHalf.goalsAgainst)}
+  Shots on Target: ${getShotsFaced(keeper.secondHalf.saves, keeper.secondHalf.goalsAgainst)}
   Save %: ${h2Pct}%
 
 Totals:
   Saves: ${totalSaves}
   Goals Against: ${totalGA}
-  Shots Faced: ${totalSF}
+  Shots on Target: ${totalSF}
   Overall Save %: ${overallPct}%
 
 1st Half Distribution:
@@ -71,7 +71,7 @@ Penalties:
 Shootout:
   Saves: ${keeper.shootout.saves}
   Goals Against: ${keeper.shootout.goalsAgainst}
-  Shots Faced: ${keeper.shootout.saves + keeper.shootout.goalsAgainst}`;
+  Shots on Target: ${keeper.shootout.saves + keeper.shootout.goalsAgainst}`;
   }
 
   if (keeper.notes) {
@@ -141,7 +141,7 @@ Save %: ${stats.savePercentage}%
 Clean Sheets: ${stats.cleanSheets}
 Total Saves: ${stats.totalSaves}
 Goals Against: ${stats.totalGoalsAgainst}
-Shots Faced: ${stats.totalShotsFaced}
+Shots on Target: ${stats.totalShotsFaced}
 Avg Saves/Game: ${stats.avgSavesPerGame}
 Avg GA/Game: ${stats.avgGoalsAgainstPerGame}`;
 
@@ -166,7 +166,7 @@ Penalties:
 Shootout:
   Saves: ${stats.shootout.saves}
   Goals Against: ${stats.shootout.goalsAgainst}
-  Shots Faced: ${stats.shootout.saves + stats.shootout.goalsAgainst}`;
+  Shots on Target: ${stats.shootout.saves + stats.shootout.goalsAgainst}`;
   }
 
   return text;
@@ -174,7 +174,7 @@ Shootout:
 
 export function formatStatsAsCSV(keeperName: string, groupMode: string, groups: GroupedStats[]): string {
   let csv = `Keeper,View\n"${keeperName}","${groupMode}"\n\n`;
-  csv += `Group,Sublabel,Games,Save%,Clean Sheets,Total Saves,Goals Against,Shots Faced,Avg Saves/Game,Avg GA/Game,Crosses/Int,Punts,Throwouts / Rollouts,Drives,Drop Backs,PK Faced,PK Saved,Yellow Cards,Red Cards,SO Saves,SO GA,SO Shots\n`;
+  csv += `Group,Sublabel,Games,Save%,Clean Sheets,Total Saves,Goals Against,Shots on Target,Avg Saves/Game,Avg GA/Game,Crosses/Int,Punts,Throwouts / Rollouts,Drives,Drop Backs,PK Faced,PK Saved,Yellow Cards,Red Cards,SO Saves,SO GA,SO Shots\n`;
 
   for (const group of groups) {
     const s = group.stats;
@@ -188,7 +188,7 @@ export function formatStatsAsCSV(keeperName: string, groupMode: string, groups: 
 export function formatGameAsCSV(game: SavedGame): string {
   let csv = `Competition,Date,Opponent,Keeper Type\n`;
   csv += `"${game.setup.eventName}","${game.setup.date}","${game.setup.gameName}","${game.setup.keeperSelection}"\n\n`;
-  csv += `Side,Name,Year,Team,2H Name,2H Year,2H Team,H1 Saves,H1 GA,H1 Save%,H2 Saves,H2 GA,H2 Save%,Total Saves,Total GA,Shots Faced,Overall Save%,Crosses/Int,Punts,Throwouts / Rollouts,Drives,Drop Backs,PK Faced,PK Saved,Yellow Cards,Red Cards,SO Saves,SO GA,SO Shots,Notes\n`;
+  csv += `Side,Name,Year,Team,2H Name,2H Year,2H Team,H1 Saves,H1 GA,H1 Save%,H2 Saves,H2 GA,H2 Save%,Total Saves,Total GA,Shots on Target,Overall Save%,Crosses/Int,Punts,Throwouts / Rollouts,Drives,Drop Backs,PK Faced,PK Saved,Yellow Cards,Red Cards,SO Saves,SO GA,SO Shots,Notes\n`;
 
   if (game.homeKeeper) {
     csv += formatKeeperCSVRows(game.homeKeeper, 'Home') + '\n';
