@@ -1,3 +1,4 @@
+// Onboarding - First-time user setup flow
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,
@@ -26,6 +27,7 @@ const ONBOARDING_KEY = 'onboarding_complete';
 const TOTAL_PAGES = 4;
 
 export default function OnboardingScreen() {
+  console.log("[Onboarding] Screen rendered");
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();

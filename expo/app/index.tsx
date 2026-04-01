@@ -13,6 +13,7 @@ import { GoalkeeperProfile } from '@/types/game';
 const ONBOARDING_KEY = 'onboarding_complete';
 
 export default function GoalkeeperSelectScreen() {
+  console.log("[GoalkeeperSelect] Screen rendered");
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();
@@ -164,7 +165,7 @@ export default function GoalkeeperSelectScreen() {
       );
     }
 
-    const canDelete = true;
+    const canDelete = !item.isShared || item.ownerId === userId;
 
     return (
       <TouchableOpacity
@@ -206,7 +207,7 @@ export default function GoalkeeperSelectScreen() {
         <ChevronRight size={18} color={colors.textMuted} />
       </TouchableOpacity>
     );
-  }, [handleSelectProfile, handleDeleteProfile, handleEditProfile, handleCancelEdit, handleSaveEdit, editingProfile, editName, editBirthYear, styles, colors]);
+  }, [handleSelectProfile, handleDeleteProfile, handleEditProfile, handleCancelEdit, handleSaveEdit, editingProfile, editName, editBirthYear, styles, colors, userId]);
 
   const keyExtractor = useCallback((item: GoalkeeperProfile) => item.id, []);
 
@@ -224,7 +225,7 @@ export default function GoalkeeperSelectScreen() {
         <View style={styles.logoIcon}>
           <Shield size={28} color={colors.primary} strokeWidth={2.5} />
         </View>
-        <Text style={styles.title}>GK Tracker</Text>
+        <Text style={styles.title} testID="app-title">GK Tracker</Text>
         <Text style={styles.subtitle}>Goalkeeper Performance</Text>
         <View style={styles.cloudStatus}>
           <Cloud size={12} color={colors.primary} />
@@ -333,6 +334,7 @@ export default function GoalkeeperSelectScreen() {
           keyExtractor={keyExtractor}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          testID="profiles-list"
         />
       )}
     </View>

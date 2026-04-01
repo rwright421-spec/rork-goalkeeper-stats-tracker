@@ -1,3 +1,4 @@
+// Team Select - Choose or create teams for a goalkeeper profile
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
@@ -14,6 +15,7 @@ const YEARS: string[] = [];
 for (let y = currentYear; y >= 1975; y--) { YEARS.push(String(y)); }
 
 export default function TeamSelectScreen() {
+  console.log("[TeamSelect] Screen rendered");
   const router = useRouter();
   const colors = useColors();
   const { activeProfile } = useGoalkeepers();

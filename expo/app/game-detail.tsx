@@ -1,3 +1,4 @@
+// Game Detail - View saved game statistics
 import React, { useMemo, useCallback, useState } from 'react';
 
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share, Platform } from 'react-native';
@@ -156,6 +157,7 @@ function KeeperDetailBlock({ keeper, label, color, colors }: { keeper: KeeperDat
 }
 
 export default function GameDetailScreen() {
+  console.log("[GameDetail] Screen rendered");
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useColors();
@@ -216,7 +218,7 @@ export default function GameDetailScreen() {
         headerShown: true,
         headerStyle: { backgroundColor: colors.background },
         headerTintColor: colors.text,
-        headerTitleStyle: { fontWeight: '700' as const },
+        headerTitleStyle: { fontWeight: '700' as const, letterSpacing: -0.3 },
         headerRight: () => (
           <TouchableOpacity
             testID="game-detail-menu"

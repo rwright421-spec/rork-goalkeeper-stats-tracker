@@ -1,3 +1,4 @@
+// Stats screen - Goalkeeper performance analytics
 import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -742,6 +743,7 @@ export default function GoalkeeperStatsScreen() {
         style={styles.scroll}
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20 }]}
         showsVerticalScrollIndicator={false}
+        testID="stats-scroll-view"
       >
         <View style={styles.profileHeader}>
           <View style={styles.profileIconBg}>

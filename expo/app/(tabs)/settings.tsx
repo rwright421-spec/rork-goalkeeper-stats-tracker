@@ -4,8 +4,7 @@ import { Check, Palette, Users, Trash2 } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useTheme, useColors } from '@/contexts/ThemeContext';
-import { ThemeName, themeOptions } from '@/constants/themes';
-import { ThemeColors } from '@/constants/themes';
+import { ThemeName, themeOptions, ThemeColors } from '@/constants/themes';
 import { useOpponents } from '@/contexts/OpponentContext';
 
 export default function SettingsScreen() {
@@ -17,9 +16,28 @@ export default function SettingsScreen() {
   const handleThemeSelect = useCallback((key: ThemeName) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setTheme(key);
+    console.log('[Settings] Theme changed to:', key);
   }, [setTheme]);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const handleRemoveOpponent = useCallback((name: string) => {
+    Alert.alert(
+      'Remove Opponent',
+      `Remove "${name}" from the autocomplete list? This won't affect any saved games.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: () => {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            removeOpponent(name);
+          },
+        },
+      ]
+    );
+  }, [removeOpponent]);
 
   return (
     <View style={styles.container}>
@@ -73,7 +91,10 @@ export default function SettingsScreen() {
 
         <View style={[styles.sectionHeader, { marginTop: 28 }]}>
           <Users size={16} color={colors.textMuted} />
-          <Text style={styles.sectionHeaderText}>Opponents</Text>
+          <Text style={styles.sectionHeaderText}>Saved Opponents</Text>
+          {opponents.length > 0 && (
+            <Text style={styles.opponentCount}>{opponents.length}</Text>
+          )}
         </View>
 
         {opponents.length === 0 ? (
@@ -88,23 +109,7 @@ export default function SettingsScreen() {
                 <TouchableOpacity
                   testID={`delete-opponent-${name}`}
                   style={styles.opponentDeleteBtn}
-                  onPress={() => {
-                    Alert.alert(
-                      'Remove Opponent',
-                      `Remove "${name}" from the autocomplete list? This won't affect any saved games.`,
-                      [
-                        { text: 'Cancel', style: 'cancel' },
-                        {
-                          text: 'Remove',
-                          style: 'destructive',
-                          onPress: () => {
-                            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            removeOpponent(name);
-                          },
-                        },
-                      ]
-                    );
-                  }}
+                  onPress={() => handleRemoveOpponent(name)}
                   activeOpacity={0.7}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
@@ -114,153 +119,39 @@ export default function SettingsScreen() {
             ))}
           </View>
         )}
+
+        <View style={{ height: 40 }} />
       </ScrollView>
     </View>
   );
 }
 
-function createStyles(colors: ThemeColors) {
+function createStyles(c: ThemeColors) {
   return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    scroll: {
-      flex: 1,
-    },
-    scrollContent: {
-      padding: 20,
-      paddingTop: 20,
-      paddingBottom: 60,
-    },
-    sectionHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-      marginBottom: 16,
-    },
-    sectionHeaderText: {
-      fontSize: 13,
-      fontWeight: '700' as const,
-      color: colors.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 1,
-    },
-    themeGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      gap: 12,
-    },
-    themeCard: {
-      width: '47%' as unknown as number,
-      flexGrow: 1,
-      backgroundColor: colors.surface,
-      borderRadius: 14,
-      borderWidth: 2,
-      borderColor: colors.border,
-      overflow: 'hidden',
-    },
-    themeCardActive: {
-      borderColor: colors.primary,
-      borderWidth: 2,
-    },
-    themePreview: {
-      padding: 10,
-      paddingBottom: 8,
-    },
-    previewBg: {
-      borderRadius: 8,
-      padding: 8,
-      height: 72,
-    },
-    previewSurface: {
-      flex: 1,
-      borderRadius: 6,
-      padding: 8,
-      justifyContent: 'center',
-      gap: 5,
-    },
-    previewAccentDot: {
-      width: 16,
-      height: 16,
-      borderRadius: 8,
-    },
-    previewTextLine: {
-      height: 5,
-      borderRadius: 2.5,
-      width: '70%',
-    },
-    previewTextLineShort: {
-      height: 4,
-      borderRadius: 2,
-      width: '45%',
-    },
-    themeInfo: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      borderTopWidth: 1,
-      borderTopColor: colors.border,
-    },
-    themeLabel: {
-      fontSize: 15,
-      fontWeight: '600' as const,
-      color: colors.textSecondary,
-    },
-    themeLabelActive: {
-      color: colors.primary,
-      fontWeight: '700' as const,
-    },
-    checkBadge: {
-      width: 26,
-      height: 26,
-      borderRadius: 13,
-      backgroundColor: colors.primaryGlow,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: colors.primary,
-    },
-    opponentEmptyState: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      padding: 20,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    opponentEmptyText: {
-      fontSize: 14,
-      color: colors.textMuted,
-      textAlign: 'center',
-      lineHeight: 20,
-    },
-    opponentList: {
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      borderWidth: 1,
-      borderColor: colors.border,
-      overflow: 'hidden' as const,
-    },
-    opponentRow: {
-      flexDirection: 'row' as const,
-      alignItems: 'center' as const,
-      justifyContent: 'space-between' as const,
-      paddingHorizontal: 16,
-      paddingVertical: 14,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    opponentName: {
-      fontSize: 15,
-      fontWeight: '500' as const,
-      color: colors.text,
-      flex: 1,
-      marginRight: 12,
-    },
-    opponentDeleteBtn: {
-      padding: 6,
-    },
+    container: { flex: 1, backgroundColor: c.background },
+    scroll: { flex: 1 },
+    scrollContent: { padding: 20, paddingBottom: 60 },
+    sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
+    sectionHeaderText: { fontSize: 13, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, flex: 1 },
+    opponentCount: { fontSize: 12, fontWeight: '600' as const, color: c.textMuted, backgroundColor: c.surface, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, overflow: 'hidden' },
+    themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+    themeCard: { width: '47%' as unknown as number, flexGrow: 1, backgroundColor: c.surface, borderRadius: 14, borderWidth: 2, borderColor: c.border, overflow: 'hidden' },
+    themeCardActive: { borderColor: c.primary, borderWidth: 2 },
+    themePreview: { padding: 10, paddingBottom: 8 },
+    previewBg: { borderRadius: 8, padding: 8, height: 72 },
+    previewSurface: { flex: 1, borderRadius: 6, padding: 8, justifyContent: 'center', gap: 5 },
+    previewAccentDot: { width: 16, height: 16, borderRadius: 8 },
+    previewTextLine: { height: 5, borderRadius: 2.5, width: '70%' },
+    previewTextLineShort: { height: 4, borderRadius: 2, width: '45%' },
+    themeInfo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: c.border },
+    themeLabel: { fontSize: 15, fontWeight: '600' as const, color: c.textSecondary },
+    themeLabelActive: { color: c.primary, fontWeight: '700' as const },
+    checkBadge: { width: 26, height: 26, borderRadius: 13, backgroundColor: c.primaryGlow, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.primary },
+    opponentEmptyState: { backgroundColor: c.surface, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: c.border },
+    opponentEmptyText: { fontSize: 14, color: c.textMuted, textAlign: 'center', lineHeight: 20 },
+    opponentList: { backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.border, overflow: 'hidden' as const },
+    opponentRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: c.border },
+    opponentName: { fontSize: 15, fontWeight: '500' as const, color: c.text, flex: 1, marginRight: 12 },
+    opponentDeleteBtn: { padding: 6 },
   });
 }

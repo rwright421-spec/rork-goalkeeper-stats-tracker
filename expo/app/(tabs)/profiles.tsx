@@ -9,6 +9,10 @@ import { ThemeColors } from '@/constants/themes';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
 
+const currentYear = new Date().getFullYear();
+const YEARS: string[] = [];
+for (let y = currentYear; y >= 1975; y--) YEARS.push(String(y));
+
 export default function ProfilesScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -22,13 +26,6 @@ export default function ProfilesScreen() {
   const [editProfileYearPickerOpen, setEditProfileYearPickerOpen] = useState(false);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
-
-  const currentYear = new Date().getFullYear();
-  const YEARS: string[] = useMemo(() => {
-    const yrs: string[] = [];
-    for (let y = currentYear; y >= 1975; y--) yrs.push(String(y));
-    return yrs;
-  }, [currentYear]);
 
   const displayName = isGuest ? 'Guest' : (activeProfile?.name ?? 'Goalkeeper');
   const teamLabel = viewAllGames ? 'All Games' : (activeTeam ? `${activeTeam.teamName} (${activeTeam.year})` : 'No team selected');
@@ -69,14 +66,13 @@ export default function ProfilesScreen() {
     updateProfile(activeProfile.id, editProfileName, editProfileBirthYear || undefined);
     setEditingProfileMode(false);
     setEditProfileYearPickerOpen(false);
+    console.log('[Profiles] Profile updated:', activeProfile.id);
   }, [activeProfile, editProfileName, editProfileBirthYear, updateProfile]);
 
   const handleCancelEditProfile = useCallback(() => {
     setEditingProfileMode(false);
     setEditProfileYearPickerOpen(false);
   }, []);
-
-
 
   return (
     <View style={styles.container}>
@@ -100,6 +96,7 @@ export default function ProfilesScreen() {
             />
             <Text style={[styles.fieldLabel, { marginTop: 12 }]}>Birth Year</Text>
             <TouchableOpacity
+              testID="edit-profile-year-selector"
               style={styles.yearSelector}
               onPress={() => setEditProfileYearPickerOpen(!editProfileYearPickerOpen)}
               activeOpacity={0.7}
@@ -141,6 +138,7 @@ export default function ProfilesScreen() {
             )}
             <View style={styles.formActions}>
               <TouchableOpacity
+                testID="cancel-edit-profile"
                 style={styles.cancelBtn}
                 onPress={handleCancelEditProfile}
                 activeOpacity={0.7}
@@ -167,7 +165,7 @@ export default function ProfilesScreen() {
             </View>
             <View style={styles.profileInfo}>
               <View style={styles.profileNameRow}>
-                <Text style={styles.profileName}>{displayName}</Text>
+                <Text style={styles.profileName} numberOfLines={1}>{displayName}</Text>
               </View>
               <Text style={styles.profileMeta}>
                 {isGuest ? 'Guest Mode' : teamLabel}
@@ -185,7 +183,7 @@ export default function ProfilesScreen() {
 
         <View style={styles.actionsSection}>
           <TouchableOpacity
-            testID="switch-goalkeeper-btn"
+            testID="switch-goalkeeper-profiles-btn"
             style={styles.actionRow}
             onPress={handleSwitchGoalkeeper}
             activeOpacity={0.7}
@@ -221,7 +219,7 @@ export default function ProfilesScreen() {
           {!isGuest && activeProfile && (
             <TouchableOpacity
               testID="edit-profile-btn"
-              style={styles.actionRow}
+              style={[styles.actionRow, { borderBottomWidth: 0 }]}
               onPress={handleEditProfile}
               activeOpacity={0.7}
             >
@@ -235,7 +233,6 @@ export default function ProfilesScreen() {
               <ChevronRight size={18} color={colors.textMuted} />
             </TouchableOpacity>
           )}
-
         </View>
       </ScrollView>
     </View>
@@ -244,214 +241,41 @@ export default function ProfilesScreen() {
 
 function createStyles(c: ThemeColors) {
   return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: c.background,
-    },
-    scroll: {
-      flex: 1,
-    },
-    scrollContent: {
-      paddingHorizontal: 20,
-      paddingBottom: 40,
-    },
-    profileCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: c.surface,
-      borderRadius: 16,
-      padding: 18,
-      marginBottom: 28,
-      borderWidth: 1,
-      borderColor: c.border,
-      gap: 14,
-    },
-    profileAvatar: {
-      width: 56,
-      height: 56,
-      borderRadius: 16,
-      backgroundColor: c.primaryGlow,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1.5,
-      borderColor: 'rgba(16, 185, 129, 0.3)',
-    },
-    profileInitial: {
-      fontSize: 24,
-      fontWeight: '800' as const,
-      color: c.primary,
-    },
-    profileInfo: {
-      flex: 1,
-    },
-    profileNameRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
-    },
-    profileName: {
-      fontSize: 20,
-      fontWeight: '800' as const,
-      color: c.text,
-    },
-    profileMeta: {
-      fontSize: 14,
-      color: c.textSecondary,
-      fontWeight: '500' as const,
-      marginTop: 3,
-    },
-    profileBirthYear: {
-      fontSize: 12,
-      color: c.textMuted,
-      fontWeight: '500' as const,
-      marginTop: 2,
-    },
-    editProfileCard: {
-      backgroundColor: c.surface,
-      borderRadius: 16,
-      padding: 18,
-      marginBottom: 28,
-      borderWidth: 1,
-      borderColor: c.primary,
-    },
-    fieldLabel: {
-      fontSize: 12,
-      fontWeight: '600' as const,
-      color: c.textSecondary,
-      marginBottom: 6,
-    },
-    editInput: {
-      backgroundColor: c.surfaceLight,
-      borderRadius: 10,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      color: c.text,
-      fontSize: 15,
-      borderWidth: 1,
-      borderColor: c.border,
-    },
-    yearSelector: {
-      backgroundColor: c.surfaceLight,
-      borderRadius: 10,
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      borderWidth: 1,
-      borderColor: c.border,
-    },
-    yearText: {
-      fontSize: 15,
-      color: c.text,
-      fontWeight: '500' as const,
-    },
-    yearDropdown: {
-      backgroundColor: c.background,
-      borderRadius: 10,
-      borderWidth: 1,
-      borderColor: c.border,
-      marginTop: 4,
-      overflow: 'hidden',
-    },
-    yearScroll: {
-      maxHeight: 180,
-    },
-    yearOption: {
-      paddingHorizontal: 14,
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: c.border,
-    },
-    yearOptionActive: {
-      backgroundColor: c.primaryGlow,
-    },
-    yearOptionText: {
-      fontSize: 14,
-      color: c.text,
-      fontWeight: '500' as const,
-    },
-    yearOptionTextActive: {
-      color: c.primary,
-      fontWeight: '700' as const,
-    },
-    formActions: {
-      flexDirection: 'row',
-      gap: 8,
-      marginTop: 14,
-    },
-    cancelBtn: {
-      flex: 1,
-      paddingVertical: 10,
-      borderRadius: 10,
-      backgroundColor: c.surfaceLight,
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: c.border,
-    },
-    cancelText: {
-      fontSize: 14,
-      fontWeight: '600' as const,
-      color: c.textSecondary,
-    },
-    confirmBtn: {
-      flex: 1,
-      paddingVertical: 10,
-      borderRadius: 10,
-      backgroundColor: c.primaryDark,
-      alignItems: 'center',
-    },
-    confirmBtnDisabled: {
-      opacity: 0.4,
-    },
-    confirmText: {
-      fontSize: 14,
-      fontWeight: '700' as const,
-      color: c.white,
-    },
-    sectionHeader: {
-      marginBottom: 12,
-    },
-    sectionHeaderText: {
-      fontSize: 13,
-      fontWeight: '700' as const,
-      color: c.textMuted,
-      textTransform: 'uppercase',
-      letterSpacing: 1,
-    },
-    actionsSection: {
-      backgroundColor: c.surface,
-      borderRadius: 14,
-      borderWidth: 1,
-      borderColor: c.border,
-      overflow: 'hidden',
-      marginBottom: 24,
-    },
-    actionRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: c.border,
-    },
-    actionIcon: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 14,
-    },
-    actionTextContainer: {
-      flex: 1,
-    },
-    actionTitle: {
-      fontSize: 16,
-      fontWeight: '600' as const,
-      color: c.text,
-    },
-    actionSubtitle: {
-      fontSize: 12,
-      color: c.textMuted,
-      fontWeight: '500' as const,
-      marginTop: 1,
-    },
+    container: { flex: 1, backgroundColor: c.background },
+    scroll: { flex: 1 },
+    scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+    profileCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.surface, borderRadius: 16, padding: 18, marginBottom: 28, borderWidth: 1, borderColor: c.border, gap: 14 },
+    profileAvatar: { width: 56, height: 56, borderRadius: 16, backgroundColor: c.primaryGlow, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(16, 185, 129, 0.3)' },
+    profileInitial: { fontSize: 24, fontWeight: '800' as const, color: c.primary },
+    profileInfo: { flex: 1 },
+    profileNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    profileName: { fontSize: 20, fontWeight: '800' as const, color: c.text, flexShrink: 1 },
+    profileMeta: { fontSize: 14, color: c.textSecondary, fontWeight: '500' as const, marginTop: 3 },
+    profileBirthYear: { fontSize: 12, color: c.textMuted, fontWeight: '500' as const, marginTop: 2 },
+    editProfileCard: { backgroundColor: c.surface, borderRadius: 16, padding: 18, marginBottom: 28, borderWidth: 1, borderColor: c.primary },
+    fieldLabel: { fontSize: 12, fontWeight: '600' as const, color: c.textSecondary, marginBottom: 6 },
+    editInput: { backgroundColor: c.surfaceLight, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, color: c.text, fontSize: 15, borderWidth: 1, borderColor: c.border },
+    yearSelector: { backgroundColor: c.surfaceLight, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: c.border },
+    yearText: { fontSize: 15, color: c.text, fontWeight: '500' as const },
+    yearDropdown: { backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border, marginTop: 4, overflow: 'hidden' },
+    yearScroll: { maxHeight: 180 },
+    yearOption: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
+    yearOptionActive: { backgroundColor: c.primaryGlow },
+    yearOptionText: { fontSize: 14, color: c.text, fontWeight: '500' as const },
+    yearOptionTextActive: { color: c.primary, fontWeight: '700' as const },
+    formActions: { flexDirection: 'row', gap: 8, marginTop: 14 },
+    cancelBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: c.surfaceLight, alignItems: 'center', borderWidth: 1, borderColor: c.border },
+    cancelText: { fontSize: 14, fontWeight: '600' as const, color: c.textSecondary },
+    confirmBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: c.primaryDark, alignItems: 'center' },
+    confirmBtnDisabled: { opacity: 0.4 },
+    confirmText: { fontSize: 14, fontWeight: '700' as const, color: c.white },
+    sectionHeader: { marginBottom: 12 },
+    sectionHeaderText: { fontSize: 13, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
+    actionsSection: { backgroundColor: c.surface, borderRadius: 14, borderWidth: 1, borderColor: c.border, overflow: 'hidden', marginBottom: 24 },
+    actionRow: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: c.border },
+    actionIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
+    actionTextContainer: { flex: 1 },
+    actionTitle: { fontSize: 16, fontWeight: '600' as const, color: c.text },
+    actionSubtitle: { fontSize: 12, color: c.textMuted, fontWeight: '500' as const, marginTop: 1 },
   });
 }

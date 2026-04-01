@@ -1,7 +1,7 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
+import React, { useCallback, useMemo, useState, useRef } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Platform, Modal, Pressable, TextInput, Animated, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus, Shield, Filter, ChevronDown, Users, Check, ArrowLeftRight } from 'lucide-react-native';
+import { Plus, Shield, Filter, ChevronDown, Users, Check, ArrowLeftRight, Zap, ClipboardList } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
@@ -11,6 +11,7 @@ import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
 import GameCard from '@/components/GameCard';
 import MoveGameModal from '@/components/MoveGameModal';
+import { useOpponents } from '@/contexts/OpponentContext';
 import { SavedGame } from '@/types/game';
 
 export default function TrackScreen() {
@@ -20,6 +21,16 @@ export default function TrackScreen() {
   const { games, isLoading, deleteGame } = useGames();
   const { activeProfile, isGuest, clearSelection } = useGoalkeepers();
   const { teams, activeTeam, activeTeamId, viewAllGames, selectTeam, showAllGames, clearTeamSelection } = useTeams();
+
+  const { addOpponent, getSuggestions } = useOpponents();
+
+  const [showNewGameSheet, setShowNewGameSheet] = useState(false);
+  const [showQuickStart, setShowQuickStart] = useState(false);
+  const [quickOpponent, setQuickOpponent] = useState('');
+  const [quickOpponentSuggestions, setQuickOpponentSuggestions] = useState<string[]>([]);
+  const [showQuickSuggestions, setShowQuickSuggestions] = useState(false);
+  const sheetAnim = useRef(new Animated.Value(0)).current;
+  const quickStartAnim = useRef(new Animated.Value(0)).current;
 
   const handleSwitchGoalkeeper = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -41,10 +52,68 @@ export default function TrackScreen() {
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const handleNewGame = useCallback(() => {
+  const openNewGameSheet = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push('/new-game');
-  }, [router]);
+    setShowNewGameSheet(true);
+    Animated.spring(sheetAnim, { toValue: 1, useNativeDriver: true, tension: 65, friction: 11 }).start();
+  }, [sheetAnim]);
+
+  const closeNewGameSheet = useCallback(() => {
+    Animated.timing(sheetAnim, { toValue: 0, useNativeDriver: true, duration: 200 }).start(() => {
+      setShowNewGameSheet(false);
+      setShowQuickStart(false);
+      setQuickOpponent('');
+      setQuickOpponentSuggestions([]);
+      setShowQuickSuggestions(false);
+    });
+  }, [sheetAnim]);
+
+  const handleFullSetup = useCallback(() => {
+    closeNewGameSheet();
+    setTimeout(() => router.push('/new-game'), 250);
+  }, [closeNewGameSheet, router]);
+
+  const openQuickStart = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setShowQuickStart(true);
+    Animated.spring(quickStartAnim, { toValue: 1, useNativeDriver: true, tension: 65, friction: 11 }).start();
+  }, [quickStartAnim]);
+
+  const handleQuickOpponentChange = useCallback((text: string) => {
+    setQuickOpponent(text);
+    if (text.trim().length > 0) {
+      const suggestions = getSuggestions(text);
+      setQuickOpponentSuggestions(suggestions);
+      setShowQuickSuggestions(suggestions.length > 0);
+    } else {
+      setQuickOpponentSuggestions([]);
+      setShowQuickSuggestions(false);
+    }
+  }, [getSuggestions]);
+
+  const handleQuickStart = useCallback(() => {
+    if (!quickOpponent.trim()) return;
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Keyboard.dismiss();
+    const opponent = quickOpponent.trim();
+    addOpponent(opponent);
+    const now = new Date();
+    const todayDate = `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
+    closeNewGameSheet();
+    setTimeout(() => {
+      router.push({
+        pathname: '/game-tracking',
+        params: {
+          eventName: '',
+          date: todayDate,
+          gameName: opponent,
+          keeperSelection: 'home',
+          ageGroup: '',
+          quickStart: '1',
+        },
+      });
+    }, 250);
+  }, [quickOpponent, addOpponent, closeNewGameSheet, router]);
 
   const handleViewGame = useCallback((gameId: string) => {
     router.push(`/game-detail?id=${gameId}`);
@@ -108,7 +177,7 @@ export default function TrackScreen() {
             <Shield size={22} color={colors.primary} strokeWidth={2.5} />
           </View>
           <View style={styles.logoTextContainer}>
-            <Text style={styles.title}>{displayName}</Text>
+            <Text style={styles.title} numberOfLines={1}>{displayName}</Text>
             {!isGuest && teams.length > 0 ? (
               <TouchableOpacity
                 testID="team-picker-btn"
@@ -135,7 +204,7 @@ export default function TrackScreen() {
             activeOpacity={0.7}
           >
             <ArrowLeftRight size={13} color={colors.primary} />
-            <Text style={styles.switchKeeperText}>Switch Goalkeeper</Text>
+            <Text style={styles.switchKeeperText}>Switch</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -143,6 +212,7 @@ export default function TrackScreen() {
       {showTeamPicker && !isGuest && teams.length > 0 && (
         <View style={styles.teamPickerDropdown}>
           <TouchableOpacity
+            testID="team-picker-all"
             style={[styles.teamPickerOption, (viewAllGames || !activeTeamId) && styles.teamPickerOptionActive]}
             onPress={() => {
               void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -160,6 +230,7 @@ export default function TrackScreen() {
           {teams.map((team) => (
             <TouchableOpacity
               key={team.id}
+              testID={`team-picker-${team.id}`}
               style={[styles.teamPickerOption, activeTeamId === team.id && styles.teamPickerOptionActive]}
               onPress={() => {
                 void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -184,7 +255,7 @@ export default function TrackScreen() {
       <TouchableOpacity
         testID="new-game-button"
         style={styles.newGameButton}
-        onPress={handleNewGame}
+        onPress={openNewGameSheet}
         activeOpacity={0.8}
       >
         <View style={styles.newGameInner}>
@@ -217,6 +288,7 @@ export default function TrackScreen() {
       {showFilter && (
         <View style={styles.filterDropdown}>
           <TouchableOpacity
+            testID="filter-all-games"
             style={[styles.filterOption, (!activeTeamId || viewAllGames) && styles.filterOptionActive]}
             onPress={handleFilterAll}
             activeOpacity={0.7}
@@ -228,6 +300,7 @@ export default function TrackScreen() {
           {teams.map((team) => (
             <TouchableOpacity
               key={team.id}
+              testID={`filter-team-${team.id}`}
               style={[styles.filterOption, activeTeamId === team.id && styles.filterOptionActive]}
               onPress={() => handleFilterTeam(team.id)}
               activeOpacity={0.7}
@@ -266,6 +339,132 @@ export default function TrackScreen() {
         game={moveGame}
         onMoveComplete={handleMoveComplete}
       />
+
+      <Modal
+        visible={showNewGameSheet}
+        transparent
+        animationType="none"
+        onRequestClose={closeNewGameSheet}
+        statusBarTranslucent
+      >
+        <Pressable style={styles.sheetOverlay} onPress={closeNewGameSheet}>
+          <Animated.View
+            style={[
+              styles.sheetContainer,
+              {
+                transform: [{
+                  translateY: sheetAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [400, 0],
+                  }),
+                }],
+                opacity: sheetAnim,
+              },
+            ]}
+          >
+            <Pressable onPress={(e) => e.stopPropagation()}>
+              <View style={styles.sheetHandle} />
+              {!showQuickStart ? (
+                <View style={styles.sheetContent}>
+                  <Text style={styles.sheetTitle}>Start a Game</Text>
+                  <TouchableOpacity
+                    testID="quick-start-option"
+                    style={styles.sheetOption}
+                    onPress={openQuickStart}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.sheetOptionIcon, { backgroundColor: 'rgba(250, 204, 21, 0.15)' }]}>
+                      <Zap size={20} color="#facc15" />
+                    </View>
+                    <View style={styles.sheetOptionTextWrap}>
+                      <Text style={styles.sheetOptionTitle}>Quick Start</Text>
+                      <Text style={styles.sheetOptionDesc}>Just an opponent name — start tracking now</Text>
+                    </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    testID="full-setup-option"
+                    style={styles.sheetOption}
+                    onPress={handleFullSetup}
+                    activeOpacity={0.7}
+                  >
+                    <View style={[styles.sheetOptionIcon, { backgroundColor: colors.primaryGlow }]}>
+                      <ClipboardList size={20} color={colors.primary} />
+                    </View>
+                    <View style={styles.sheetOptionTextWrap}>
+                      <Text style={styles.sheetOptionTitle}>Full Setup</Text>
+                      <Text style={styles.sheetOptionDesc}>Event, team, age group, and all details</Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <Animated.View
+                  style={[
+                    styles.sheetContent,
+                    {
+                      opacity: quickStartAnim,
+                      transform: [{
+                        translateX: quickStartAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [30, 0],
+                        }),
+                      }],
+                    },
+                  ]}
+                >
+                  <View style={styles.quickStartHeader}>
+                    <Zap size={18} color="#facc15" />
+                    <Text style={styles.sheetTitle}>Quick Start</Text>
+                  </View>
+                  <Text style={styles.quickStartHint}>Enter the opponent and go. Fill in the rest later.</Text>
+                  <View style={styles.quickStartInputWrap}>
+                    <TextInput
+                      testID="quick-opponent-input"
+                      style={styles.quickStartInput}
+                      value={quickOpponent}
+                      onChangeText={handleQuickOpponentChange}
+                      placeholder="Opponent name"
+                      placeholderTextColor={colors.textMuted}
+                      autoFocus
+                      returnKeyType="go"
+                      onSubmitEditing={handleQuickStart}
+                    />
+                    {showQuickSuggestions && quickOpponentSuggestions.length > 0 && (
+                      <View style={styles.quickSuggestions}>
+                        {quickOpponentSuggestions.slice(0, 4).map((s) => (
+                          <TouchableOpacity
+                            key={s}
+                            style={styles.quickSuggestionItem}
+                            onPress={() => {
+                              setQuickOpponent(s);
+                              setShowQuickSuggestions(false);
+                            }}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={styles.quickSuggestionText}>{s}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+                  <TouchableOpacity
+                    testID="quick-start-go-btn"
+                    style={[
+                      styles.quickStartBtn,
+                      !quickOpponent.trim() && styles.quickStartBtnDisabled,
+                    ]}
+                    onPress={handleQuickStart}
+                    disabled={!quickOpponent.trim()}
+                    activeOpacity={0.8}
+                  >
+                    <Zap size={18} color={colors.white} />
+                    <Text style={styles.quickStartBtnText}>Start Tracking</Text>
+                  </TouchableOpacity>
+                </Animated.View>
+              )}
+            </Pressable>
+          </Animated.View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
@@ -500,6 +699,133 @@ function createStyles(c: ThemeColors) {
       fontSize: 12,
       fontWeight: '600' as const,
       color: c.primary,
+    },
+    sheetOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0,0,0,0.55)',
+      justifyContent: 'flex-end',
+    },
+    sheetContainer: {
+      backgroundColor: c.surface,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      paddingBottom: 40,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderBottomWidth: 0,
+    },
+    sheetHandle: {
+      width: 40,
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: c.borderLight,
+      alignSelf: 'center',
+      marginTop: 12,
+      marginBottom: 8,
+    },
+    sheetContent: {
+      paddingHorizontal: 20,
+      paddingTop: 8,
+      paddingBottom: 8,
+    },
+    sheetTitle: {
+      fontSize: 20,
+      fontWeight: '800' as const,
+      color: c.text,
+      marginBottom: 16,
+    },
+    sheetOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: c.background,
+      borderRadius: 14,
+      padding: 16,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    sheetOptionIcon: {
+      width: 44,
+      height: 44,
+      borderRadius: 12,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: 14,
+    },
+    sheetOptionTextWrap: {
+      flex: 1,
+    },
+    sheetOptionTitle: {
+      fontSize: 16,
+      fontWeight: '700' as const,
+      color: c.text,
+      marginBottom: 2,
+    },
+    sheetOptionDesc: {
+      fontSize: 13,
+      color: c.textSecondary,
+      fontWeight: '500' as const,
+    },
+    quickStartHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 4,
+    },
+    quickStartHint: {
+      fontSize: 14,
+      color: c.textSecondary,
+      fontWeight: '500' as const,
+      marginBottom: 16,
+    },
+    quickStartInputWrap: {
+      marginBottom: 16,
+    },
+    quickStartInput: {
+      backgroundColor: c.background,
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 14,
+      color: c.text,
+      fontSize: 16,
+      borderWidth: 1.5,
+      borderColor: 'rgba(250, 204, 21, 0.3)',
+    },
+    quickSuggestions: {
+      backgroundColor: c.background,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: c.border,
+      marginTop: 4,
+      overflow: 'hidden' as const,
+    },
+    quickSuggestionItem: {
+      paddingHorizontal: 14,
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: c.border,
+    },
+    quickSuggestionText: {
+      fontSize: 14,
+      color: c.text,
+      fontWeight: '500' as const,
+    },
+    quickStartBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      backgroundColor: '#b8960a',
+      borderRadius: 14,
+      paddingVertical: 16,
+    },
+    quickStartBtnDisabled: {
+      opacity: 0.4,
+    },
+    quickStartBtnText: {
+      color: c.white,
+      fontSize: 17,
+      fontWeight: '700' as const,
     },
   });
 }

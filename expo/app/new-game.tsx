@@ -24,6 +24,7 @@ const SELECTION_OPTIONS: SelectionOption[] = [
 const AGE_GROUPS: AgeGroup[] = ['U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19'];
 
 export default function NewGameScreen() {
+  console.log("[NewGame] Screen rendered");
   const router = useRouter();
   const colors = useColors();
   const [eventName, setEventName] = useState('');
@@ -102,7 +103,7 @@ export default function NewGameScreen() {
           headerShown: true,
           headerStyle: { backgroundColor: colors.background },
           headerTintColor: colors.text,
-          headerTitleStyle: { fontWeight: '700' },
+          headerTitleStyle: { fontWeight: '700' as const },
         }}
       />
       <ScrollView
@@ -253,7 +254,7 @@ export default function NewGameScreen() {
                 style={styles.createTeamInput}
                 value={newTeamYear}
                 onChangeText={setNewTeamYear}
-                placeholder="Year (e.g. 2025)"
+                placeholder="Year (e.g. 2026)"
                 placeholderTextColor={colors.textMuted}
                 keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
               />

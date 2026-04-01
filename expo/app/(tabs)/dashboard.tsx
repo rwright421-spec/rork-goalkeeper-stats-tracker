@@ -285,7 +285,7 @@ export default function DashboardScreen() {
             </View>
             <View style={styles.profileInfo}>
               <View style={styles.profileNameRow}>
-                <Text style={styles.profileName}>{displayName}</Text>
+                <Text style={styles.profileName} numberOfLines={1}>{displayName}</Text>
               </View>
               <Text style={styles.profileMeta}>
                 {isGuest
@@ -303,7 +303,7 @@ export default function DashboardScreen() {
               activeOpacity={0.7}
             >
               <ArrowLeftRight size={13} color={colors.primary} />
-              <Text style={styles.switchBtnText}>Switch Goalkeeper</Text>
+              <Text style={styles.switchBtnText}>Switch</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -513,6 +513,7 @@ export default function DashboardScreen() {
                   return (
                     <View key={team.id} style={styles.teamRow}>
                       <TouchableOpacity
+                        testID={`team-row-${team.id}`}
                         style={styles.teamRowMain}
                         onPress={() => handleFilterByTeam(team.id)}
                         activeOpacity={0.7}
@@ -530,6 +531,7 @@ export default function DashboardScreen() {
                       </TouchableOpacity>
                       <View style={styles.teamActions}>
                         <TouchableOpacity
+                          testID={`edit-team-${team.id}`}
                           style={styles.teamActionBtn}
                           onPress={() => handleEditTeam(team)}
                           activeOpacity={0.7}
@@ -538,6 +540,7 @@ export default function DashboardScreen() {
                           <Pencil size={12} color={colors.primary} />
                         </TouchableOpacity>
                         <TouchableOpacity
+                          testID={`delete-team-${team.id}`}
                           style={styles.teamDeleteBtn}
                           onPress={() => handleDeleteTeam(team)}
                           activeOpacity={0.7}
@@ -597,6 +600,7 @@ export default function DashboardScreen() {
                 return (
                   <TouchableOpacity
                     key={game.id}
+                    testID={`recent-game-${game.id}`}
                     style={[styles.recentGameRow, idx < recentGames.length - 1 && styles.recentGameBorder]}
                     onPress={() => handleViewGame(game.id)}
                     activeOpacity={0.7}
@@ -622,6 +626,7 @@ export default function DashboardScreen() {
 
               {allGames.length > 3 && (
                 <TouchableOpacity
+                  testID="see-all-games-btn"
                   style={styles.seeAllGamesRow}
                   onPress={handleViewAllGames}
                   activeOpacity={0.7}
@@ -634,7 +639,7 @@ export default function DashboardScreen() {
           </>
         )}
 
-        {!isGuest && activeProfile && (
+        {!isGuest && activeProfile && !editingProfileMode && (
           <>
             <View style={styles.sectionHeader}>
               <Pencil size={14} color={colors.textMuted} />
@@ -717,6 +722,7 @@ function createStyles(c: ThemeColors) {
       fontSize: 20,
       fontWeight: '800' as const,
       color: c.text,
+      flexShrink: 1,
     },
     profileMeta: {
       fontSize: 13,

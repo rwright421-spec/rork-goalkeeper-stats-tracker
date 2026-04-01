@@ -1,4 +1,3 @@
-// template
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -10,8 +9,15 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useMemo } from "react";
+import { useColors } from "@/contexts/ThemeContext";
+import { ThemeColors } from "@/constants/themes";
+import { X } from "lucide-react-native";
 
 export default function ModalScreen() {
+  const colors = useColors();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <Modal
       animationType="fade"
@@ -21,63 +27,91 @@ export default function ModalScreen() {
     >
       <Pressable style={styles.overlay} onPress={() => router.back()}>
         <View style={styles.modalContent}>
-          <Text style={styles.title}>Modal</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>Info</Text>
+            <TouchableOpacity
+              testID="modal-close-btn"
+              style={styles.closeIcon}
+              onPress={() => router.back()}
+              activeOpacity={0.7}
+            >
+              <X size={18} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
           <Text style={styles.description}>
-            This is an example modal with proper fade animation. You can edit it
-            in app/modal.tsx.
+            GK Tracker helps you track goalkeeper performance across games, teams, and seasons.
           </Text>
 
           <TouchableOpacity
+            testID="modal-close-button"
             style={styles.closeButton}
             onPress={() => router.back()}
+            activeOpacity={0.8}
           >
             <Text style={styles.closeButtonText}>Close</Text>
           </TouchableOpacity>
         </View>
       </Pressable>
 
-      {/* Use a light status bar on iOS to account for the black space above the modal */}
       <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 24,
-    margin: 20,
-    alignItems: "center",
-    minWidth: 300,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 16,
-  },
-  description: {
-    textAlign: "center",
-    marginBottom: 24,
-    color: "#666",
-    lineHeight: 20,
-  },
-  closeButton: {
-    backgroundColor: "#007AFF",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 10,
-    minWidth: 100,
-  },
-  closeButtonText: {
-    color: "white",
-    fontWeight: "600",
-    textAlign: "center",
-  },
-});
+function createStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: "rgba(0, 0, 0, 0.6)",
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    modalContent: {
+      backgroundColor: c.surface,
+      borderRadius: 20,
+      padding: 24,
+      margin: 20,
+      minWidth: 300,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    headerRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginBottom: 16,
+    },
+    title: {
+      fontSize: 20,
+      fontWeight: "700" as const,
+      color: c.text,
+    },
+    closeIcon: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: c.surfaceLight,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    description: {
+      textAlign: "center",
+      marginBottom: 24,
+      color: c.textSecondary,
+      lineHeight: 22,
+      fontSize: 15,
+    },
+    closeButton: {
+      backgroundColor: c.primaryDark,
+      paddingHorizontal: 24,
+      paddingVertical: 14,
+      borderRadius: 12,
+      alignItems: "center",
+    },
+    closeButtonText: {
+      color: c.white,
+      fontWeight: "700" as const,
+      fontSize: 16,
+    },
+  });
+}

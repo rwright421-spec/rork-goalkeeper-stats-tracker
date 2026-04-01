@@ -1,3 +1,4 @@
+// Game Tracking - Main stat entry screen for live game tracking
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
@@ -13,6 +14,7 @@ import { useOpponents } from '@/contexts/OpponentContext';
 import KeeperStatsSection from '@/components/KeeperStatsSection';
 
 export default function GameTrackingScreen() {
+  console.log("[GameTracking] Screen rendered");
   const router = useRouter();
   const colors = useColors();
   const params = useLocalSearchParams<{
@@ -22,6 +24,7 @@ export default function GameTrackingScreen() {
     keeperSelection: string;
     gameId?: string;
     ageGroup?: string;
+    quickStart?: string;
   }>();
 
   const { addGame, updateGame, getGame } = useGames();
@@ -93,7 +96,8 @@ export default function GameTrackingScreen() {
     if (existingGame?.finalScore && !isBoth && hasAway && !hasHome) return String(existingGame.finalScore.away);
     return '';
   });
-  const [gameDetailsCollapsed, setGameDetailsCollapsed] = useState<boolean>(true);
+  const isQuickStart = params.quickStart === '1' && !isEditMode;
+  const [gameDetailsCollapsed, setGameDetailsCollapsed] = useState<boolean>(!isQuickStart);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -183,11 +187,15 @@ export default function GameTrackingScreen() {
       updateGame(updated);
       Alert.alert('Game Updated', 'Stats have been updated.', [{ text: 'OK', onPress: () => { if (Platform.OS === 'web') { router.replace('/(tabs)/dashboard'); } else { router.dismissAll(); router.replace('/(tabs)/dashboard'); } } }]);
     } else {
-      if (params.gameName) addOpponent(params.gameName);
+      const finalEventName = isQuickStart ? (editEventName.trim() || params.eventName || '') : (params.eventName || '');
+      const finalDate = isQuickStart ? (editDate.trim() || params.date || '') : (params.date || '');
+      const finalGameName = isQuickStart ? (editGameName.trim() || params.gameName || '') : (params.gameName || '');
+      const finalAgeGroup = isQuickStart ? (editAgeGroup || params.ageGroup || '') : (params.ageGroup || '');
+      if (finalGameName) addOpponent(finalGameName);
       const game: SavedGame = {
         id: Date.now().toString() + Math.random().toString(36).slice(2, 8),
         teamId: activeTeamId ?? undefined,
-        setup: { eventName: params.eventName || '', date: params.date || '', gameName: params.gameName || '', keeperSelection, ageGroup: (params.ageGroup || '') as any },
+        setup: { eventName: finalEventName, date: finalDate, gameName: finalGameName, keeperSelection, ageGroup: finalAgeGroup as any },
         homeKeeper: hasHome ? homeKeeper : undefined,
         awayKeeper: hasAway ? awayKeeper : undefined,
         finalScore: computedFinalScore,
@@ -196,7 +204,7 @@ export default function GameTrackingScreen() {
       addGame(game);
       Alert.alert('Game Saved', 'Stats have been saved to Prior Games.', [{ text: 'OK', onPress: () => { if (Platform.OS === 'web') { router.replace('/(tabs)/dashboard'); } else { router.dismissAll(); router.replace('/(tabs)/dashboard'); } } }]);
     }
-  }, [isEditMode, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent]);
+  }, [isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent]);
 
   const headerSubtitle = useMemo(() => {
     if (isEditMode) return `${editEventName} · ${editDate}`;
@@ -215,12 +223,14 @@ export default function GameTrackingScreen() {
         }}
       />
 
-      {isEditMode ? (
+      {(isEditMode || isQuickStart) ? (
         <View style={styles.editInfoSection}>
           <TouchableOpacity testID="toggle-game-details" style={styles.editInfoHeader} onPress={() => setGameDetailsCollapsed(!gameDetailsCollapsed)} activeOpacity={0.7}>
             <Text style={styles.editInfoTitle}>Game Details</Text>
             <View style={styles.editInfoHeaderRight}>
-              {gameDetailsCollapsed ? <Text style={styles.editInfoSummary} numberOfLines={1}>{editEventName || 'Untitled'} · {editDate}</Text> : null}
+              {gameDetailsCollapsed && isQuickStart && !editEventName ? <Text style={styles.quickStartDetailHint}>Tap to fill in game details</Text> : null}
+              {gameDetailsCollapsed && !isQuickStart ? <Text style={styles.editInfoSummary} numberOfLines={1}>{editEventName || 'Untitled'} · {editDate}</Text> : null}
+              {gameDetailsCollapsed && isQuickStart && editEventName ? <Text style={styles.editInfoSummary} numberOfLines={1}>{editEventName} · {editDate}</Text> : null}
               {gameDetailsCollapsed ? <ChevronDown size={18} color={colors.textMuted} /> : <ChevronUp size={18} color={colors.textMuted} />}
             </View>
           </TouchableOpacity>
@@ -373,6 +383,7 @@ function createStyles(c: ThemeColors) {
     keeperSelectionOptionActive: { backgroundColor: c.primaryGlow, borderColor: 'rgba(16, 185, 129, 0.4)' },
     keeperSelectionText: { fontSize: 14, fontWeight: '600' as const, color: c.textMuted },
     keeperSelectionTextActive: { color: c.primary },
+    quickStartDetailHint: { fontSize: 12, color: c.accent, fontWeight: '600' as const, fontStyle: 'italic' },
     suggestionsDropdown: { backgroundColor: c.surface, borderRadius: 10, borderWidth: 1, borderColor: c.border, marginTop: 4, overflow: 'hidden' as const, maxHeight: 160 },
     suggestionItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
     suggestionText: { fontSize: 14, color: c.text, fontWeight: '500' as const },
