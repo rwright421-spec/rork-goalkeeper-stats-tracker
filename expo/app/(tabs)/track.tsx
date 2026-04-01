@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus, Shield, Filter, ChevronDown, Users, Check } from 'lucide-react-native';
+import { Plus, Shield, Filter, ChevronDown, Users, Check, ArrowLeftRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
@@ -18,8 +18,19 @@ export default function TrackScreen() {
   const insets = useSafeAreaInsets();
   const colors = useColors();
   const { games, isLoading, deleteGame } = useGames();
-  const { activeProfile, isGuest } = useGoalkeepers();
-  const { teams, activeTeam, activeTeamId, viewAllGames, selectTeam, showAllGames } = useTeams();
+  const { activeProfile, isGuest, clearSelection } = useGoalkeepers();
+  const { teams, activeTeam, activeTeamId, viewAllGames, selectTeam, showAllGames, clearTeamSelection } = useTeams();
+
+  const handleSwitchGoalkeeper = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    clearSelection();
+    clearTeamSelection();
+    if (Platform.OS === 'web') {
+      router.replace('/');
+    } else {
+      router.dismissAll();
+    }
+  }, [clearSelection, clearTeamSelection, router]);
 
   const [moveGame, setMoveGame] = useState<SavedGame | null>(null);
   const [showFilter, setShowFilter] = useState(false);
@@ -117,6 +128,15 @@ export default function TrackScreen() {
               <Text style={styles.subtitle}>{isGuest ? 'Guest Mode · Stats not saved' : filterLabel}</Text>
             )}
           </View>
+          <TouchableOpacity
+            testID="switch-goalkeeper-track-btn"
+            style={styles.switchKeeperBtn}
+            onPress={handleSwitchGoalkeeper}
+            activeOpacity={0.7}
+          >
+            <ArrowLeftRight size={13} color={colors.primary} />
+            <Text style={styles.switchKeeperText}>Switch Goalkeeper</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -464,6 +484,22 @@ function createStyles(c: ThemeColors) {
     emptySubtitle: {
       fontSize: 14,
       color: c.textMuted,
+    },
+    switchKeeperBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: c.primaryGlow,
+      paddingHorizontal: 10,
+      paddingVertical: 7,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: 'rgba(16, 185, 129, 0.2)',
+    },
+    switchKeeperText: {
+      fontSize: 12,
+      fontWeight: '600' as const,
+      color: c.primary,
     },
   });
 }

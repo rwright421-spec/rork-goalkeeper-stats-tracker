@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Platform } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TrendingUp, Shield, Target, Award, ChevronDown, ChevronUp, Check, Square, Share2, FileText, FileSpreadsheet, Image } from 'lucide-react-native';
+import { TrendingUp, Shield, Target, Award, ChevronDown, ChevronUp, Check, Square, Share2, FileText, FileSpreadsheet, Image, ArrowLeftRight } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { DarkTheme as Colors } from '@/constants/themes';
 import { useColors } from '@/contexts/ThemeContext';
@@ -609,10 +610,22 @@ const selectorStyles = StyleSheet.create({
 
 export default function GoalkeeperStatsScreen() {
   const colors = useColors();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { activeProfile } = useGoalkeepers();
+  const { activeProfile, clearSelection } = useGoalkeepers();
   const { allGames } = useGames();
-  const { teams } = useTeams();
+  const { teams, clearTeamSelection } = useTeams();
+
+  const handleSwitchGoalkeeper = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    clearSelection();
+    clearTeamSelection();
+    if (Platform.OS === 'web') {
+      router.replace('/');
+    } else {
+      router.dismissAll();
+    }
+  }, [clearSelection, clearTeamSelection, router]);
   const [groupMode, setGroupMode] = useState<GroupMode>('career');
   const [selectedGameIds, setSelectedGameIds] = useState<Set<string>>(new Set());
   const customLabel = 'Selected Games';
@@ -735,7 +748,18 @@ export default function GoalkeeperStatsScreen() {
             <TrendingUp size={22} color={colors.primary} />
           </View>
           <View style={styles.profileHeaderText}>
-            <Text style={styles.profileName}>{activeProfile?.name ?? 'Goalkeeper'}</Text>
+            <View style={styles.profileNameRow}>
+              <Text style={styles.profileName}>{activeProfile?.name ?? 'Goalkeeper'}</Text>
+              <TouchableOpacity
+                testID="switch-goalkeeper-stats-btn"
+                style={styles.switchKeeperBtn}
+                onPress={handleSwitchGoalkeeper}
+                activeOpacity={0.7}
+              >
+                <ArrowLeftRight size={13} color={colors.primary} />
+                <Text style={styles.switchKeeperText}>Switch Goalkeeper</Text>
+              </TouchableOpacity>
+            </View>
             <Text style={styles.profileSub}>
               {activeProfile?.birthYear ? `Born ${activeProfile.birthYear} · ` : ''}{allGames.length} game{allGames.length !== 1 ? 's' : ''} recorded
             </Text>
@@ -899,6 +923,28 @@ const styles = StyleSheet.create({
   },
   profileHeaderText: {
     flex: 1,
+  },
+  profileNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  switchKeeperBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: Colors.primaryGlow,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.2)',
+  },
+  switchKeeperText: {
+    fontSize: 12,
+    fontWeight: '600' as const,
+    color: Colors.primary,
   },
   profileName: {
     fontSize: 20,
