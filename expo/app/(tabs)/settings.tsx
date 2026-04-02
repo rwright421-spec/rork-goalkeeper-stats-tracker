@@ -96,6 +96,7 @@ export default function SettingsScreen() {
             <Text style={styles.opponentCount}>{opponents.length}</Text>
           )}
         </View>
+        <Text style={styles.sectionSubtitle}>Opponents are saved automatically when you create a game. Edit or remove them here.</Text>
 
         {opponents.length === 0 ? (
           <View style={styles.opponentEmptyState}>
@@ -134,6 +135,7 @@ function createStyles(c: ThemeColors) {
     sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
     sectionHeaderText: { fontSize: 13, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, flex: 1 },
     opponentCount: { fontSize: 12, fontWeight: '600' as const, color: c.textMuted, backgroundColor: c.surface, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, overflow: 'hidden' },
+    sectionSubtitle: { fontSize: 13, color: c.textMuted, lineHeight: 18, marginTop: -8, marginBottom: 14 },
     themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
     themeCard: { width: '47%' as unknown as number, flexGrow: 1, backgroundColor: c.surface, borderRadius: 14, borderWidth: 2, borderColor: c.border, overflow: 'hidden' },
     themeCardActive: { borderColor: c.primary, borderWidth: 2 },
