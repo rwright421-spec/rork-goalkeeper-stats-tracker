@@ -1,4 +1,4 @@
-// Game Tracking - Main stat entry screen for live game tracking
+// Game Tracking - Live stat entry screen for game tracking
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';

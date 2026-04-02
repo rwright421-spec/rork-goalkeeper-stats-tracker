@@ -1,4 +1,4 @@
-// Onboarding - First-time user setup flow
+// Onboarding - First-time user welcome and setup flow
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import {
   View,

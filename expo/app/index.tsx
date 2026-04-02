@@ -30,16 +30,18 @@ export default function GoalkeeperSelectScreen() {
           return;
         }
       } catch (e) {
-        console.log('[Index] Error checking onboarding flag:', e);
+        console.log('[Index] Error checking onboarding:', e);
       }
       if (mounted) setOnboardingChecked(true);
     })();
     return () => { mounted = false; };
   }, [router]);
+
   const {
     profiles, isLoading, createProfile, updateProfile, deleteProfile,
     selectProfile, selectGuest, userId,
   } = useGoalkeepers();
+
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');
   const [newBirthYear, setNewBirthYear] = useState('');
@@ -116,8 +118,6 @@ export default function GoalkeeperSelectScreen() {
     );
   }, [deleteProfile, userId]);
 
-
-
   const renderProfile = useCallback(({ item }: { item: GoalkeeperProfile }) => {
     if (editingProfile?.id === item.id) {
       return (
@@ -145,11 +145,7 @@ export default function GoalkeeperSelectScreen() {
             onSubmitEditing={handleSaveEdit}
           />
           <View style={styles.createActions}>
-            <TouchableOpacity
-              style={styles.cancelBtn}
-              onPress={handleCancelEdit}
-              activeOpacity={0.7}
-            >
+            <TouchableOpacity style={styles.cancelBtn} onPress={handleCancelEdit} activeOpacity={0.7}>
               <Text style={styles.cancelText}>Cancel</Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -172,6 +168,7 @@ export default function GoalkeeperSelectScreen() {
         style={styles.profileCard}
         onPress={() => handleSelectProfile(item.id)}
         activeOpacity={0.7}
+        testID={`profile-card-${item.id}`}
       >
         <View style={styles.profileAvatar}>
           <Text style={styles.profileInitial}>{item.name.charAt(0).toUpperCase()}</Text>
@@ -184,7 +181,6 @@ export default function GoalkeeperSelectScreen() {
             {item.birthYear ? `Born ${item.birthYear} · ` : ''}
             Created {new Date(item.createdAt).toLocaleDateString()}
           </Text>
-
         </View>
         <TouchableOpacity
           style={styles.profileEditBtn}
@@ -213,7 +209,7 @@ export default function GoalkeeperSelectScreen() {
 
   if (!onboardingChecked) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[styles.container, { paddingTop: insets.top, justifyContent: 'center', alignItems: 'center' as const }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -343,307 +339,47 @@ export default function GoalkeeperSelectScreen() {
 
 function createStyles(c: ThemeColors) {
   return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: c.background,
-    },
-    header: {
-      alignItems: 'center',
-      paddingTop: 20,
-      paddingBottom: 24,
-    },
-    logoIcon: {
-      width: 56,
-      height: 56,
-      borderRadius: 16,
-      backgroundColor: c.primaryGlow,
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderWidth: 1,
-      borderColor: 'rgba(16, 185, 129, 0.25)',
-      marginBottom: 12,
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: '800' as const,
-      color: c.text,
-      letterSpacing: -0.5,
-    },
-    subtitle: {
-      fontSize: 14,
-      color: c.textSecondary,
-      fontWeight: '500' as const,
-      marginTop: 2,
-    },
-    cloudStatus: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 5,
-      marginTop: 8,
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 10,
-      backgroundColor: c.surface,
-    },
-    cloudStatusText: {
-      fontSize: 11,
-      fontWeight: '600' as const,
-      color: c.primary,
-    },
-    actionsSection: {
-      paddingHorizontal: 20,
-      marginBottom: 24,
-      gap: 10,
-    },
-    actionButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: c.surface,
-      borderRadius: 14,
-      padding: 16,
-      borderWidth: 1.5,
-      borderColor: c.primary,
-    },
-    actionIconContainer: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: c.primaryGlow,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 14,
-    },
-    actionText: {
-      flex: 1,
-      fontSize: 16,
-      fontWeight: '700' as const,
-      color: c.text,
-    },
-    createForm: {
-      backgroundColor: c.surface,
-      borderRadius: 14,
-      padding: 16,
-      borderWidth: 1.5,
-      borderColor: c.primary,
-    },
-    createLabel: {
-      fontSize: 13,
-      fontWeight: '600' as const,
-      color: c.textSecondary,
-      marginBottom: 8,
-    },
-    createInput: {
-      backgroundColor: c.surfaceLight,
-      borderRadius: 10,
-      paddingHorizontal: 14,
-      paddingVertical: 12,
-      color: c.text,
-      fontSize: 16,
-      borderWidth: 1,
-      borderColor: c.border,
-      marginBottom: 12,
-    },
-    createActions: {
-      flexDirection: 'row',
-      gap: 10,
-    },
-    cancelBtn: {
-      flex: 1,
-      paddingVertical: 12,
-      borderRadius: 10,
-      backgroundColor: c.surfaceLight,
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: c.border,
-    },
-    cancelText: {
-      fontSize: 14,
-      fontWeight: '600' as const,
-      color: c.textSecondary,
-    },
-    confirmBtn: {
-      flex: 1,
-      paddingVertical: 12,
-      borderRadius: 10,
-      backgroundColor: c.primaryDark,
-      alignItems: 'center',
-    },
-    confirmBtnDisabled: {
-      opacity: 0.4,
-    },
-    confirmText: {
-      fontSize: 14,
-      fontWeight: '700' as const,
-      color: c.white,
-    },
-    guestButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: c.surface,
-      borderRadius: 14,
-      padding: 16,
-      borderWidth: 1,
-      borderColor: c.border,
-    },
-    guestIconContainer: {
-      backgroundColor: 'rgba(245, 158, 11, 0.12)',
-    },
-    guestTextContainer: {
-      flex: 1,
-    },
-    guestText: {
-      fontSize: 16,
-      fontWeight: '700' as const,
-      color: c.text,
-    },
-    guestSubtext: {
-      fontSize: 12,
-      color: c.textMuted,
-      fontWeight: '500' as const,
-      marginTop: 1,
-    },
-    profilesHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 20,
-      marginBottom: 12,
-      gap: 8,
-    },
-    profilesTitle: {
-      flex: 1,
-      fontSize: 15,
-      fontWeight: '700' as const,
-      color: c.textSecondary,
-    },
-    profilesCount: {
-      fontSize: 13,
-      fontWeight: '600' as const,
-      color: c.textMuted,
-      backgroundColor: c.surface,
-      paddingHorizontal: 10,
-      paddingVertical: 3,
-      borderRadius: 10,
-      overflow: 'hidden',
-    },
-    listContent: {
-      paddingHorizontal: 20,
-      paddingBottom: 40,
-    },
-    profileCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: c.surface,
-      borderRadius: 12,
-      padding: 14,
-      marginBottom: 8,
-      borderWidth: 1,
-      borderColor: c.border,
-    },
-    profileAvatar: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
-      backgroundColor: c.primaryGlow,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 12,
-      borderWidth: 1,
-      borderColor: 'rgba(16, 185, 129, 0.3)',
-    },
-    profileAvatarShared: {
-      borderColor: 'rgba(59, 130, 246, 0.4)',
-      backgroundColor: 'rgba(59, 130, 246, 0.1)',
-    },
-    profileInitial: {
-      fontSize: 18,
-      fontWeight: '800' as const,
-      color: c.primary,
-    },
-    profileInfo: {
-      flex: 1,
-    },
-    profileNameRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 6,
-    },
-    profileName: {
-      fontSize: 16,
-      fontWeight: '600' as const,
-      color: c.text,
-      flexShrink: 1,
-    },
-    sharedBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 3,
-      backgroundColor: c.primaryGlow,
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 5,
-    },
-    sharedBadgeText: {
-      fontSize: 9,
-      fontWeight: '700' as const,
-      color: c.primary,
-    },
-    profileDate: {
-      fontSize: 12,
-      color: c.textMuted,
-      marginTop: 2,
-    },
-    lastEditedText: {
-      fontSize: 11,
-      color: c.textMuted,
-      fontStyle: 'italic' as const,
-      marginTop: 2,
-    },
-    editCard: {
-      backgroundColor: c.surface,
-      borderRadius: 12,
-      padding: 14,
-      marginBottom: 8,
-      borderWidth: 1.5,
-      borderColor: c.primary,
-    },
-    profileEditBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      backgroundColor: c.primaryGlow,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 8,
-      borderWidth: 1,
-      borderColor: 'rgba(16, 185, 129, 0.2)',
-    },
-    profileDeleteBtn: {
-      width: 36,
-      height: 36,
-      borderRadius: 10,
-      backgroundColor: c.dangerGlow,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 8,
-      borderWidth: 1,
-      borderColor: 'rgba(248, 81, 73, 0.2)',
-    },
-    emptyContainer: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingBottom: 60,
-      gap: 8,
-    },
-    emptyTitle: {
-      fontSize: 17,
-      fontWeight: '600' as const,
-      color: c.textSecondary,
-      marginTop: 8,
-    },
-    emptySubtitle: {
-      fontSize: 13,
-      color: c.textMuted,
-    },
+    container: { flex: 1, backgroundColor: c.background },
+    header: { alignItems: 'center' as const, paddingTop: 20, paddingBottom: 24 },
+    logoIcon: { width: 56, height: 56, borderRadius: 16, backgroundColor: c.primaryGlow, alignItems: 'center' as const, justifyContent: 'center' as const, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.25)', marginBottom: 12 },
+    title: { fontSize: 28, fontWeight: '800' as const, color: c.text, letterSpacing: -0.5 },
+    subtitle: { fontSize: 14, color: c.textSecondary, fontWeight: '500' as const, marginTop: 2 },
+    cloudStatus: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 5, marginTop: 8, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, backgroundColor: c.surface },
+    cloudStatusText: { fontSize: 11, fontWeight: '600' as const, color: c.primary },
+    actionsSection: { paddingHorizontal: 20, marginBottom: 24, gap: 10 },
+    actionButton: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: c.surface, borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: c.primary },
+    actionIconContainer: { width: 40, height: 40, borderRadius: 12, backgroundColor: c.primaryGlow, alignItems: 'center' as const, justifyContent: 'center' as const, marginRight: 14 },
+    actionText: { flex: 1, fontSize: 16, fontWeight: '700' as const, color: c.text },
+    createForm: { backgroundColor: c.surface, borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: c.primary },
+    createLabel: { fontSize: 13, fontWeight: '600' as const, color: c.textSecondary, marginBottom: 8 },
+    createInput: { backgroundColor: c.surfaceLight, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: c.text, fontSize: 16, borderWidth: 1, borderColor: c.border, marginBottom: 12 },
+    createActions: { flexDirection: 'row' as const, gap: 10 },
+    cancelBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: c.surfaceLight, alignItems: 'center' as const, borderWidth: 1, borderColor: c.border },
+    cancelText: { fontSize: 14, fontWeight: '600' as const, color: c.textSecondary },
+    confirmBtn: { flex: 1, paddingVertical: 12, borderRadius: 10, backgroundColor: c.primaryDark, alignItems: 'center' as const },
+    confirmBtnDisabled: { opacity: 0.4 },
+    confirmText: { fontSize: 14, fontWeight: '700' as const, color: c.white },
+    guestButton: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: c.surface, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: c.border },
+    guestIconContainer: { backgroundColor: 'rgba(245, 158, 11, 0.12)' },
+    guestTextContainer: { flex: 1 },
+    guestText: { fontSize: 16, fontWeight: '700' as const, color: c.text },
+    guestSubtext: { fontSize: 12, color: c.textMuted, fontWeight: '500' as const, marginTop: 1 },
+    profilesHeader: { flexDirection: 'row' as const, alignItems: 'center' as const, paddingHorizontal: 20, marginBottom: 12, gap: 8 },
+    profilesTitle: { flex: 1, fontSize: 15, fontWeight: '700' as const, color: c.textSecondary },
+    profilesCount: { fontSize: 13, fontWeight: '600' as const, color: c.textMuted, backgroundColor: c.surface, paddingHorizontal: 10, paddingVertical: 3, borderRadius: 10, overflow: 'hidden' as const },
+    listContent: { paddingHorizontal: 20, paddingBottom: 40 },
+    profileCard: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: c.surface, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: c.border },
+    profileAvatar: { width: 42, height: 42, borderRadius: 21, backgroundColor: c.primaryGlow, alignItems: 'center' as const, justifyContent: 'center' as const, marginRight: 12, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.3)' },
+    profileInitial: { fontSize: 18, fontWeight: '800' as const, color: c.primary },
+    profileInfo: { flex: 1 },
+    profileNameRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
+    profileName: { fontSize: 16, fontWeight: '600' as const, color: c.text, flexShrink: 1 },
+    profileDate: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+    editCard: { backgroundColor: c.surface, borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1.5, borderColor: c.primary },
+    profileEditBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: c.primaryGlow, alignItems: 'center' as const, justifyContent: 'center' as const, marginRight: 8, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.2)' },
+    profileDeleteBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: c.dangerGlow, alignItems: 'center' as const, justifyContent: 'center' as const, marginRight: 8, borderWidth: 1, borderColor: 'rgba(248, 81, 73, 0.2)' },
+    emptyContainer: { flex: 1, alignItems: 'center' as const, justifyContent: 'center' as const, paddingBottom: 60, gap: 8 },
+    emptyTitle: { fontSize: 17, fontWeight: '600' as const, color: c.textSecondary, marginTop: 8 },
+    emptySubtitle: { fontSize: 13, color: c.textMuted },
   });
 }

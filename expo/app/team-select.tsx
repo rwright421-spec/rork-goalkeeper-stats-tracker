@@ -1,4 +1,4 @@
-// Team Select - Choose or create teams for a goalkeeper profile
+// Team Select - Team management and selection screen
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, Stack } from 'expo-router';

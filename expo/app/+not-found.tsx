@@ -11,7 +11,7 @@ export default function NotFoundScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Oops!" }} />
+      <Stack.Screen options={{ title: "Page Not Found" }} />
       <View style={styles.container}>
         <AlertCircle size={48} color={colors.textMuted} strokeWidth={1.5} />
         <Text style={styles.title}>This screen doesn&apos;t exist.</Text>
@@ -27,8 +27,8 @@ function createStyles(c: ThemeColors) {
   return StyleSheet.create({
     container: {
       flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
       padding: 20,
       backgroundColor: c.background,
       gap: 12,

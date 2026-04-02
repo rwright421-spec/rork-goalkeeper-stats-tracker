@@ -1,4 +1,4 @@
-// Game Detail - View saved game statistics
+// Game Detail - Detailed view of saved game statistics
 import React, { useMemo, useCallback, useState } from 'react';
 
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share, Platform } from 'react-native';

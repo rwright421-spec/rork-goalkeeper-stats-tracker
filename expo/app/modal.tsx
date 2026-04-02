@@ -28,7 +28,7 @@ export default function ModalScreen() {
       <Pressable style={styles.overlay} onPress={() => router.back()}>
         <View style={styles.modalContent}>
           <View style={styles.headerRow}>
-            <Text style={styles.title}>Info</Text>
+            <Text style={styles.title}>About GK Tracker</Text>
             <TouchableOpacity
               testID="modal-close-btn"
               style={styles.closeIcon}
@@ -39,9 +39,9 @@ export default function ModalScreen() {
             </TouchableOpacity>
           </View>
           <Text style={styles.description}>
-            GK Tracker helps you track goalkeeper performance across games, teams, and seasons.
+            GK Tracker helps you track goalkeeper performance across games,
+            teams, and seasons.
           </Text>
-
           <TouchableOpacity
             testID="modal-close-button"
             style={styles.closeButton}
@@ -52,7 +52,6 @@ export default function ModalScreen() {
           </TouchableOpacity>
         </View>
       </Pressable>
-
       <StatusBar style={Platform.OS === "ios" ? "light" : "auto"} />
     </Modal>
   );
@@ -63,8 +62,8 @@ function createStyles(c: ThemeColors) {
     overlay: {
       flex: 1,
       backgroundColor: "rgba(0, 0, 0, 0.6)",
-      justifyContent: "center",
-      alignItems: "center",
+      justifyContent: "center" as const,
+      alignItems: "center" as const,
     },
     modalContent: {
       backgroundColor: c.surface,
@@ -76,9 +75,9 @@ function createStyles(c: ThemeColors) {
       borderColor: c.border,
     },
     headerRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
+      flexDirection: "row" as const,
+      alignItems: "center" as const,
+      justifyContent: "space-between" as const,
       marginBottom: 16,
     },
     title: {
@@ -91,11 +90,11 @@ function createStyles(c: ThemeColors) {
       height: 32,
       borderRadius: 16,
       backgroundColor: c.surfaceLight,
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: "center" as const,
+      justifyContent: "center" as const,
     },
     description: {
-      textAlign: "center",
+      textAlign: "center" as const,
       marginBottom: 24,
       color: c.textSecondary,
       lineHeight: 22,
@@ -106,7 +105,7 @@ function createStyles(c: ThemeColors) {
       paddingHorizontal: 24,
       paddingVertical: 14,
       borderRadius: 12,
-      alignItems: "center",
+      alignItems: "center" as const,
     },
     closeButtonText: {
       color: c.white,

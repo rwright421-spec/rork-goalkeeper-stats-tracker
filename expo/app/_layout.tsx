@@ -23,21 +23,38 @@ const queryClient = new QueryClient({
 
 function RootLayoutNav() {
   return (
-    <Stack screenOptions={{ headerBackTitle: "Back", animation: "slide_from_right" }}>
+    <Stack
+      screenOptions={{
+        headerBackTitle: "Back",
+        animation: "slide_from_right",
+      }}
+    >
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="team-select" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="new-game" options={{ title: "New Game", headerShown: false }} />
-      <Stack.Screen name="game-tracking" options={{ title: "Track Game", headerShown: false }} />
-      <Stack.Screen name="game-detail" options={{ title: "Game Detail", headerShown: false }} />
-      <Stack.Screen name="onboarding" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen
+        name="new-game"
+        options={{ title: "New Game", headerShown: false }}
+      />
+      <Stack.Screen
+        name="game-tracking"
+        options={{ title: "Track Game", headerShown: false }}
+      />
+      <Stack.Screen
+        name="game-detail"
+        options={{ title: "Game Detail", headerShown: false }}
+      />
+      <Stack.Screen
+        name="onboarding"
+        options={{ headerShown: false, gestureEnabled: false }}
+      />
     </Stack>
   );
 }
 
 export default function RootLayout() {
   useEffect(() => {
-    console.log('[RootLayout] App mounted, hiding splash screen');
+    console.log("[RootLayout] App mounted, hiding splash screen");
     void SplashScreen.hideAsync();
   }, []);
 

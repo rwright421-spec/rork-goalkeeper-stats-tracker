@@ -1,9 +1,9 @@
-// Stats screen - Goalkeeper performance analytics
+// Stats screen - Comprehensive goalkeeper performance analytics
 import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TrendingUp, Shield, Target, Award, ChevronDown, ChevronUp, Check, Square, Share2, FileText, FileSpreadsheet, Image, ArrowLeftRight } from 'lucide-react-native';
+import { TrendingUp, Shield, Target, Award, ChevronDown, ChevronUp, Check, Square, Share2, FileText, FileSpreadsheet, Image, ArrowLeftRight, MoreHorizontal } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { DarkTheme as Colors } from '@/constants/themes';
 import { useColors } from '@/contexts/ThemeContext';
@@ -23,12 +23,20 @@ import {
 } from '@/utils/statsAggregator';
 import { formatStatsAsText, formatStatsAsCSV } from '@/utils/export';
 
-const GROUP_OPTIONS: { key: GroupMode; label: string }[] = [
+const PRIMARY_MODES: { key: GroupMode; label: string }[] = [
   { key: 'career', label: 'Career' },
-  { key: 'team', label: 'By Team' },
+  { key: 'team', label: 'Team' },
+  { key: 'opponent', label: 'Opponent' },
+];
+
+const SECONDARY_MODES: { key: GroupMode; label: string }[] = [
   { key: 'year', label: 'By Year' },
-  { key: 'opponent', label: 'By Opponent' },
   { key: 'custom', label: 'Custom' },
+];
+
+const ALL_GROUP_OPTIONS: { key: GroupMode; label: string }[] = [
+  ...PRIMARY_MODES,
+  ...SECONDARY_MODES,
 ];
 
 function StatCard({ label, value, color, icon }: { label: string; value: string | number; color: string; icon?: React.ReactNode }) {
@@ -651,14 +659,24 @@ export default function GoalkeeperStatsScreen() {
   }, [clearSelection, clearTeamSelection, router]);
   const [groupMode, setGroupMode] = useState<GroupMode>('career');
   const [selectedGameIds, setSelectedGameIds] = useState<Set<string>>(new Set());
+  const [moreViewsOpen, setMoreViewsOpen] = useState<boolean>(false);
   const customLabel = 'Selected Games';
+
+  const isSecondaryMode = SECONDARY_MODES.some(m => m.key === groupMode);
+  const activeSecondaryLabel = SECONDARY_MODES.find(m => m.key === groupMode)?.label;
 
   const handleGroupChange = useCallback((mode: GroupMode) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setGroupMode(mode);
+    setMoreViewsOpen(false);
     if (mode !== 'custom') {
       setSelectedGameIds(new Set());
     }
+  }, []);
+
+  const handleToggleMoreViews = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setMoreViewsOpen(prev => !prev);
   }, []);
 
   const handleToggleGame = useCallback((gameId: string) => {
@@ -709,7 +727,7 @@ export default function GoalkeeperStatsScreen() {
     return null;
   }, [groupMode, groupedStats]);
 
-  const modeLabel = GROUP_OPTIONS.find(o => o.key === groupMode)?.label ?? groupMode;
+  const modeLabel = ALL_GROUP_OPTIONS.find(o => o.key === groupMode)?.label ?? groupMode;
 
   const handleExportText = useCallback(async () => {
     if (groupedStats.length === 0) return;
@@ -790,20 +808,60 @@ export default function GoalkeeperStatsScreen() {
           </View>
         </View>
 
-        <View style={styles.groupSelector}>
-          {GROUP_OPTIONS.map((opt) => (
+        <View style={styles.modeSelectorWrap}>
+          <View style={styles.groupSelector}>
+            {PRIMARY_MODES.map((opt) => (
+              <TouchableOpacity
+                key={opt.key}
+                testID={`group-${opt.key}`}
+                style={[styles.groupOption, groupMode === opt.key && !isSecondaryMode && styles.groupOptionActive]}
+                onPress={() => handleGroupChange(opt.key)}
+                activeOpacity={0.7}
+              >
+                <Text style={[styles.groupOptionText, groupMode === opt.key && !isSecondaryMode && styles.groupOptionTextActive]}>
+                  {opt.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
             <TouchableOpacity
-              key={opt.key}
-              testID={`group-${opt.key}`}
-              style={[styles.groupOption, groupMode === opt.key && styles.groupOptionActive]}
-              onPress={() => handleGroupChange(opt.key)}
+              testID="more-views-btn"
+              style={[styles.groupOption, isSecondaryMode && styles.groupOptionActive]}
+              onPress={handleToggleMoreViews}
               activeOpacity={0.7}
             >
-              <Text style={[styles.groupOptionText, groupMode === opt.key && styles.groupOptionTextActive]}>
-                {opt.label}
-              </Text>
+              <View style={styles.moreViewsInner}>
+                {isSecondaryMode ? (
+                  <Text style={[styles.groupOptionText, styles.groupOptionTextActive]}>
+                    {activeSecondaryLabel}
+                  </Text>
+                ) : (
+                  <>
+                    <MoreHorizontal size={14} color={Colors.textMuted} />
+                    <Text style={styles.groupOptionText}>More</Text>
+                  </>
+                )}
+                <ChevronDown size={12} color={isSecondaryMode ? Colors.white : Colors.textMuted} style={moreViewsOpen ? { transform: [{ rotate: '180deg' }] } : undefined} />
+              </View>
             </TouchableOpacity>
-          ))}
+          </View>
+
+          {moreViewsOpen && (
+            <View style={styles.moreViewsDropdown}>
+              {SECONDARY_MODES.map((opt) => (
+                <TouchableOpacity
+                  key={opt.key}
+                  testID={`group-${opt.key}`}
+                  style={[styles.moreViewsItem, groupMode === opt.key && styles.moreViewsItemActive]}
+                  onPress={() => handleGroupChange(opt.key)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.moreViewsItemText, groupMode === opt.key && styles.moreViewsItemTextActive]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
         {allGames.length === 0 ? (
@@ -981,12 +1039,15 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     marginTop: 2,
   },
+  modeSelectorWrap: {
+    marginBottom: 20,
+    gap: 6,
+  },
   groupSelector: {
     flexDirection: 'row',
     backgroundColor: Colors.surface,
     borderRadius: 12,
     padding: 4,
-    marginBottom: 20,
     borderWidth: 1,
     borderColor: Colors.border,
   },
@@ -1005,6 +1066,38 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
   },
   groupOptionTextActive: {
+    color: Colors.white,
+    fontWeight: '700' as const,
+  },
+  moreViewsInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  moreViewsDropdown: {
+    flexDirection: 'row',
+    backgroundColor: Colors.surface,
+    borderRadius: 10,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    gap: 4,
+  },
+  moreViewsItem: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  moreViewsItemActive: {
+    backgroundColor: Colors.primaryDark,
+  },
+  moreViewsItemText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: Colors.textMuted,
+  },
+  moreViewsItemTextActive: {
     color: Colors.white,
     fontWeight: '700' as const,
   },

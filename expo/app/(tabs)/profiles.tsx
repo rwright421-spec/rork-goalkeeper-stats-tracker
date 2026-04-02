@@ -1,3 +1,4 @@
+// Profiles - Goalkeeper profile management screen
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
 import { useRouter } from 'expo-router';

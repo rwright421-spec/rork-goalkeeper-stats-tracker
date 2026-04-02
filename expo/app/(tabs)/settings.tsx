@@ -1,3 +1,4 @@
+// Settings - App configuration and theme selection
 import React, { useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { Check, Palette, Users, Trash2 } from 'lucide-react-native';

@@ -1,3 +1,4 @@
+// Track - Game list and management screen
 import React, { useCallback, useMemo, useState, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Platform, Modal, Pressable, TextInput, Animated, Keyboard } from 'react-native';
 import { useRouter } from 'expo-router';

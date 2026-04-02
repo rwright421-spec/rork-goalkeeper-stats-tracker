@@ -1,3 +1,4 @@
+// New Game - Game setup and configuration screen
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useRouter, Stack } from 'expo-router';

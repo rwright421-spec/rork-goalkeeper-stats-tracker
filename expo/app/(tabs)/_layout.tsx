@@ -16,12 +16,12 @@ export default function TabLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
           borderTopWidth: 0.5,
-          ...(Platform.OS === 'web' ? { height: 60 } : {}),
+          ...(Platform.OS === "web" ? { height: 60 } : {}),
         },
         headerShown: false,
         tabBarLabelStyle: {
           fontSize: 11,
-          fontWeight: '600' as const,
+          fontWeight: "600" as const,
           letterSpacing: 0.2,
         },
       }}

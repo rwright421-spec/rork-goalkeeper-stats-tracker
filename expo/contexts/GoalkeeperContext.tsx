@@ -15,7 +15,7 @@ async function loadLocalProfiles(): Promise<GoalkeeperProfile[]> {
     }
     return [];
   } catch (e) {
-    console.log('Error loading local profiles:', e);
+    console.log('[GoalkeeperContext] Error loading local profiles:', e);
     return [];
   }
 }
@@ -31,7 +31,6 @@ export const [GoalkeeperProvider, useGoalkeepers] = createContextHook(() => {
   const [profiles, setProfiles] = useState<GoalkeeperProfile[]>([]);
   const [activeProfileId, setActiveProfileId] = useState<string | null>(null);
   const [isGuest, setIsGuest] = useState(false);
-
 
   const localQuery = useQuery({
     queryKey: ['goalkeeper-profiles-local'],
@@ -111,6 +110,8 @@ export const [GoalkeeperProvider, useGoalkeepers] = createContextHook(() => {
     void queryClient.invalidateQueries({ queryKey: ['goalkeeper-profiles-local'] });
   }, [queryClient]);
 
+  const supabaseReady = false;
+
   return useMemo(() => ({
     profiles,
     isLoading: localQuery.isLoading,
@@ -118,6 +119,7 @@ export const [GoalkeeperProvider, useGoalkeepers] = createContextHook(() => {
     activeProfileId,
     isGuest,
     userId,
+    supabaseReady,
     createProfile,
     renameProfile,
     updateProfile,
@@ -128,7 +130,7 @@ export const [GoalkeeperProvider, useGoalkeepers] = createContextHook(() => {
     refreshProfiles,
   }), [
     profiles, localQuery.isLoading,
-    activeProfile, activeProfileId, isGuest, userId,
+    activeProfile, activeProfileId, isGuest, userId, supabaseReady,
     createProfile, renameProfile, updateProfile, deleteProfile,
     selectProfile, selectGuest, clearSelection,
     refreshProfiles,
