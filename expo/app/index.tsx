@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Shield, UserPlus, Users, UserX, Trash2, ChevronRight, Pencil, Cloud } from 'lucide-react-native';
+import { Shield, UserPlus, Users, UserX, Trash2, ChevronRight, Pencil } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
@@ -223,10 +223,6 @@ export default function GoalkeeperSelectScreen() {
         </View>
         <Text style={styles.title} testID="app-title">GK Tracker</Text>
         <Text style={styles.subtitle}>Goalkeeper Performance</Text>
-        <View style={styles.cloudStatus}>
-          <Cloud size={12} color={colors.primary} />
-          <Text style={styles.cloudStatusText}>Sharing available</Text>
-        </View>
       </View>
 
       <View style={styles.actionsSection}>
@@ -344,8 +340,7 @@ function createStyles(c: ThemeColors) {
     logoIcon: { width: 56, height: 56, borderRadius: 16, backgroundColor: c.primaryGlow, alignItems: 'center' as const, justifyContent: 'center' as const, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.25)', marginBottom: 12 },
     title: { fontSize: 28, fontWeight: '800' as const, color: c.text, letterSpacing: -0.5 },
     subtitle: { fontSize: 14, color: c.textSecondary, fontWeight: '500' as const, marginTop: 2 },
-    cloudStatus: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 5, marginTop: 8, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10, backgroundColor: c.surface },
-    cloudStatusText: { fontSize: 11, fontWeight: '600' as const, color: c.primary },
+
     actionsSection: { paddingHorizontal: 20, marginBottom: 24, gap: 10 },
     actionButton: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: c.surface, borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: c.primary },
     actionIconContainer: { width: 40, height: 40, borderRadius: 12, backgroundColor: c.primaryGlow, alignItems: 'center' as const, justifyContent: 'center' as const, marginRight: 14 },
