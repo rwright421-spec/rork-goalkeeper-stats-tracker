@@ -1,7 +1,7 @@
 // Settings - App configuration and theme selection
 import React, { useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { Check, Palette, Users, Trash2 } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
+import { Check, Palette, Users, Trash2, MessageSquare, ExternalLink } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useTheme, useColors } from '@/contexts/ThemeContext';
@@ -122,6 +122,39 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        <View style={[styles.sectionHeader, { marginTop: 28 }]}>
+          <MessageSquare size={16} color={colors.textMuted} />
+          <Text style={styles.sectionHeaderText}>Beta Feedback</Text>
+        </View>
+        <Text style={styles.sectionSubtitle}>Enjoying the app? Found a bug? We'd love to hear from you.</Text>
+
+        <TouchableOpacity
+          testID="send-feedback-btn"
+          style={styles.feedbackButton}
+          activeOpacity={0.7}
+          onPress={() => {
+            const mailUrl = 'mailto:gkstatsapp@gmail.com?subject=GK%20Stats%20Feedback&body=App%20Version%3A%20%5Bversion%5D%0A%0AWhat%20I%20found%3A%0A%0A%0AWhat%20I%20expected%3A%0A%0A%0ADevice%20%2F%20iOS%20version%3A%0A';
+            Linking.openURL(mailUrl).catch(() => {
+              Alert.alert('Unable to Open Mail', 'Please send feedback to gkstatsapp@gmail.com');
+            });
+          }}
+        >
+          <MessageSquare size={18} color={colors.primary} />
+          <Text style={styles.feedbackButtonText}>Send Feedback</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          testID="privacy-policy-link"
+          style={styles.privacyLink}
+          activeOpacity={0.7}
+          onPress={() => {
+            void Linking.openURL('https://smiling-gorgonzola-c76.notion.site/Privacy-Policy-a70ef03840ca4301b83bb7a302c070fa');
+          }}
+        >
+          <ExternalLink size={13} color={colors.textMuted} />
+          <Text style={styles.privacyLinkText}>Privacy Policy</Text>
+        </TouchableOpacity>
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -156,5 +189,9 @@ function createStyles(c: ThemeColors) {
     opponentRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: c.border },
     opponentName: { fontSize: 15, fontWeight: '500' as const, color: c.text, flex: 1, marginRight: 12 },
     opponentDeleteBtn: { padding: 6 },
+    feedbackButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 10, backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.border, paddingVertical: 14, paddingHorizontal: 20 },
+    feedbackButtonText: { fontSize: 15, fontWeight: '600' as const, color: c.text },
+    privacyLink: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, marginTop: 16 },
+    privacyLinkText: { fontSize: 13, color: c.textMuted, textDecorationLine: 'underline' as const },
   });
 }
