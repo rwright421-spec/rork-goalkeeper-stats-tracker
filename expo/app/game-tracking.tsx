@@ -1,6 +1,6 @@
 // Game Tracking - Live stat entry screen for game tracking
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, InputAccessoryView, TouchableWithoutFeedback } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -211,6 +211,12 @@ export default function GameTrackingScreen() {
     return `${params.eventName} · ${params.date}`;
   }, [isEditMode, editEventName, editDate, params.eventName, params.date]);
 
+  const scoreInputAccessoryId = 'score-input-done';
+
+  const dismissKeyboard = useCallback(() => {
+    Keyboard.dismiss();
+  }, []);
+
   return (
     <View style={styles.container}>
       <Stack.Screen
@@ -295,7 +301,17 @@ export default function GameTrackingScreen() {
         </View>
       ) : null}
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      {Platform.OS === 'ios' && (
+        <InputAccessoryView nativeID={scoreInputAccessoryId}>
+          <View style={styles.keyboardToolbar}>
+            <TouchableOpacity onPress={dismissKeyboard} style={styles.keyboardDoneButton} activeOpacity={0.7}>
+              <Text style={styles.keyboardDoneText}>Done</Text>
+            </TouchableOpacity>
+          </View>
+        </InputAccessoryView>
+      )}
+
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" showsVerticalScrollIndicator={false}>
         {(hasHome && activeTab === 'home') || (hasHome && !showTabs) ? <KeeperStatsSection label="HOME" keeper={homeKeeper} onUpdate={setHomeKeeper} accentColor={colors.cardHome} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} /> : null}
         {(hasAway && activeTab === 'away') || (hasAway && !showTabs) ? <KeeperStatsSection label="AWAY" keeper={awayKeeper} onUpdate={setAwayKeeper} accentColor={colors.cardAway} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} /> : null}
 
@@ -311,7 +327,7 @@ export default function GameTrackingScreen() {
             <View style={styles.scoreTeam}>
               <Text style={styles.scoreTeamLabel}>HOME</Text>
               {!isBoth && hasHome && !hasAway ? (
-                <TextInput testID="home-score-input" style={styles.scoreInput} value={homeScoreOverride} onChangeText={setHomeScoreOverride} keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.textMuted} maxLength={3} />
+                <TextInput testID="home-score-input" style={styles.scoreInput} value={homeScoreOverride} onChangeText={setHomeScoreOverride} keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.textMuted} maxLength={3} returnKeyType="done" onSubmitEditing={dismissKeyboard} inputAccessoryViewID={Platform.OS === 'ios' ? scoreInputAccessoryId : undefined} />
               ) : (
                 <Text style={[styles.scoreValue, { color: colors.cardHome }]}>{computedFinalScore.home}</Text>
               )}
@@ -320,7 +336,7 @@ export default function GameTrackingScreen() {
             <View style={styles.scoreTeam}>
               <Text style={styles.scoreTeamLabel}>AWAY</Text>
               {!isBoth && hasAway && !hasHome ? (
-                <TextInput testID="away-score-input" style={styles.scoreInput} value={awayScoreOverride} onChangeText={setAwayScoreOverride} keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.textMuted} maxLength={3} />
+                <TextInput testID="away-score-input" style={styles.scoreInput} value={awayScoreOverride} onChangeText={setAwayScoreOverride} keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.textMuted} maxLength={3} returnKeyType="done" onSubmitEditing={dismissKeyboard} inputAccessoryViewID={Platform.OS === 'ios' ? scoreInputAccessoryId : undefined} />
               ) : (
                 <Text style={[styles.scoreValue, { color: colors.cardAway }]}>{computedFinalScore.away}</Text>
               )}
@@ -369,6 +385,9 @@ function createStyles(c: ThemeColors) {
     scoreHint: { fontSize: 11, color: c.textMuted, textAlign: 'center', marginTop: 12, fontStyle: 'italic' },
     saveButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: c.primaryDark, borderRadius: 14, paddingVertical: 16, marginTop: 8 },
     saveText: { color: c.white, fontSize: 17, fontWeight: '700' as const },
+    keyboardToolbar: { flexDirection: 'row' as const, justifyContent: 'flex-end' as const, alignItems: 'center' as const, backgroundColor: c.surface, borderTopWidth: 1, borderTopColor: c.border, paddingHorizontal: 16, paddingVertical: 8 },
+    keyboardDoneButton: { paddingHorizontal: 12, paddingVertical: 6 },
+    keyboardDoneText: { fontSize: 16, fontWeight: '600' as const, color: c.primary },
     editInfoSection: { marginHorizontal: 20, marginBottom: 12, backgroundColor: c.surface, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: c.border },
     editInfoHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     editInfoHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },

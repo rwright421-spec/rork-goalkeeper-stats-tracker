@@ -35,10 +35,16 @@ export default function ProfilesScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     clearSelection();
     clearTeamSelection();
-    if (Platform.OS === 'web') {
+    try {
+      if (Platform.OS === 'web') {
+        router.replace('/');
+      } else {
+        router.dismissAll();
+        router.replace('/');
+      }
+    } catch (e) {
+      console.log('[Profiles] Navigation error, falling back to replace:', e);
       router.replace('/');
-    } else {
-      router.dismissAll();
     }
   }, [clearSelection, clearTeamSelection, router]);
 
