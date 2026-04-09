@@ -4,14 +4,18 @@ import Purchases, { CustomerInfo, PurchasesOffering } from 'react-native-purchas
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
 
+const RC_TEST_API_KEY = 'test_HcQzwKLIXZlgMxLsPDISZrUZodq';
+const RC_IOS_API_KEY = 'test_HcQzwKLIXZlgMxLsPDISZrUZodq';
+const RC_ANDROID_API_KEY = 'placeholder_android_not_used';
+
 function getRCApiKey(): string {
   if (__DEV__ || Platform.OS === 'web') {
-    return process.env.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY ?? '';
+    return RC_TEST_API_KEY;
   }
   return Platform.select({
-    ios: process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY ?? '',
-    android: process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY ?? '',
-    default: process.env.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY ?? '',
+    ios: RC_IOS_API_KEY,
+    android: RC_ANDROID_API_KEY,
+    default: RC_TEST_API_KEY,
   }) as string;
 }
 
