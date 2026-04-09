@@ -7,6 +7,8 @@ import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
 import { uploadProfileData, downloadProfileData } from '@/lib/sync';
 
+export const FREE_GAME_LIMIT = 5;
+
 function migrateSavedGame(game: SavedGame): SavedGame {
   return {
     ...game,
@@ -202,6 +204,9 @@ export const [GameProvider, useGames] = createContextHook(() => {
     }
   }, [isShared, sharedProfileId, supabaseReady, activeProfileId, storageKey, queryClient]);
 
+  const totalGameCount = allGames.length;
+  const isAtFreeLimit = totalGameCount >= FREE_GAME_LIMIT;
+
   return useMemo(() => ({
     games,
     allGames,
@@ -212,7 +217,9 @@ export const [GameProvider, useGames] = createContextHook(() => {
     getGame,
     moveGameToProfile,
     forceSync,
-  }), [games, allGames, gamesQuery.isLoading, addGame, updateGame, deleteGame, getGame, moveGameToProfile, forceSync]);
+    totalGameCount,
+    isAtFreeLimit,
+  }), [games, allGames, gamesQuery.isLoading, addGame, updateGame, deleteGame, getGame, moveGameToProfile, forceSync, totalGameCount, isAtFreeLimit]);
 });
 
 function mergeGames(local: SavedGame[], cloud: SavedGame[]): SavedGame[] {

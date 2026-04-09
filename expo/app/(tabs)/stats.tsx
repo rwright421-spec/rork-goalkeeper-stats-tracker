@@ -8,8 +8,9 @@ import * as Haptics from 'expo-haptics';
 import { DarkTheme as Colors } from '@/constants/themes';
 import { useColors } from '@/contexts/ThemeContext';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
-import { useGames } from '@/contexts/GameContext';
+import { useGames, FREE_GAME_LIMIT } from '@/contexts/GameContext';
 import { useTeams } from '@/contexts/TeamContext';
+import { usePurchases } from '@/contexts/PurchasesContext';
 import { SavedGame } from '@/types/game';
 import {
   GroupMode,
@@ -644,8 +645,10 @@ export default function GoalkeeperStatsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { activeProfile, clearSelection } = useGoalkeepers();
-  const { allGames } = useGames();
+  const { allGames, isAtFreeLimit } = useGames();
   const { teams, clearTeamSelection } = useTeams();
+  const { isPro } = usePurchases();
+  const showUpgradeBanner = !isPro && isAtFreeLimit;
 
   const handleSwitchGoalkeeper = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -863,6 +866,35 @@ export default function GoalkeeperStatsScreen() {
             </View>
           )}
         </View>
+
+        {showUpgradeBanner && (
+          <TouchableOpacity
+            testID="upgrade-banner"
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              backgroundColor: colors.accentGlow,
+              borderRadius: 12,
+              padding: 14,
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: 'rgba(245, 158, 11, 0.25)',
+              gap: 10,
+            }}
+            onPress={() => router.push('/paywall')}
+            activeOpacity={0.7}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600' as const, color: colors.text }}>
+                You've reached the {FREE_GAME_LIMIT}-game limit.
+              </Text>
+              <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                Upgrade to Pro to keep tracking.
+              </Text>
+            </View>
+            <Text style={{ fontSize: 13, fontWeight: '700' as const, color: colors.accent }}>Upgrade</Text>
+          </TouchableOpacity>
+        )}
 
         {allGames.length === 0 ? (
           <View style={styles.emptyContainer}>

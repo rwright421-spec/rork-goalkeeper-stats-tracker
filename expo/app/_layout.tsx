@@ -9,6 +9,7 @@ import { TeamProvider } from "@/contexts/TeamContext";
 import { GameProvider } from "@/contexts/GameContext";
 import { OpponentProvider } from "@/contexts/OpponentContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { PurchasesProvider } from "@/contexts/PurchasesContext";
 
 void SplashScreen.preventAutoHideAsync();
 
@@ -48,6 +49,10 @@ function RootLayoutNav() {
         name="onboarding"
         options={{ headerShown: false, gestureEnabled: false }}
       />
+      <Stack.Screen
+        name="paywall"
+        options={{ headerShown: false, presentation: "modal", gestureEnabled: true }}
+      />
     </Stack>
   );
 }
@@ -67,7 +72,9 @@ export default function RootLayout() {
               <TeamProvider>
                 <GameProvider>
                   <OpponentProvider>
-                    <RootLayoutNav />
+                    <PurchasesProvider>
+                      <RootLayoutNav />
+                    </PurchasesProvider>
                   </OpponentProvider>
                 </GameProvider>
               </TeamProvider>

@@ -7,9 +7,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
-import { useGames } from '@/contexts/GameContext';
+import { useGames, FREE_GAME_LIMIT } from '@/contexts/GameContext';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
+import { usePurchases } from '@/contexts/PurchasesContext';
 import GameCard from '@/components/GameCard';
 import MoveGameModal from '@/components/MoveGameModal';
 import { useOpponents } from '@/contexts/OpponentContext';
@@ -19,8 +20,9 @@ export default function TrackScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { games, isLoading, deleteGame } = useGames();
+  const { games, isLoading, deleteGame, isAtFreeLimit, totalGameCount } = useGames();
   const { activeProfile, isGuest, clearSelection } = useGoalkeepers();
+  const { isPro } = usePurchases();
   const { teams, activeTeam, activeTeamId, viewAllGames, selectTeam, showAllGames, clearTeamSelection } = useTeams();
 
   const { addOpponent, getSuggestions } = useOpponents();
@@ -54,10 +56,15 @@ export default function TrackScreen() {
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const openNewGameSheet = useCallback(() => {
+    if (!isPro && isAtFreeLimit) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      router.push('/paywall');
+      return;
+    }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setShowNewGameSheet(true);
     Animated.spring(sheetAnim, { toValue: 1, useNativeDriver: true, tension: 65, friction: 11 }).start();
-  }, [sheetAnim]);
+  }, [sheetAnim, isPro, isAtFreeLimit, router]);
 
   const closeNewGameSheet = useCallback(() => {
     Animated.timing(sheetAnim, { toValue: 0, useNativeDriver: true, duration: 200 }).start(() => {
