@@ -204,16 +204,9 @@ export default function GameTrackingScreen() {
         createdAt: new Date().toISOString(),
       };
       if (!isPro && isAtFreeLimit) {
-        console.log('[GameTracking] Free limit reached at save time, redirecting to paywall. Count:', totalGameCount);
+        console.log('[GameTracking] Free limit reached at save time (fallback gate). Count:', totalGameCount);
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        Alert.alert(
-          'Game Limit Reached',
-          `You've reached the ${FREE_GAME_LIMIT}-game free limit. Upgrade to Pro to save unlimited games.`,
-          [
-            { text: 'Later', style: 'cancel', onPress: () => { if (Platform.OS === 'web') { router.replace('/(tabs)/dashboard'); } else { router.dismissAll(); } } },
-            { text: 'Upgrade', onPress: () => { if (Platform.OS === 'web') { router.replace('/paywall'); } else { router.dismissAll(); router.push('/paywall'); } } },
-          ],
-        );
+        router.push('/paywall');
         return;
       }
       addGame(game);

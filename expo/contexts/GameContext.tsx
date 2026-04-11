@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
@@ -204,7 +204,38 @@ export const [GameProvider, useGames] = createContextHook(() => {
     }
   }, [isShared, sharedProfileId, supabaseReady, activeProfileId, storageKey, queryClient]);
 
-  const totalGameCount = allGames.length;
+  const { profiles } = useGoalkeepers();
+  const [globalGameCount, setGlobalGameCount] = useState<number>(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function countAllGames() {
+      try {
+        let total = 0;
+        const guestStored = await AsyncStorage.getItem('gk_tracker_games_guest');
+        if (guestStored) {
+          total += (JSON.parse(guestStored) as SavedGame[]).length;
+        }
+        for (const profile of profiles) {
+          const key = `gk_tracker_games_${profile.id}`;
+          const stored = await AsyncStorage.getItem(key);
+          if (stored) {
+            total += (JSON.parse(stored) as SavedGame[]).length;
+          }
+        }
+        if (!cancelled) {
+          console.log('[GameContext] Global game count across all profiles:', total);
+          setGlobalGameCount(total);
+        }
+      } catch (e) {
+        console.log('[GameContext] Error counting global games:', e);
+      }
+    }
+    void countAllGames();
+    return () => { cancelled = true; };
+  }, [profiles, allGames]);
+
+  const totalGameCount = globalGameCount;
   const isAtFreeLimit = totalGameCount >= FREE_GAME_LIMIT;
 
   return useMemo(() => ({

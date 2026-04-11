@@ -9,6 +9,8 @@ import { ThemeColors } from '@/constants/themes';
 import { KeeperSelection, AgeGroup } from '@/types/game';
 import { useTeams } from '@/contexts/TeamContext';
 import { useOpponents } from '@/contexts/OpponentContext';
+import { useGames } from '@/contexts/GameContext';
+import { usePurchases } from '@/contexts/PurchasesContext';
 
 type SelectionOption = {
   key: KeeperSelection;
@@ -39,6 +41,8 @@ export default function NewGameScreen() {
   const [keeperSelection, setKeeperSelection] = useState<KeeperSelection>('home');
   const { teams, activeTeamId, selectTeam, clearTeamSelection, createTeam } = useTeams();
   const { addOpponent, getSuggestions } = useOpponents();
+  const { isAtFreeLimit } = useGames();
+  const { isPro } = usePurchases();
   const [teamPickerOpen, setTeamPickerOpen] = useState(false);
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
@@ -82,6 +86,11 @@ export default function NewGameScreen() {
 
   const handleContinue = useCallback(() => {
     if (!canProceed) return;
+    if (!isPro && isAtFreeLimit) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      router.push('/paywall');
+      return;
+    }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     addOpponent(opponent.trim());
     router.push({
@@ -94,7 +103,7 @@ export default function NewGameScreen() {
         ageGroup,
       },
     });
-  }, [canProceed, router, eventName, date, opponent, keeperSelection, ageGroup, addOpponent]);
+  }, [canProceed, router, eventName, date, opponent, keeperSelection, ageGroup, addOpponent, isPro, isAtFreeLimit]);
 
   return (
     <View style={styles.container}>
