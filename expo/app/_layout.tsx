@@ -35,7 +35,7 @@ function RootLayoutNav() {
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
         name="new-game"
-        options={{ title: "New Game", headerShown: false }}
+        options={{ title: "New Game" }}
       />
       <Stack.Screen
         name="game-tracking"
