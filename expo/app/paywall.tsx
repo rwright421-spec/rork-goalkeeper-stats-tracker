@@ -27,13 +27,15 @@ export default function PaywallScreen() {
   console.log('[Paywall] Screen rendered');
   const router = useRouter();
   const colors = useColors();
-  const { checkEntitlement, restorePurchases, isRestoring, currentOffering, initAndFetchOfferings, isLoading: isLoadingOfferings } = usePurchases();
+  const { checkEntitlement, restorePurchases, isRestoring, currentOffering, initAndFetchOfferings, isLoading: isLoadingOfferings, rcAvailable } = usePurchases();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('annual');
   const [isPurchasing, setIsPurchasing] = useState(false);
 
+  const [initAttempted, setInitAttempted] = useState(false);
+
   useEffect(() => {
     console.log('[Paywall] Lazily initializing RevenueCat on paywall open');
-    initAndFetchOfferings();
+    initAndFetchOfferings().finally(() => setInitAttempted(true));
   }, [initAndFetchOfferings]);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -49,6 +51,10 @@ export default function PaywallScreen() {
   }, []);
 
   const handlePurchase = useCallback(async () => {
+    if (!rcAvailable) {
+      Alert.alert('Unavailable', 'Subscriptions are temporarily unavailable. Please try again later.');
+      return;
+    }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsPurchasing(true);
     try {
@@ -108,7 +114,7 @@ export default function PaywallScreen() {
     } finally {
       setIsPurchasing(false);
     }
-  }, [selectedPlan, currentOffering, checkEntitlement, router]);
+  }, [selectedPlan, currentOffering, checkEntitlement, router, rcAvailable]);
 
   const handleRestore = useCallback(async () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -162,6 +168,12 @@ export default function PaywallScreen() {
           ))}
         </View>
 
+        {initAttempted && !rcAvailable ? (
+          <View style={styles.unavailableBanner}>
+            <Text style={styles.unavailableText}>Subscriptions are temporarily unavailable. Please try again later.</Text>
+          </View>
+        ) : null}
+
         <View style={styles.trialBadge}>
           <Text style={styles.trialBadgeText}>Start free — 7 days on us</Text>
         </View>
@@ -199,15 +211,15 @@ export default function PaywallScreen() {
 
         <TouchableOpacity
           testID="subscribe-button"
-          style={[styles.subscribeButton, isPurchasing && styles.subscribeButtonDisabled]}
+          style={[styles.subscribeButton, (isPurchasing || (initAttempted && !rcAvailable)) && styles.subscribeButtonDisabled]}
           onPress={handlePurchase}
-          disabled={isPurchasing}
+          disabled={isPurchasing || (initAttempted && !rcAvailable)}
           activeOpacity={0.8}
         >
           {isPurchasing ? (
             <ActivityIndicator color={colors.white} size="small" />
           ) : (
-            <Text style={styles.subscribeButtonText}>Try Free for 7 Days</Text>
+            <Text style={styles.subscribeButtonText}>{initAttempted && !rcAvailable ? 'Coming Soon' : 'Try Free for 7 Days'}</Text>
           )}
         </TouchableOpacity>
         <Text style={styles.captionText}>{captionText}</Text>
@@ -452,6 +464,20 @@ function createStyles(c: ThemeColors) {
       fontSize: 11,
       color: c.textMuted,
       textAlign: 'center',
+    },
+    unavailableBanner: {
+      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 20,
+      alignItems: 'center',
+    },
+    unavailableText: {
+      fontSize: 13,
+      color: '#EF4444',
+      fontWeight: '600' as const,
+      textAlign: 'center',
+      lineHeight: 18,
     },
   });
 }

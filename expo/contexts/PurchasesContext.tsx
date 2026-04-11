@@ -8,6 +8,7 @@ const RC_ANDROID_API_KEY = 'placeholder_android_not_used';
 const RC_TEST_API_KEY = 'test_HcQzwKLIXZlgMxLsPDISZrUZodq';
 
 let rcConfigured = false;
+let rcFailed = false;
 let PurchasesModule: any = null;
 
 function isValidKey(key: string | undefined | null): boolean {
@@ -29,17 +30,24 @@ function getRCApiKey(): string {
 
 async function ensureConfiguredLazy(): Promise<boolean> {
   if (Platform.OS === 'web') return false;
+  if (rcFailed) return false;
   if (rcConfigured && PurchasesModule) return true;
 
   const key = getRCApiKey();
   if (!isValidKey(key)) {
     console.log('[PurchasesContext] No valid RevenueCat API key, skipping init');
+    rcFailed = true;
     return false;
   }
 
   try {
     if (!PurchasesModule) {
       PurchasesModule = require('react-native-purchases').default;
+    }
+    if (!PurchasesModule) {
+      console.log('[PurchasesContext] react-native-purchases module not available');
+      rcFailed = true;
+      return false;
     }
     if (!rcConfigured) {
       PurchasesModule.configure({ apiKey: key });
@@ -50,6 +58,7 @@ async function ensureConfiguredLazy(): Promise<boolean> {
   } catch (e) {
     console.log('[PurchasesContext] RevenueCat lazy configure error:', e);
     rcConfigured = false;
+    rcFailed = true;
     PurchasesModule = null;
     return false;
   }
@@ -61,6 +70,7 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isRestoring, setIsRestoring] = useState<boolean>(false);
   const [currentOffering, setCurrentOffering] = useState<any>(null);
+  const [rcAvailable, setRcAvailable] = useState<boolean>(true);
 
   const initAndFetchOfferings = useCallback(async () => {
     if (Platform.OS === 'web') return null;
@@ -69,12 +79,14 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
       const ok = await ensureConfiguredLazy();
       if (!ok || !PurchasesModule) {
         console.log('[PurchasesContext] Cannot fetch offerings, RC not configured');
+        setRcAvailable(false);
         return null;
       }
 
       const info = await PurchasesModule.getCustomerInfo();
       const proActive = !!info?.entitlements?.active?.['pro'];
       setIsPro(proActive);
+      setRcAvailable(true);
       console.log('[PurchasesContext] Customer info fetched, isPro:', proActive);
 
       const offerings = await PurchasesModule.getOfferings();
@@ -84,6 +96,7 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
       return current;
     } catch (e) {
       console.log('[PurchasesContext] Error during lazy init/fetch:', e);
+      setRcAvailable(false);
       return null;
     } finally {
       setIsLoading(false);
@@ -138,5 +151,6 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
     restorePurchases,
     isRestoring,
     initAndFetchOfferings,
-  }), [isPro, isLoading, currentOffering, checkEntitlement, restorePurchases, isRestoring, initAndFetchOfferings]);
+    rcAvailable,
+  }), [isPro, isLoading, currentOffering, checkEntitlement, restorePurchases, isRestoring, initAndFetchOfferings, rcAvailable]);
 });
