@@ -1,9 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
-import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect, Component, ReactNode } from "react";
+import React, { useEffect, useState, Component, ReactNode } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { GoalkeeperProvider } from "@/contexts/GoalkeeperContext";
 import { TeamProvider } from "@/contexts/TeamContext";
@@ -12,10 +10,19 @@ import { OpponentProvider } from "@/contexts/OpponentContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { PurchasesProvider } from "@/contexts/PurchasesContext";
 
+let SplashScreen: typeof import('expo-splash-screen') | null = null;
 try {
-  SplashScreen.preventAutoHideAsync();
+  SplashScreen = require('expo-splash-screen');
+  SplashScreen?.preventAutoHideAsync();
 } catch (e) {
   console.log("[RootLayout] SplashScreen.preventAutoHideAsync error:", e);
+}
+
+let GestureHandlerRootView: React.ComponentType<{ style?: any; children?: ReactNode }> | null = null;
+try {
+  GestureHandlerRootView = require('react-native-gesture-handler').GestureHandlerRootView;
+} catch (e) {
+  console.log("[RootLayout] GestureHandlerRootView not available:", e);
 }
 
 const queryClient = new QueryClient({
@@ -138,20 +145,36 @@ function RootLayoutNav() {
   );
 }
 
+function GestureWrapper({ children }: { children: ReactNode }) {
+  if (GestureHandlerRootView) {
+    return <GestureHandlerRootView style={{ flex: 1 }}>{children}</GestureHandlerRootView>;
+  }
+  return <View style={{ flex: 1 }}>{children}</View>;
+}
+
 export default function RootLayout() {
+  const [ready, setReady] = useState(false);
+
   useEffect(() => {
     console.log("[RootLayout] App mounted, hiding splash screen");
+    setReady(true);
     try {
-      void SplashScreen.hideAsync();
+      void SplashScreen?.hideAsync();
     } catch (e) {
       console.log("[RootLayout] SplashScreen.hideAsync error:", e);
     }
   }, []);
 
+  if (!ready) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#0D1117' }} />
+    );
+  }
+
   return (
     <AppErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <GestureHandlerRootView style={{ flex: 1 }}>
+        <GestureWrapper>
           <AuthProvider>
             <ThemeProvider>
               <GoalkeeperProvider>
@@ -167,7 +190,7 @@ export default function RootLayout() {
               </GoalkeeperProvider>
             </ThemeProvider>
           </AuthProvider>
-        </GestureHandlerRootView>
+        </GestureWrapper>
       </QueryClientProvider>
     </AppErrorBoundary>
   );
