@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.rork.qghcrb50ht8pldbyfomrt"
+      "bundleIdentifier": "app.rork.goalkeeper-stats-tracker"
     },
     "android": {
       "adaptiveIcon": {
