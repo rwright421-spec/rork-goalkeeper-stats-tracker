@@ -657,7 +657,8 @@ export default function GoalkeeperStatsScreen() {
     if (Platform.OS === 'web') {
       router.replace('/');
     } else {
-      router.dismissAll();
+      try { router.dismissAll(); } catch (e) { console.log('[Stats] dismissAll error:', e); }
+      setTimeout(() => router.replace('/'), 100);
     }
   }, [clearSelection, clearTeamSelection, router]);
   const [groupMode, setGroupMode] = useState<GroupMode>('career');
