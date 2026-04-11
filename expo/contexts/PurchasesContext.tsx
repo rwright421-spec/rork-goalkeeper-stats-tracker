@@ -1,20 +1,25 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Platform, Alert } from 'react-native';
-import Purchases, { CustomerInfo, PurchasesOffering } from 'react-native-purchases';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
 
-const RC_TEST_API_KEY = 'test_HcQzwKLIXZlgMxLsPDISZrUZodq';
 const RC_IOS_API_KEY = 'test_HcQzwKLIXZlgMxLsPDISZrUZodq';
 const RC_ANDROID_API_KEY = 'placeholder_android_not_used';
+const RC_TEST_API_KEY = 'test_HcQzwKLIXZlgMxLsPDISZrUZodq';
+
+let rcConfigured = false;
+let PurchasesModule: any = null;
+
+function isValidKey(key: string | undefined | null): boolean {
+  if (!key) return false;
+  if (key === 'placeholder_android_not_used') return false;
+  if (key.length < 10) return false;
+  return true;
+}
 
 function getRCApiKey(): string {
-  if (Platform.OS === 'web') {
-    return '';
-  }
-  if (__DEV__) {
-    return RC_TEST_API_KEY;
-  }
+  if (Platform.OS === 'web') return '';
+  if (__DEV__) return RC_TEST_API_KEY;
   return Platform.select({
     ios: RC_IOS_API_KEY,
     android: RC_ANDROID_API_KEY,
@@ -22,148 +27,116 @@ function getRCApiKey(): string {
   }) as string;
 }
 
-let rcConfigured = false;
-
-function ensureConfigured(): boolean {
+async function ensureConfiguredLazy(): Promise<boolean> {
   if (Platform.OS === 'web') return false;
-  if (rcConfigured) return true;
+  if (rcConfigured && PurchasesModule) return true;
 
   const key = getRCApiKey();
-  if (!key) return false;
-
-  try {
-    Purchases.configure({ apiKey: key });
-    rcConfigured = true;
-    console.log('[PurchasesContext] RevenueCat configured with key:', key.substring(0, 8) + '...');
-    return true;
-  } catch (e) {
-    console.log('[PurchasesContext] RevenueCat configure error:', e);
+  if (!isValidKey(key)) {
+    console.log('[PurchasesContext] No valid RevenueCat API key, skipping init');
     return false;
   }
-}
 
-async function fetchCustomerInfo(): Promise<CustomerInfo | null> {
-  if (!ensureConfigured()) return null;
   try {
-    const info = await Purchases.getCustomerInfo();
-    console.log('[PurchasesContext] Customer info fetched, active entitlements:', Object.keys(info.entitlements.active));
-    return info;
+    if (!PurchasesModule) {
+      PurchasesModule = require('react-native-purchases').default;
+    }
+    if (!rcConfigured) {
+      PurchasesModule.configure({ apiKey: key });
+      rcConfigured = true;
+      console.log('[PurchasesContext] RevenueCat configured lazily with key:', key.substring(0, 8) + '...');
+    }
+    return true;
   } catch (e) {
-    console.log('[PurchasesContext] Error fetching customer info:', e);
-    return null;
-  }
-}
-
-async function fetchOfferings(): Promise<PurchasesOffering | null> {
-  if (!ensureConfigured()) return null;
-  try {
-    const offerings = await Purchases.getOfferings();
-    console.log('[PurchasesContext] Offerings fetched:', offerings.current?.identifier);
-    return offerings.current ?? null;
-  } catch (e) {
-    console.log('[PurchasesContext] Error fetching offerings:', e);
-    return null;
+    console.log('[PurchasesContext] RevenueCat lazy configure error:', e);
+    rcConfigured = false;
+    PurchasesModule = null;
+    return false;
   }
 }
 
 export const [PurchasesProvider, usePurchases] = createContextHook(() => {
   const queryClient = useQueryClient();
   const [isPro, setIsPro] = useState<boolean>(false);
-  const configuredRef = useRef(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isRestoring, setIsRestoring] = useState<boolean>(false);
+  const [currentOffering, setCurrentOffering] = useState<any>(null);
 
-  useEffect(() => {
-    if (configuredRef.current) return;
+  const initAndFetchOfferings = useCallback(async () => {
+    if (Platform.OS === 'web') return null;
+    setIsLoading(true);
     try {
-      const ok = ensureConfigured();
-      configuredRef.current = ok;
-      console.log('[PurchasesContext] Init in useEffect, configured:', ok);
+      const ok = await ensureConfiguredLazy();
+      if (!ok || !PurchasesModule) {
+        console.log('[PurchasesContext] Cannot fetch offerings, RC not configured');
+        return null;
+      }
+
+      const info = await PurchasesModule.getCustomerInfo();
+      const proActive = !!info?.entitlements?.active?.['pro'];
+      setIsPro(proActive);
+      console.log('[PurchasesContext] Customer info fetched, isPro:', proActive);
+
+      const offerings = await PurchasesModule.getOfferings();
+      const current = offerings?.current ?? null;
+      setCurrentOffering(current);
+      console.log('[PurchasesContext] Offerings fetched:', current?.identifier);
+      return current;
     } catch (e) {
-      console.log('[PurchasesContext] Init error in useEffect:', e);
+      console.log('[PurchasesContext] Error during lazy init/fetch:', e);
+      return null;
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
-  const customerInfoQuery = useQuery({
-    queryKey: ['customerInfo'],
-    queryFn: fetchCustomerInfo,
-    staleTime: 1000 * 60 * 5,
-    retry: 2,
-  });
-
-  const offeringsQuery = useQuery({
-    queryKey: ['rcOfferings'],
-    queryFn: fetchOfferings,
-    staleTime: 1000 * 60 * 10,
-    retry: 2,
-  });
-
-  useEffect(() => {
-    if (customerInfoQuery.data) {
-      const proActive = !!customerInfoQuery.data.entitlements.active['pro'];
-      console.log('[PurchasesContext] Pro entitlement active:', proActive);
-      setIsPro(proActive);
-    }
-  }, [customerInfoQuery.data]);
-
-  useEffect(() => {
-    if (Platform.OS === 'web' || !rcConfigured) return;
-    const listener = (info: CustomerInfo) => {
-      const proActive = !!info.entitlements.active['pro'];
-      console.log('[PurchasesContext] Customer info updated via listener, isPro:', proActive);
-      setIsPro(proActive);
-      queryClient.setQueryData(['customerInfo'], info);
-    };
-    try {
-      Purchases.addCustomerInfoUpdateListener(listener);
-      return () => {
-        try {
-          Purchases.removeCustomerInfoUpdateListener(listener);
-        } catch (e) {
-          console.log('[PurchasesContext] Error removing listener:', e);
-        }
-      };
-    } catch (e) {
-      console.log('[PurchasesContext] Error adding listener:', e);
-    }
-  }, [queryClient]);
-
   const checkEntitlement = useCallback(async () => {
-    console.log('[PurchasesContext] Manually checking entitlement');
-    await queryClient.invalidateQueries({ queryKey: ['customerInfo'] });
-  }, [queryClient]);
-
-  const restoreMutation = useMutation({
-    mutationFn: async () => {
-      if (!ensureConfigured()) throw new Error('RevenueCat not configured');
-      const info = await Purchases.restorePurchases();
-      return info;
-    },
-    onSuccess: (info) => {
-      const proActive = !!info.entitlements.active['pro'];
+    if (Platform.OS === 'web') return;
+    try {
+      const ok = await ensureConfiguredLazy();
+      if (!ok || !PurchasesModule) return;
+      const info = await PurchasesModule.getCustomerInfo();
+      const proActive = !!info?.entitlements?.active?.['pro'];
+      console.log('[PurchasesContext] Manual entitlement check, isPro:', proActive);
       setIsPro(proActive);
-      queryClient.setQueryData(['customerInfo'], info);
+    } catch (e) {
+      console.log('[PurchasesContext] Error checking entitlement:', e);
+    }
+  }, []);
+
+  const restorePurchases = useCallback(async () => {
+    if (Platform.OS === 'web') return;
+    setIsRestoring(true);
+    try {
+      const ok = await ensureConfiguredLazy();
+      if (!ok || !PurchasesModule) {
+        Alert.alert('Unavailable', 'Purchase restoration is not available right now.');
+        return;
+      }
+      const info = await PurchasesModule.restorePurchases();
+      const proActive = !!info?.entitlements?.active?.['pro'];
+      setIsPro(proActive);
       if (proActive) {
         Alert.alert('Restored', 'Your Pro subscription has been restored.');
       } else {
         Alert.alert('No Subscription Found', 'No active subscription was found for this account.');
       }
       console.log('[PurchasesContext] Restore completed, isPro:', proActive);
-    },
-    onError: (error) => {
-      console.log('[PurchasesContext] Restore error:', error);
+    } catch (e) {
+      console.log('[PurchasesContext] Restore error:', e);
       Alert.alert('Restore Failed', 'Unable to restore purchases. Please try again.');
-    },
-  });
-
-  const restorePurchases = useCallback(async () => {
-    restoreMutation.mutate();
-  }, [restoreMutation]);
+    } finally {
+      setIsRestoring(false);
+    }
+  }, []);
 
   return useMemo(() => ({
     isPro,
-    isLoading: customerInfoQuery.isLoading,
-    currentOffering: offeringsQuery.data ?? null,
+    isLoading,
+    currentOffering,
     checkEntitlement,
     restorePurchases,
-    isRestoring: restoreMutation.isPending,
-  }), [isPro, customerInfoQuery.isLoading, offeringsQuery.data, checkEntitlement, restorePurchases, restoreMutation.isPending]);
+    isRestoring,
+    initAndFetchOfferings,
+  }), [isPro, isLoading, currentOffering, checkEntitlement, restorePurchases, isRestoring, initAndFetchOfferings]);
 });

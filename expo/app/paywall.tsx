@@ -1,9 +1,8 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, Linking, ActivityIndicator } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { X, Shield, Check, Crown } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import Purchases from 'react-native-purchases';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { usePurchases } from '@/contexts/PurchasesContext';
@@ -28,9 +27,14 @@ export default function PaywallScreen() {
   console.log('[Paywall] Screen rendered');
   const router = useRouter();
   const colors = useColors();
-  const { checkEntitlement, restorePurchases, isRestoring, currentOffering } = usePurchases();
+  const { checkEntitlement, restorePurchases, isRestoring, currentOffering, initAndFetchOfferings, isLoading: isLoadingOfferings } = usePurchases();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('annual');
   const [isPurchasing, setIsPurchasing] = useState(false);
+
+  useEffect(() => {
+    console.log('[Paywall] Lazily initializing RevenueCat on paywall open');
+    initAndFetchOfferings();
+  }, [initAndFetchOfferings]);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -51,13 +55,22 @@ export default function PaywallScreen() {
       const productId = PRODUCT_IDS[selectedPlan];
       console.log('[Paywall] Attempting purchase for product:', productId);
 
+      let PurchasesModule: any;
+      try {
+        PurchasesModule = require('react-native-purchases').default;
+      } catch (e) {
+        console.log('[Paywall] Cannot load react-native-purchases:', e);
+        Alert.alert('Unavailable', 'Purchases are not available on this platform.');
+        return;
+      }
+
       if (currentOffering) {
-        const pkg = currentOffering.availablePackages.find(
-          p => p.product.identifier === productId
+        const pkg = currentOffering.availablePackages?.find(
+          (p: any) => p.product.identifier === productId
         );
         if (pkg) {
-          const { customerInfo } = await Purchases.purchasePackage(pkg);
-          if (customerInfo.entitlements.active['pro']) {
+          const { customerInfo } = await PurchasesModule.purchasePackage(pkg);
+          if (customerInfo?.entitlements?.active?.['pro']) {
             console.log('[Paywall] Purchase successful, pro entitlement active');
             await checkEntitlement();
             void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -69,10 +82,10 @@ export default function PaywallScreen() {
         }
       }
 
-      const products = await Purchases.getProducts([productId]);
-      if (products.length > 0) {
-        const { customerInfo } = await Purchases.purchaseStoreProduct(products[0]);
-        if (customerInfo.entitlements.active['pro']) {
+      const products = await PurchasesModule.getProducts([productId]);
+      if (products && products.length > 0) {
+        const { customerInfo } = await PurchasesModule.purchaseStoreProduct(products[0]);
+        if (customerInfo?.entitlements?.active?.['pro']) {
           console.log('[Paywall] Purchase successful via direct product');
           await checkEntitlement();
           void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
