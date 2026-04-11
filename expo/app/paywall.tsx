@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, Linking, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, Linking } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { X, Shield, Check, Crown } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -8,11 +8,6 @@ import { ThemeColors } from '@/constants/themes';
 import { usePurchases } from '@/contexts/PurchasesContext';
 
 type PlanType = 'annual' | 'monthly';
-
-const PRODUCT_IDS = {
-  monthly: 'com.snocoventures.gkstats.pro.monthly',
-  annual: 'com.snocoventures.gkstats.pro.annual',
-} as const;
 
 const FEATURES = [
   'Unlimited games',
@@ -27,16 +22,8 @@ export default function PaywallScreen() {
   console.log('[Paywall] Screen rendered');
   const router = useRouter();
   const colors = useColors();
-  const { checkEntitlement, restorePurchases, isRestoring, currentOffering, initAndFetchOfferings, isLoading: isLoadingOfferings, rcAvailable } = usePurchases();
+  const { restorePurchases, isRestoring } = usePurchases();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('annual');
-  const [isPurchasing, setIsPurchasing] = useState(false);
-
-  const [initAttempted, setInitAttempted] = useState(false);
-
-  useEffect(() => {
-    console.log('[Paywall] Lazily initializing RevenueCat on paywall open');
-    initAndFetchOfferings().finally(() => setInitAttempted(true));
-  }, [initAndFetchOfferings]);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -50,71 +37,13 @@ export default function PaywallScreen() {
     setSelectedPlan(plan);
   }, []);
 
-  const handlePurchase = useCallback(async () => {
-    if (!rcAvailable) {
-      Alert.alert('Unavailable', 'Subscriptions are temporarily unavailable. Please try again later.');
-      return;
-    }
+  const handlePurchase = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setIsPurchasing(true);
-    try {
-      const productId = PRODUCT_IDS[selectedPlan];
-      console.log('[Paywall] Attempting purchase for product:', productId);
-
-      let PurchasesModule: any;
-      try {
-        PurchasesModule = require('react-native-purchases').default;
-      } catch (e) {
-        console.log('[Paywall] Cannot load react-native-purchases:', e);
-        Alert.alert('Unavailable', 'Purchases are not available on this platform.');
-        return;
-      }
-
-      if (currentOffering) {
-        const pkg = currentOffering.availablePackages?.find(
-          (p: any) => p.product.identifier === productId
-        );
-        if (pkg) {
-          const { customerInfo } = await PurchasesModule.purchasePackage(pkg);
-          if (customerInfo?.entitlements?.active?.['pro']) {
-            console.log('[Paywall] Purchase successful, pro entitlement active');
-            await checkEntitlement();
-            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            Alert.alert('Welcome to Pro!', 'You now have unlimited access to all features.', [
-              { text: 'OK', onPress: () => router.back() },
-            ]);
-            return;
-          }
-        }
-      }
-
-      const products = await PurchasesModule.getProducts([productId]);
-      if (products && products.length > 0) {
-        const { customerInfo } = await PurchasesModule.purchaseStoreProduct(products[0]);
-        if (customerInfo?.entitlements?.active?.['pro']) {
-          console.log('[Paywall] Purchase successful via direct product');
-          await checkEntitlement();
-          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-          Alert.alert('Welcome to Pro!', 'You now have unlimited access to all features.', [
-            { text: 'OK', onPress: () => router.back() },
-          ]);
-          return;
-        }
-      }
-
-      console.log('[Paywall] Product not found:', productId);
-      Alert.alert('Error', 'Unable to find the product. Please try again later.');
-    } catch (e: any) {
-      if (e?.userCancelled) {
-        console.log('[Paywall] User cancelled purchase');
-        return;
-      }
-      console.log('[Paywall] Purchase error:', e);
-      Alert.alert('Purchase Error', 'Something went wrong. Please try again.');
-    } finally {
-      setIsPurchasing(false);
-    }
-  }, [selectedPlan, currentOffering, checkEntitlement, router, rcAvailable]);
+    Alert.alert(
+      'Coming Soon',
+      'In-app purchases are being updated for compatibility with the latest iOS. Please check back in a future update.'
+    );
+  }, []);
 
   const handleRestore = useCallback(async () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -168,11 +97,9 @@ export default function PaywallScreen() {
           ))}
         </View>
 
-        {initAttempted && !rcAvailable ? (
-          <View style={styles.unavailableBanner}>
-            <Text style={styles.unavailableText}>Subscriptions are temporarily unavailable. Please try again later.</Text>
-          </View>
-        ) : null}
+        <View style={styles.unavailableBanner}>
+          <Text style={styles.unavailableText}>Subscriptions are being updated for iOS compatibility. Check back soon!</Text>
+        </View>
 
         <View style={styles.trialBadge}>
           <Text style={styles.trialBadgeText}>Start free — 7 days on us</Text>
@@ -211,16 +138,11 @@ export default function PaywallScreen() {
 
         <TouchableOpacity
           testID="subscribe-button"
-          style={[styles.subscribeButton, (isPurchasing || (initAttempted && !rcAvailable)) && styles.subscribeButtonDisabled]}
+          style={[styles.subscribeButton, styles.subscribeButtonDisabled]}
           onPress={handlePurchase}
-          disabled={isPurchasing || (initAttempted && !rcAvailable)}
           activeOpacity={0.8}
         >
-          {isPurchasing ? (
-            <ActivityIndicator color={colors.white} size="small" />
-          ) : (
-            <Text style={styles.subscribeButtonText}>{initAttempted && !rcAvailable ? 'Coming Soon' : 'Try Free for 7 Days'}</Text>
-          )}
+          <Text style={styles.subscribeButtonText}>Coming Soon</Text>
         </TouchableOpacity>
         <Text style={styles.captionText}>{captionText}</Text>
 
@@ -270,12 +192,12 @@ function createStyles(c: ThemeColors) {
       height: 36,
       borderRadius: 18,
       backgroundColor: c.surface,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
       zIndex: 10,
     },
     headerSection: {
-      alignItems: 'center',
+      alignItems: 'center' as const,
       marginBottom: 28,
       marginTop: 8,
     },
@@ -284,21 +206,21 @@ function createStyles(c: ThemeColors) {
       height: 88,
       borderRadius: 44,
       backgroundColor: c.primaryGlow,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
       marginBottom: 20,
     },
     headline: {
       fontSize: 26,
       fontWeight: '800' as const,
       color: c.text,
-      textAlign: 'center',
+      textAlign: 'center' as const,
       marginBottom: 8,
     },
     subheadline: {
       fontSize: 15,
       color: c.textSecondary,
-      textAlign: 'center',
+      textAlign: 'center' as const,
       lineHeight: 22,
     },
     featureList: {
@@ -306,8 +228,8 @@ function createStyles(c: ThemeColors) {
       gap: 12,
     },
     featureRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
       gap: 12,
     },
     featureCheckContainer: {
@@ -315,8 +237,8 @@ function createStyles(c: ThemeColors) {
       height: 28,
       borderRadius: 14,
       backgroundColor: c.primaryGlow,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
     },
     featureText: {
       fontSize: 15,
@@ -329,17 +251,17 @@ function createStyles(c: ThemeColors) {
       borderRadius: 24,
       paddingVertical: 10,
       paddingHorizontal: 20,
-      alignSelf: 'center',
+      alignSelf: 'center' as const,
       marginBottom: 24,
     },
     trialBadgeText: {
       color: c.white,
       fontSize: 15,
       fontWeight: '700' as const,
-      textAlign: 'center',
+      textAlign: 'center' as const,
     },
     planSelector: {
-      flexDirection: 'row',
+      flexDirection: 'row' as const,
       gap: 12,
       marginBottom: 24,
     },
@@ -348,7 +270,7 @@ function createStyles(c: ThemeColors) {
       backgroundColor: c.surface,
       borderRadius: 16,
       padding: 16,
-      alignItems: 'center',
+      alignItems: 'center' as const,
       borderWidth: 2,
       borderColor: c.border,
     },
@@ -383,8 +305,8 @@ function createStyles(c: ThemeColors) {
       color: c.textSecondary,
     },
     bestValueTag: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
       gap: 4,
       backgroundColor: c.primary,
       paddingHorizontal: 10,
@@ -396,7 +318,7 @@ function createStyles(c: ThemeColors) {
       fontSize: 10,
       fontWeight: '700' as const,
       color: c.white,
-      textTransform: 'uppercase',
+      textTransform: 'uppercase' as const,
       letterSpacing: 0.5,
     },
     savingsBadge: {
@@ -415,8 +337,8 @@ function createStyles(c: ThemeColors) {
       backgroundColor: c.primaryDark,
       borderRadius: 14,
       paddingVertical: 16,
-      alignItems: 'center',
-      justifyContent: 'center',
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
       marginBottom: 6,
     },
     subscribeButtonDisabled: {
@@ -430,31 +352,31 @@ function createStyles(c: ThemeColors) {
     captionText: {
       fontSize: 12,
       color: c.textMuted,
-      textAlign: 'center',
+      textAlign: 'center' as const,
       marginBottom: 16,
     },
     restoreButton: {
       paddingVertical: 10,
-      alignItems: 'center',
+      alignItems: 'center' as const,
       marginBottom: 24,
     },
     restoreText: {
       fontSize: 14,
       color: c.textSecondary,
       fontWeight: '500' as const,
-      textDecorationLine: 'underline',
+      textDecorationLine: 'underline' as const,
     },
     footer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-      alignItems: 'center',
+      flexDirection: 'row' as const,
+      flexWrap: 'wrap' as const,
+      justifyContent: 'center' as const,
+      alignItems: 'center' as const,
       gap: 4,
     },
     footerLink: {
       fontSize: 11,
       color: c.textSecondary,
-      textDecorationLine: 'underline',
+      textDecorationLine: 'underline' as const,
     },
     footerSeparator: {
       fontSize: 11,
@@ -463,20 +385,20 @@ function createStyles(c: ThemeColors) {
     footerNote: {
       fontSize: 11,
       color: c.textMuted,
-      textAlign: 'center',
+      textAlign: 'center' as const,
     },
     unavailableBanner: {
-      backgroundColor: 'rgba(239, 68, 68, 0.15)',
+      backgroundColor: 'rgba(245, 158, 11, 0.15)',
       borderRadius: 12,
       padding: 14,
       marginBottom: 20,
-      alignItems: 'center',
+      alignItems: 'center' as const,
     },
     unavailableText: {
       fontSize: 13,
-      color: '#EF4444',
+      color: '#F59E0B',
       fontWeight: '600' as const,
-      textAlign: 'center',
+      textAlign: 'center' as const,
       lineHeight: 18,
     },
   });
