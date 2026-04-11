@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Platform, Alert } from 'react-native';
 import Purchases, { CustomerInfo, PurchasesOffering } from 'react-native-purchases';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -9,7 +9,10 @@ const RC_IOS_API_KEY = 'test_HcQzwKLIXZlgMxLsPDISZrUZodq';
 const RC_ANDROID_API_KEY = 'placeholder_android_not_used';
 
 function getRCApiKey(): string {
-  if (__DEV__ || Platform.OS === 'web') {
+  if (Platform.OS === 'web') {
+    return '';
+  }
+  if (__DEV__) {
     return RC_TEST_API_KEY;
   }
   return Platform.select({
@@ -19,21 +22,28 @@ function getRCApiKey(): string {
   }) as string;
 }
 
-const rcApiKey = getRCApiKey();
+let rcConfigured = false;
 
-if (rcApiKey) {
+function ensureConfigured(): boolean {
+  if (Platform.OS === 'web') return false;
+  if (rcConfigured) return true;
+
+  const key = getRCApiKey();
+  if (!key) return false;
+
   try {
-    Purchases.configure({ apiKey: rcApiKey });
-    console.log('[PurchasesContext] RevenueCat configured with key:', rcApiKey.substring(0, 8) + '...');
+    Purchases.configure({ apiKey: key });
+    rcConfigured = true;
+    console.log('[PurchasesContext] RevenueCat configured with key:', key.substring(0, 8) + '...');
+    return true;
   } catch (e) {
     console.log('[PurchasesContext] RevenueCat configure error:', e);
+    return false;
   }
-} else {
-  console.log('[PurchasesContext] No RevenueCat API key found, skipping configuration');
 }
 
 async function fetchCustomerInfo(): Promise<CustomerInfo | null> {
-  if (!rcApiKey) return null;
+  if (!ensureConfigured()) return null;
   try {
     const info = await Purchases.getCustomerInfo();
     console.log('[PurchasesContext] Customer info fetched, active entitlements:', Object.keys(info.entitlements.active));
@@ -45,7 +55,7 @@ async function fetchCustomerInfo(): Promise<CustomerInfo | null> {
 }
 
 async function fetchOfferings(): Promise<PurchasesOffering | null> {
-  if (!rcApiKey) return null;
+  if (!ensureConfigured()) return null;
   try {
     const offerings = await Purchases.getOfferings();
     console.log('[PurchasesContext] Offerings fetched:', offerings.current?.identifier);
@@ -59,6 +69,18 @@ async function fetchOfferings(): Promise<PurchasesOffering | null> {
 export const [PurchasesProvider, usePurchases] = createContextHook(() => {
   const queryClient = useQueryClient();
   const [isPro, setIsPro] = useState<boolean>(false);
+  const configuredRef = useRef(false);
+
+  useEffect(() => {
+    if (configuredRef.current) return;
+    try {
+      const ok = ensureConfigured();
+      configuredRef.current = ok;
+      console.log('[PurchasesContext] Init in useEffect, configured:', ok);
+    } catch (e) {
+      console.log('[PurchasesContext] Init error in useEffect:', e);
+    }
+  }, []);
 
   const customerInfoQuery = useQuery({
     queryKey: ['customerInfo'],
@@ -83,17 +105,25 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
   }, [customerInfoQuery.data]);
 
   useEffect(() => {
-    if (!rcApiKey) return;
+    if (Platform.OS === 'web' || !rcConfigured) return;
     const listener = (info: CustomerInfo) => {
       const proActive = !!info.entitlements.active['pro'];
       console.log('[PurchasesContext] Customer info updated via listener, isPro:', proActive);
       setIsPro(proActive);
       queryClient.setQueryData(['customerInfo'], info);
     };
-    Purchases.addCustomerInfoUpdateListener(listener);
-    return () => {
-      Purchases.removeCustomerInfoUpdateListener(listener);
-    };
+    try {
+      Purchases.addCustomerInfoUpdateListener(listener);
+      return () => {
+        try {
+          Purchases.removeCustomerInfoUpdateListener(listener);
+        } catch (e) {
+          console.log('[PurchasesContext] Error removing listener:', e);
+        }
+      };
+    } catch (e) {
+      console.log('[PurchasesContext] Error adding listener:', e);
+    }
   }, [queryClient]);
 
   const checkEntitlement = useCallback(async () => {
@@ -103,7 +133,7 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
 
   const restoreMutation = useMutation({
     mutationFn: async () => {
-      if (!rcApiKey) throw new Error('RevenueCat not configured');
+      if (!ensureConfigured()) throw new Error('RevenueCat not configured');
       const info = await Purchases.restorePurchases();
       return info;
     },
