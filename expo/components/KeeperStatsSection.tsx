@@ -233,7 +233,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
                 <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
                   {AGE_GROUPS.map((ag) => (
                     <TouchableOpacity key={ag} style={[styles.yearOption, keeper.year === ag && styles.yearOptionActive]} onPress={() => { updateField('year', ag); setYearPickerOpen(false); }} activeOpacity={0.7}>
-                      <Text style={[styles.yearOptionText, keeper.year === ag && styles.yearOptionTextActive]}>{ag}</Text>
+                      <Text style={[styles.yearOptionText, keeper.year === ag && styles.yearOptionTextActive, ag.length > 3 && { fontSize: fontSize.caption }]}>{ag}</Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -285,7 +285,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
                     <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
                       {AGE_GROUPS.map((ag) => (
                         <TouchableOpacity key={ag} style={[styles.yearOption, keeper.secondHalfYear === ag && styles.yearOptionActive]} onPress={() => { onUpdate({ ...keeper, secondHalfYear: ag }); setSecondHalfYearPickerOpen(false); }} activeOpacity={0.7}>
-                          <Text style={[styles.yearOptionText, keeper.secondHalfYear === ag && styles.yearOptionTextActive]}>{ag}</Text>
+                          <Text style={[styles.yearOptionText, keeper.secondHalfYear === ag && styles.yearOptionTextActive, ag.length > 3 && { fontSize: fontSize.caption }]}>{ag}</Text>
                         </TouchableOpacity>
                       ))}
                     </ScrollView>

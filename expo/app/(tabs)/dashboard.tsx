@@ -407,7 +407,7 @@ export default function DashboardScreen() {
                             }}
                             activeOpacity={0.7}
                           >
-                            <Text style={[styles.yearOptionText, newYear === ag && styles.yearOptionTextActive]}>
+                            <Text style={[styles.yearOptionText, newYear === ag && styles.yearOptionTextActive, ag.length > 3 && { fontSize: fontSize.caption }]}>
                               {ag}
                             </Text>
                           </TouchableOpacity>
@@ -522,7 +522,7 @@ export default function DashboardScreen() {
                                   activeOpacity={0.7}
                                 >
                                   <Text
-                                    style={[styles.yearOptionText, editYear === ag && styles.yearOptionTextActive]}
+                                    style={[styles.yearOptionText, editYear === ag && styles.yearOptionTextActive, ag.length > 3 && { fontSize: fontSize.caption }]}
                                   >
                                     {ag}
                                   </Text>

@@ -86,7 +86,7 @@ export default function TeamSelectScreen() {
               <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
                 {AGE_GROUPS.map((ag) => (
                   <TouchableOpacity key={ag} style={[styles.yearOption, editYear === ag && styles.yearOptionActive]} onPress={() => { setEditYear(ag); setEditYearPickerOpen(false); }} activeOpacity={0.7}>
-                    <Text style={[styles.yearOptionText, editYear === ag && styles.yearOptionTextActive]}>{ag}</Text>
+                    <Text style={[styles.yearOptionText, editYear === ag && styles.yearOptionTextActive, ag.length > 3 && { fontSize: fontSize.caption }]}>{ag}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -152,7 +152,7 @@ export default function TeamSelectScreen() {
             {yearPickerOpen && (
               <View style={styles.yearDropdown}>
                 <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
-                  {AGE_GROUPS.map((ag) => (<TouchableOpacity key={ag} style={[styles.yearOption, newYear === ag && styles.yearOptionActive]} onPress={() => { setNewYear(ag); setYearPickerOpen(false); }} activeOpacity={0.7}><Text style={[styles.yearOptionText, newYear === ag && styles.yearOptionTextActive]}>{ag}</Text></TouchableOpacity>))}
+                  {AGE_GROUPS.map((ag) => (<TouchableOpacity key={ag} style={[styles.yearOption, newYear === ag && styles.yearOptionActive]} onPress={() => { setNewYear(ag); setYearPickerOpen(false); }} activeOpacity={0.7}><Text style={[styles.yearOptionText, newYear === ag && styles.yearOptionTextActive, ag.length > 3 && { fontSize: fontSize.caption }]}>{ag}</Text></TouchableOpacity>))}
                 </ScrollView>
               </View>
             )}
