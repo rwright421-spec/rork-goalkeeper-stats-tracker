@@ -1,5 +1,5 @@
 // Game Tracking - Live stat entry screen for game tracking
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, InputAccessoryView, TouchableWithoutFeedback } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react-native';
@@ -28,13 +28,22 @@ export default function GameTrackingScreen() {
     quickStart?: string;
   }>();
 
-  const { addGame, updateGame, getGame, isAtFreeLimit, totalGameCount } = useGames();
+  const { addGame, updateGame, getGame, isAtFreeLimit, totalGameCount, gameLimitExceeded, clearGameLimitExceeded } = useGames();
   const { isPro } = usePurchases();
   const isEditMode = !!params.gameId;
   const existingGame = isEditMode ? getGame(params.gameId!) : undefined;
   const { activeProfile, profiles, createProfile } = useGoalkeepers();
   const { activeTeam, activeTeamId } = useTeams();
   const { addOpponent, getSuggestions } = useOpponents();
+
+  useEffect(() => {
+    if (gameLimitExceeded && !isPro) {
+      console.log('[GameTracking] Server-side game limit exceeded — showing paywall');
+      clearGameLimitExceeded();
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      router.push('/paywall');
+    }
+  }, [gameLimitExceeded, isPro, clearGameLimitExceeded, router]);
 
   const allProfiles = useMemo(() => profiles ?? [], [profiles]);
 

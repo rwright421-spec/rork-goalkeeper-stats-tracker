@@ -6,7 +6,7 @@ import { SavedGame, normalizeKeeper } from '@/types/game';
 import { validateAndSanitizeArray } from '@/utils/validation';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
-import { uploadProfileData, downloadProfileData } from '@/lib/sync';
+import { uploadProfileData, downloadProfileData, GAME_LIMIT_ERROR_KEY } from '@/lib/sync';
 
 export const FREE_GAME_LIMIT = 5;
 
@@ -54,6 +54,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
 
   const sharedProfileId = activeProfile?.sharedProfileId;
   const isShared = !!activeProfile?.isShared && !!sharedProfileId;
+  const [gameLimitExceeded, setGameLimitExceeded] = useState<boolean>(false);
 
   const gamesQuery = useQuery({
     queryKey: ['games', storageKey],
@@ -122,10 +123,23 @@ export const [GameProvider, useGames] = createContextHook(() => {
 
       if (isShared && sharedProfileId && supabaseReady) {
         console.log('[GameContext] Uploading games to cloud for shared profile');
-        void uploadProfileData(sharedProfileId, 'games', data);
+        void (async () => {
+          try {
+            await uploadProfileData(sharedProfileId, 'games', data);
+          } catch (e: any) {
+            if (e?.message === GAME_LIMIT_ERROR_KEY) {
+              console.log('[GameContext] Server rejected sync: game limit exceeded');
+              setGameLimitExceeded(true);
+            }
+          }
+        })();
       }
     },
   });
+
+  const clearGameLimitExceeded = useCallback(() => {
+    setGameLimitExceeded(false);
+  }, []);
 
   const addGame = useCallback((game: SavedGame) => {
     const currentGames = queryClient.getQueryData<SavedGame[]>(['games', storageKey]) ?? [];
@@ -252,7 +266,9 @@ export const [GameProvider, useGames] = createContextHook(() => {
     forceSync,
     totalGameCount,
     isAtFreeLimit,
-  }), [games, allGames, gamesQuery.isLoading, addGame, updateGame, deleteGame, getGame, moveGameToProfile, forceSync, totalGameCount, isAtFreeLimit]);
+    gameLimitExceeded,
+    clearGameLimitExceeded,
+  }), [games, allGames, gamesQuery.isLoading, addGame, updateGame, deleteGame, getGame, moveGameToProfile, forceSync, totalGameCount, isAtFreeLimit, gameLimitExceeded, clearGameLimitExceeded]);
 });
 
 function mergeGames(local: SavedGame[], cloud: SavedGame[]): SavedGame[] {

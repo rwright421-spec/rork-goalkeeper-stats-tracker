@@ -7,6 +7,13 @@ export interface SyncData {
   updatedAt: string;
 }
 
+export const GAME_LIMIT_ERROR_KEY = 'GAME_LIMIT_EXCEEDED';
+
+export function isGameLimitError(error: { message?: string; code?: string } | null | undefined): boolean {
+  if (!error) return false;
+  return !!error.message?.includes(GAME_LIMIT_ERROR_KEY);
+}
+
 export async function uploadProfileData(
   sharedProfileId: string,
   dataKey: 'teams' | 'games',
@@ -32,13 +39,19 @@ export async function uploadProfileData(
 
     if (error) {
       console.log('[Sync] Upload error for', dataKey, ':', error.message, error.code);
+      if (isGameLimitError(error)) {
+        throw new Error(GAME_LIMIT_ERROR_KEY);
+      }
       return false;
     }
 
     console.log('[Sync] Uploaded', dataKey, ':', data.length, 'items for profile:', sharedProfileId);
     return true;
-  } catch (e) {
+  } catch (e: any) {
     console.log('[Sync] Upload exception:', e);
+    if (e?.message === GAME_LIMIT_ERROR_KEY) {
+      throw e;
+    }
     return false;
   }
 }
