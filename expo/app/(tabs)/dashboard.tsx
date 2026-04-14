@@ -216,7 +216,7 @@ export default function DashboardScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 12 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 16 }]}
         showsVerticalScrollIndicator={false}
       >
         <SyncStatusBanner />
@@ -809,12 +809,15 @@ function createStyles(c: ThemeColors) {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
+      flexShrink: 1,
+      overflow: 'hidden',
     },
     profileName: {
       fontSize: fontSize.h2,
       fontWeight: '800' as const,
       color: c.text,
       flexShrink: 1,
+      maxWidth: '100%',
     },
     profileMeta: {
       fontSize: fontSize.body2,
