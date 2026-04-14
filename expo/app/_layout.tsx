@@ -167,7 +167,7 @@ function RootLayoutNav() {
       />
       <Stack.Screen
         name="game-detail"
-        options={{ title: "Game Detail", headerShown: false }}
+        options={{ title: "Game Detail" }}
       />
       <Stack.Screen
         name="onboarding"

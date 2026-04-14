@@ -215,10 +215,10 @@ export default function DashboardScreen() {
   const recentGames = useMemo(() => allGames.slice(0, 3), [allGames]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 20 }]}
         showsVerticalScrollIndicator={false}
       >
         <SyncStatusBanner />

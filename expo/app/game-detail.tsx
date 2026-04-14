@@ -330,7 +330,7 @@ function createDetailStyles(c: ThemeColors) {
     container: { flex: 1, backgroundColor: c.background },
     centered: { alignItems: 'center', justifyContent: 'center' },
     emptyText: { color: c.textSecondary, fontSize: fontSize.subtitle },
-    scrollContent: { padding: 20, paddingBottom: 60 },
+    scrollContent: { paddingHorizontal: 28, paddingTop: 20, paddingBottom: 60 },
     gameInfoCard: { backgroundColor: c.surface, borderRadius: 14, padding: 18, marginBottom: 20, borderWidth: 1, borderColor: c.border },
     gameInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     gameInfoText: { fontSize: fontSize.body2, color: c.textMuted, fontWeight: '500' as const },
