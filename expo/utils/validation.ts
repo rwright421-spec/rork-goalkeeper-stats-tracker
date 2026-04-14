@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import * as Sentry from '@sentry/react-native';
 import type {
   GoalkeeperProfile,
   Team,
@@ -150,6 +151,20 @@ type SchemaOutput<T extends SchemaType> =
   T extends 'SavedGame' ? SavedGame :
   never;
 
+function describeShape(data: unknown): string {
+  if (data === null) return 'null';
+  if (data === undefined) return 'undefined';
+  if (Array.isArray(data)) return `Array(${data.length})`;
+  if (typeof data === 'object') {
+    try {
+      return `Object(${Object.keys(data as Record<string, unknown>).join(',')})`;
+    } catch {
+      return 'Object(unknown)';
+    }
+  }
+  return typeof data;
+}
+
 export function validateAndSanitize<T extends SchemaType>(
   schemaType: T,
   data: unknown,
@@ -162,8 +177,25 @@ export function validateAndSanitize<T extends SchemaType>(
     return { success: true, data: result.data as SchemaOutput<T> };
   }
 
-  console.log(`[Validation] ${schemaType} failed validation:`, result.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', '));
-  return { success: false, error: result.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ') };
+  const errorDetails = result.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ');
+  const shape = describeShape(data);
+
+  console.log(`[Validation] ${schemaType} failed validation:`, errorDetails);
+
+  if (__DEV__) {
+    console.warn(`[Validation DEV] ${schemaType} validation failed:\n  Shape: ${shape}\n  Errors: ${errorDetails}`);
+  }
+
+  Sentry.captureMessage(`Validation failed for ${schemaType}`, {
+    level: 'warning',
+    extra: {
+      schemaType,
+      rawDataShape: shape,
+      errors: errorDetails,
+    },
+  });
+
+  return { success: false, error: errorDetails };
 }
 
 export function validateAndSanitizeArray<T extends SchemaType>(
@@ -171,14 +203,32 @@ export function validateAndSanitizeArray<T extends SchemaType>(
   data: unknown[],
 ): SchemaOutput<T>[] {
   const validated: SchemaOutput<T>[] = [];
+  let skippedCount = 0;
   for (const item of data) {
     const result = validateAndSanitize(schemaType, item);
     if (result.success) {
       validated.push(result.data);
     } else {
+      skippedCount++;
       console.log(`[Validation] Skipping invalid ${schemaType} item:`, result.error);
     }
   }
   console.log(`[Validation] ${schemaType} array: ${validated.length}/${data.length} items valid`);
+
+  if (skippedCount > 0) {
+    if (__DEV__) {
+      console.warn(`[Validation DEV] ${skippedCount} ${schemaType} items failed validation and were dropped`);
+    }
+    Sentry.captureMessage(`${skippedCount} ${schemaType} items failed array validation`, {
+      level: 'warning',
+      extra: {
+        schemaType,
+        totalItems: data.length,
+        validItems: validated.length,
+        skippedItems: skippedCount,
+      },
+    });
+  }
+
   return validated;
 }
