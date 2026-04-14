@@ -1,19 +1,26 @@
-// Settings - App configuration and theme selection
-import React, { useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
-import { Check, Palette, Users, Trash2, MessageSquare, ExternalLink } from 'lucide-react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking, Platform, ActivityIndicator } from 'react-native';
+import { Check, Palette, Users, Trash2, MessageSquare, ExternalLink, Upload, Download, Database } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import * as Sharing from 'expo-sharing';
+import * as DocumentPicker from 'expo-document-picker';
+import * as Sentry from '@sentry/react-native';
 import { useTheme, useColors } from '@/contexts/ThemeContext';
 import { ThemeName, themeOptions, ThemeColors } from '@/constants/themes';
 import { useOpponents } from '@/contexts/OpponentContext';
 import SyncStatusBanner from '@/components/SyncStatusBanner';
+import { gatherExportData, validateImportPayload, mergeImportData } from '@/utils/dataTransfer';
+import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 
 export default function SettingsScreen() {
   const { themeName, setTheme } = useTheme();
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { opponents, removeOpponent } = useOpponents();
+  const { refreshProfiles } = useGoalkeepers();
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   const handleThemeSelect = useCallback((key: ThemeName) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -40,6 +47,138 @@ export default function SettingsScreen() {
       ]
     );
   }, [removeOpponent]);
+
+  const handleExport = useCallback(async () => {
+    setIsExporting(true);
+    try {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      console.log('[Settings] Starting data export...');
+      const payload = await gatherExportData();
+      const jsonString = JSON.stringify(payload, null, 2);
+
+      if (Platform.OS === 'web') {
+        const blob = new Blob([jsonString], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `gk-stats-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        Alert.alert('Export Complete', 'Your data has been downloaded.');
+      } else {
+        const { File, Paths } = await import('expo-file-system');
+        const fileName = `gk-stats-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        const file = new File(Paths.cache, fileName);
+        file.write(jsonString);
+        console.log('[Settings] Export file written to:', file.uri);
+
+        const canShare = await Sharing.isAvailableAsync();
+        if (canShare) {
+          await Sharing.shareAsync(file.uri, {
+            mimeType: 'application/json',
+            dialogTitle: 'Export GK Stats Data',
+          });
+        } else {
+          Alert.alert('Sharing Unavailable', 'Sharing is not available on this device.');
+        }
+      }
+      console.log('[Settings] Export complete');
+    } catch (e) {
+      console.log('[Settings] Export error:', e);
+      Sentry.captureException(e);
+      Alert.alert('Export Failed', 'Something went wrong while exporting your data. Please try again.');
+    } finally {
+      setIsExporting(false);
+    }
+  }, []);
+
+  const handleImport = useCallback(async () => {
+    setIsImporting(true);
+    try {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      console.log('[Settings] Starting data import...');
+
+      const result = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+        copyToCacheDirectory: true,
+      });
+
+      if (result.canceled || !result.assets || result.assets.length === 0) {
+        console.log('[Settings] Import cancelled by user');
+        setIsImporting(false);
+        return;
+      }
+
+      const asset = result.assets[0];
+      console.log('[Settings] Picked file:', asset.name, 'size:', asset.size);
+
+      let jsonString: string;
+
+      if (Platform.OS === 'web') {
+        const response = await fetch(asset.uri);
+        jsonString = await response.text();
+      } else {
+        const { File: FSFile } = await import('expo-file-system');
+        const file = new FSFile(asset.uri);
+        jsonString = file.textSync();
+      }
+
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(jsonString);
+      } catch {
+        Alert.alert('Invalid File', 'The selected file is not valid JSON.');
+        setIsImporting(false);
+        return;
+      }
+
+      const validation = validateImportPayload(parsed);
+      if (!validation.success) {
+        Alert.alert('Invalid Backup File', validation.error);
+        setIsImporting(false);
+        return;
+      }
+
+      const importData = validation.data;
+      const profileCount = importData.profiles.length;
+      const gameCount = Object.values(importData.games).reduce((sum, arr) => sum + arr.length, 0);
+      const teamCount = Object.values(importData.teams).reduce((sum, arr) => sum + arr.length, 0);
+
+      Alert.alert(
+        'Import Data',
+        `This backup contains:\n\n${profileCount} profile(s)\n${gameCount} game(s)\n${teamCount} team(s)\n\nExisting records will not be overwritten unless the imported version is newer. Continue?`,
+        [
+          { text: 'Cancel', style: 'cancel', onPress: () => setIsImporting(false) },
+          {
+            text: 'Import',
+            onPress: async () => {
+              try {
+                const mergeResult = await mergeImportData(importData);
+                refreshProfiles();
+                void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                Alert.alert(
+                  'Import Complete',
+                  `Profiles: ${mergeResult.profilesAdded} added, ${mergeResult.profilesSkipped} unchanged\nGames: ${mergeResult.gamesAdded} added, ${mergeResult.gamesSkipped} unchanged\nTeams: ${mergeResult.teamsAdded} added, ${mergeResult.teamsSkipped} unchanged`
+                );
+                console.log('[Settings] Import merge complete:', mergeResult);
+              } catch (e) {
+                console.log('[Settings] Import merge error:', e);
+                Sentry.captureException(e);
+                Alert.alert('Import Failed', 'Something went wrong while importing your data.');
+              } finally {
+                setIsImporting(false);
+              }
+            },
+          },
+        ]
+      );
+    } catch (e) {
+      console.log('[Settings] Import error:', e);
+      Sentry.captureException(e);
+      Alert.alert('Import Failed', 'Something went wrong while reading the file.');
+      setIsImporting(false);
+    }
+  }, [refreshProfiles]);
 
   return (
     <View style={styles.container}>
@@ -91,6 +230,48 @@ export default function SettingsScreen() {
               </TouchableOpacity>
             );
           })}
+        </View>
+
+        <View style={[styles.sectionHeader, { marginTop: 28 }]}>
+          <Database size={16} color={colors.textMuted} />
+          <Text style={styles.sectionHeaderText}>Data Management</Text>
+        </View>
+        <Text style={styles.sectionSubtitle}>Back up your data or restore from a previous export.</Text>
+
+        <View style={styles.dataButtonRow}>
+          <TouchableOpacity
+            testID="export-data-btn"
+            style={[styles.dataButton, styles.exportButton]}
+            activeOpacity={0.7}
+            onPress={handleExport}
+            disabled={isExporting}
+          >
+            {isExporting ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Upload size={18} color={colors.primary} />
+            )}
+            <Text style={[styles.dataButtonText, { color: colors.primary }]}>
+              {isExporting ? 'Exporting...' : 'Export All Data'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            testID="import-data-btn"
+            style={[styles.dataButton, styles.importButton]}
+            activeOpacity={0.7}
+            onPress={handleImport}
+            disabled={isImporting}
+          >
+            {isImporting ? (
+              <ActivityIndicator size="small" color={colors.text} />
+            ) : (
+              <Download size={18} color={colors.text} />
+            )}
+            <Text style={[styles.dataButtonText, { color: colors.text }]}>
+              {isImporting ? 'Importing...' : 'Import Data'}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <View style={[styles.sectionHeader, { marginTop: 28 }]}>
@@ -186,6 +367,11 @@ function createStyles(c: ThemeColors) {
     themeLabel: { fontSize: 15, fontWeight: '600' as const, color: c.textSecondary },
     themeLabelActive: { color: c.primary, fontWeight: '700' as const },
     checkBadge: { width: 26, height: 26, borderRadius: 13, backgroundColor: c.primaryGlow, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.primary },
+    dataButtonRow: { gap: 10 },
+    dataButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 10, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 20, borderWidth: 1 },
+    exportButton: { backgroundColor: c.primaryGlow, borderColor: c.primary },
+    importButton: { backgroundColor: c.surface, borderColor: c.border },
+    dataButtonText: { fontSize: 15, fontWeight: '600' as const },
     opponentEmptyState: { backgroundColor: c.surface, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: c.border },
     opponentEmptyText: { fontSize: 14, color: c.textMuted, textAlign: 'center', lineHeight: 20 },
     opponentList: { backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.border, overflow: 'hidden' as const },
