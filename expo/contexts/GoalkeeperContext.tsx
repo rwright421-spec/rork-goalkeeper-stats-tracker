@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
 import { GoalkeeperProfile } from '@/types/game';
+import { validateAndSanitizeArray } from '@/utils/validation';
 import { useAuth } from '@/contexts/AuthContext';
 
 const PROFILES_KEY = 'gk_tracker_profiles';
@@ -11,7 +12,8 @@ async function loadLocalProfiles(): Promise<GoalkeeperProfile[]> {
   try {
     const stored = await AsyncStorage.getItem(PROFILES_KEY);
     if (stored) {
-      return JSON.parse(stored) as GoalkeeperProfile[];
+      const raw = JSON.parse(stored) as unknown[];
+      return validateAndSanitizeArray('GoalkeeperProfile', raw);
     }
     return [];
   } catch (e) {

@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
 import { SavedGame, normalizeKeeper } from '@/types/game';
+import { validateAndSanitizeArray } from '@/utils/validation';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
 import { uploadProfileData, downloadProfileData } from '@/lib/sync';
@@ -27,8 +28,9 @@ async function loadGamesFromStorage(storageKey: string): Promise<SavedGame[]> {
     console.log('[GameContext] Loading games for key:', storageKey);
     const stored = await AsyncStorage.getItem(storageKey);
     if (stored) {
-      const parsed = JSON.parse(stored) as SavedGame[];
-      const migrated = parsed.map(migrateSavedGame);
+      const raw = JSON.parse(stored) as unknown[];
+      const validated = validateAndSanitizeArray('SavedGame', raw);
+      const migrated = validated.map(migrateSavedGame);
       console.log('[GameContext] Loaded', migrated.length, 'games for key:', storageKey);
       return migrated;
     }

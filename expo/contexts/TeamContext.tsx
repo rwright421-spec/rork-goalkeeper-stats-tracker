@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
 import { Team } from '@/types/game';
+import { validateAndSanitizeArray } from '@/utils/validation';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { uploadProfileData, downloadProfileData } from '@/lib/sync';
 
@@ -18,9 +19,10 @@ async function loadTeams(key: string): Promise<Team[]> {
     console.log('[TeamContext] Loading teams for key:', key);
     const stored = await AsyncStorage.getItem(key);
     if (stored) {
-      const parsed = JSON.parse(stored) as Team[];
-      console.log('[TeamContext] Loaded', parsed.length, 'teams');
-      return parsed;
+      const raw = JSON.parse(stored) as unknown[];
+      const validated = validateAndSanitizeArray('Team', raw);
+      console.log('[TeamContext] Loaded', validated.length, 'teams');
+      return validated;
     }
     return [];
   } catch (e) {
