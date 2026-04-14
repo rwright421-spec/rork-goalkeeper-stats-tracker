@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as secureStorage from '@/utils/secureStorage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
 
@@ -7,9 +7,9 @@ const OPPONENTS_KEY = 'gk_tracker_opponents';
 
 async function loadOpponents(): Promise<string[]> {
   try {
-    const stored = await AsyncStorage.getItem(OPPONENTS_KEY);
+    const stored = await secureStorage.getItem<string[]>(OPPONENTS_KEY);
     if (stored) {
-      return JSON.parse(stored) as string[];
+      return stored;
     }
     return [];
   } catch (e) {
@@ -19,7 +19,7 @@ async function loadOpponents(): Promise<string[]> {
 }
 
 async function persistOpponents(opponents: string[]): Promise<string[]> {
-  await AsyncStorage.setItem(OPPONENTS_KEY, JSON.stringify(opponents));
+  await secureStorage.setItem(OPPONENTS_KEY, opponents);
   return opponents;
 }
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as secureStorage from '@/utils/secureStorage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
 import { GoalkeeperProfile } from '@/types/game';
@@ -10,10 +10,9 @@ const PROFILES_KEY = 'gk_tracker_profiles';
 
 async function loadLocalProfiles(): Promise<GoalkeeperProfile[]> {
   try {
-    const stored = await AsyncStorage.getItem(PROFILES_KEY);
+    const stored = await secureStorage.getItem<unknown[]>(PROFILES_KEY);
     if (stored) {
-      const raw = JSON.parse(stored) as unknown[];
-      return validateAndSanitizeArray('GoalkeeperProfile', raw);
+      return validateAndSanitizeArray('GoalkeeperProfile', stored);
     }
     return [];
   } catch (e) {
@@ -23,7 +22,7 @@ async function loadLocalProfiles(): Promise<GoalkeeperProfile[]> {
 }
 
 async function persistLocalProfiles(profiles: GoalkeeperProfile[]): Promise<GoalkeeperProfile[]> {
-  await AsyncStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+  await secureStorage.setItem(PROFILES_KEY, profiles);
   return profiles;
 }
 
@@ -84,8 +83,8 @@ export const [GoalkeeperProvider, useGoalkeepers] = createContextHook(() => {
     const updated = localProfiles.filter(p => p.id !== profileId);
     queryClient.setQueryData(['goalkeeper-profiles-local'], updated);
     localSaveMutation.mutate(updated);
-    AsyncStorage.removeItem(`gk_tracker_games_${profileId}`).catch(console.log);
-    AsyncStorage.removeItem(`gk_tracker_teams_${profileId}`).catch(console.log);
+    secureStorage.removeItem(`gk_tracker_games_${profileId}`).catch(console.log);
+    secureStorage.removeItem(`gk_tracker_teams_${profileId}`).catch(console.log);
   }, [queryClient, localSaveMutation]);
 
   const selectProfile = useCallback((profileId: string) => {

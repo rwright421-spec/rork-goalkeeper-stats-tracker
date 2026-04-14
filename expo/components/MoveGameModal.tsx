@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { X, Shield, Users, ChevronRight } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as secureStorage from '@/utils/secureStorage';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
@@ -42,12 +42,8 @@ export default function MoveGameModal({ visible, onClose, game, onMoveComplete }
       for (const profile of availableProfiles) {
         try {
           const key = `gk_tracker_teams_${profile.id}`;
-          const stored = await AsyncStorage.getItem(key);
-          if (stored) {
-            result[profile.id] = JSON.parse(stored) as Team[];
-          } else {
-            result[profile.id] = [];
-          }
+          const teams = await secureStorage.getItem<Team[]>(key);
+          result[profile.id] = teams ?? [];
         } catch {
           result[profile.id] = [];
         }
@@ -84,7 +80,7 @@ export default function MoveGameModal({ visible, onClose, game, onMoveComplete }
 
       const destKey = `gk_tracker_teams_${destProfile.id}`;
       const updatedTeams = [newTeam, ...destTeams];
-      await AsyncStorage.setItem(destKey, JSON.stringify(updatedTeams));
+      await secureStorage.setItem(destKey, updatedTeams);
       console.log('[MoveGame] Created new team for destination:', gameTeamName, gameYear);
     }
 

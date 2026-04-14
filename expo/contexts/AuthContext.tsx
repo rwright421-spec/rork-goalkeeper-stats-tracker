@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as secureStorage from '@/utils/secureStorage';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
 
@@ -12,13 +12,13 @@ function generateUserId(): string {
 
 async function loadUserIdentity(): Promise<{ userId: string; displayName: string }> {
   try {
-    let userId = await AsyncStorage.getItem(USER_ID_KEY);
+    let userId = await secureStorage.getRawString(USER_ID_KEY);
     if (!userId) {
       userId = generateUserId();
-      await AsyncStorage.setItem(USER_ID_KEY, userId);
+      await secureStorage.setRawString(USER_ID_KEY, userId);
       console.log('[Auth] Generated new user ID:', userId);
     }
-    const displayName = (await AsyncStorage.getItem(DISPLAY_NAME_KEY)) || '';
+    const displayName = (await secureStorage.getRawString(DISPLAY_NAME_KEY)) || '';
     console.log('[Auth] Loaded identity - userId:', userId, 'displayName:', displayName);
     return { userId, displayName };
   } catch (e) {
@@ -46,7 +46,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
   const saveNameMutation = useMutation({
     mutationFn: async (name: string) => {
-      await AsyncStorage.setItem(DISPLAY_NAME_KEY, name);
+      await secureStorage.setRawString(DISPLAY_NAME_KEY, name);
       return name;
     },
   });

@@ -1,5 +1,5 @@
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as secureStorage from '@/utils/secureStorage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
 import { SavedGame, normalizeKeeper, normalizeHalf } from '@/types/game';
@@ -56,10 +56,9 @@ function getStorageKey(profileId: string | null, isGuest: boolean): string {
 async function loadGamesFromStorage(storageKey: string): Promise<SavedGame[]> {
   try {
     console.log('[GameContext] Loading games for key:', storageKey);
-    const stored = await AsyncStorage.getItem(storageKey);
+    const stored = await secureStorage.getItem<unknown[]>(storageKey);
     if (stored) {
-      const raw = JSON.parse(stored) as unknown[];
-      const validated = validateAndSanitizeArray('SavedGame', raw);
+      const validated = validateAndSanitizeArray('SavedGame', stored);
       const migrated = validated.map(migrateSavedGame);
 
       let didBackfill = false;
@@ -73,7 +72,7 @@ async function loadGamesFromStorage(storageKey: string): Promise<SavedGame[]> {
 
       if (didBackfill) {
         console.log('[GameContext] Backfilled defaultHalfStats into games missing half data for key:', storageKey);
-        await AsyncStorage.setItem(storageKey, JSON.stringify(backfilled));
+        await secureStorage.setItem(storageKey, backfilled);
       }
 
       console.log('[GameContext] Loaded', backfilled.length, 'games for key:', storageKey);
@@ -136,12 +135,12 @@ export const [GameProvider, useGames] = createContextHook(() => {
       try {
         const cloudGames = await downloadProfileData<SavedGame>(sharedProfileId, 'games');
         if (cloudGames && cloudGames.length > 0 && activeProfileId) {
-          const localStored = await AsyncStorage.getItem(storageKey);
-          const localGames: SavedGame[] = localStored ? JSON.parse(localStored).map(migrateSavedGame) : [];
+          const localGamesRaw = await secureStorage.getItem<SavedGame[]>(storageKey);
+          const localGames: SavedGame[] = localGamesRaw ? localGamesRaw.map(migrateSavedGame) : [];
 
           const merged = mergeGames(localGames, cloudGames);
           if (merged.length !== localGames.length || JSON.stringify(merged) !== JSON.stringify(localGames)) {
-            await AsyncStorage.setItem(storageKey, JSON.stringify(merged));
+            await secureStorage.setItem(storageKey, merged);
             queryClient.setQueryData(['games', storageKey], merged);
             console.log('[GameContext] Merged cloud games, total:', merged.length);
           }
@@ -158,7 +157,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
     mutationFn: async ({ key, updatedGames }: { key: string; updatedGames: SavedGame[] }) => {
       if (key !== 'gk_tracker_games_guest') {
         console.log('[GameContext] Persisting', updatedGames.length, 'games to key:', key);
-        await AsyncStorage.setItem(key, JSON.stringify(updatedGames));
+        await secureStorage.setItem(key, updatedGames);
       } else {
         console.log('[GameContext] Guest mode - not persisting games');
       }
@@ -220,8 +219,8 @@ export const [GameProvider, useGames] = createContextHook(() => {
         if (changed) {
           queryClient.setQueryData(['games', storageKey], updatedGames);
           if (storageKey !== 'gk_tracker_games_guest') {
-            await AsyncStorage.setItem(storageKey, JSON.stringify(updatedGames));
-            console.log('[GameContext] Persisted synced games to AsyncStorage');
+            await secureStorage.setItem(storageKey, updatedGames);
+            console.log('[GameContext] Persisted synced games to secureStorage');
           }
 
           if (isShared && sharedProfileId && supabaseReady) {
@@ -282,21 +281,21 @@ export const [GameProvider, useGames] = createContextHook(() => {
       }
 
       const destKey = `gk_tracker_games_${destinationProfileId}`;
-      const destStored = await AsyncStorage.getItem(destKey);
-      const destGames: SavedGame[] = destStored ? (JSON.parse(destStored) as SavedGame[]).map(migrateSavedGame) : [];
+      const destGamesRaw = await secureStorage.getItem<SavedGame[]>(destKey);
+      const destGames: SavedGame[] = destGamesRaw ? destGamesRaw.map(migrateSavedGame) : [];
 
       const movedGame: SavedGame = {
         ...gameToMove,
         teamId: destinationTeamId ?? gameToMove.teamId,
       };
       const updatedDestGames = [movedGame, ...destGames];
-      await AsyncStorage.setItem(destKey, JSON.stringify(updatedDestGames));
+      await secureStorage.setItem(destKey, updatedDestGames);
       queryClient.setQueryData(['games', destKey], updatedDestGames);
       console.log('[GameContext] Added game to destination profile:', destinationProfileId);
 
       const updatedSourceGames = currentGames.filter(g => g.id !== gameId);
       queryClient.setQueryData(['games', storageKey], updatedSourceGames);
-      await AsyncStorage.setItem(storageKey, JSON.stringify(updatedSourceGames));
+      await secureStorage.setItem(storageKey, updatedSourceGames);
       console.log('[GameContext] Removed game from source, remaining:', updatedSourceGames.length);
 
       return true;
@@ -313,10 +312,10 @@ export const [GameProvider, useGames] = createContextHook(() => {
 
     const cloudGames = await downloadProfileData<SavedGame>(sharedProfileId, 'games');
     if (cloudGames && activeProfileId) {
-      const localStored = await AsyncStorage.getItem(storageKey);
-      const localGames: SavedGame[] = localStored ? JSON.parse(localStored).map(migrateSavedGame) : [];
+      const localGamesRaw = await secureStorage.getItem<SavedGame[]>(storageKey);
+      const localGames: SavedGame[] = localGamesRaw ? localGamesRaw.map(migrateSavedGame) : [];
       const merged = mergeGames(localGames, cloudGames);
-      await AsyncStorage.setItem(storageKey, JSON.stringify(merged));
+      await secureStorage.setItem(storageKey, merged);
       queryClient.setQueryData(['games', storageKey], merged);
       console.log('[GameContext] Force synced games:', merged.length);
     }
@@ -330,15 +329,15 @@ export const [GameProvider, useGames] = createContextHook(() => {
     async function countAllGames() {
       try {
         let total = 0;
-        const guestStored = await AsyncStorage.getItem('gk_tracker_games_guest');
-        if (guestStored) {
-          total += (JSON.parse(guestStored) as SavedGame[]).length;
+        const guestGames = await secureStorage.getItem<SavedGame[]>('gk_tracker_games_guest');
+        if (guestGames) {
+          total += guestGames.length;
         }
         for (const profile of profiles) {
           const key = `gk_tracker_games_${profile.id}`;
-          const stored = await AsyncStorage.getItem(key);
-          if (stored) {
-            total += (JSON.parse(stored) as SavedGame[]).length;
+          const profileGames = await secureStorage.getItem<SavedGame[]>(key);
+          if (profileGames) {
+            total += profileGames.length;
           }
         }
         if (!cancelled) {

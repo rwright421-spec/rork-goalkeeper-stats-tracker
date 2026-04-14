@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as secureStorage from '@/utils/secureStorage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
 import { Team } from '@/types/game';
@@ -17,10 +17,9 @@ function getTeamsKey(profileId: string | null): string {
 async function loadTeams(key: string): Promise<Team[]> {
   try {
     console.log('[TeamContext] Loading teams for key:', key);
-    const stored = await AsyncStorage.getItem(key);
+    const stored = await secureStorage.getItem<unknown[]>(key);
     if (stored) {
-      const raw = JSON.parse(stored) as unknown[];
-      const validated = validateAndSanitizeArray('Team', raw);
+      const validated = validateAndSanitizeArray('Team', stored);
       console.log('[TeamContext] Loaded', validated.length, 'teams');
       return validated;
     }
@@ -62,12 +61,11 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
       try {
         const cloudTeams = await downloadProfileData<Team>(sharedProfileId, 'teams');
         if (cloudTeams && cloudTeams.length > 0 && activeProfileId) {
-          const localStored = await AsyncStorage.getItem(storageKey);
-          const localTeams: Team[] = localStored ? JSON.parse(localStored) : [];
+          const localTeams: Team[] = await secureStorage.getItem<Team[]>(storageKey) ?? [];
 
           const merged = mergeTeams(localTeams, cloudTeams);
           if (merged.length !== localTeams.length || JSON.stringify(merged) !== JSON.stringify(localTeams)) {
-            await AsyncStorage.setItem(storageKey, JSON.stringify(merged));
+            await secureStorage.setItem(storageKey, merged);
             queryClient.setQueryData(['teams', storageKey], merged);
             console.log('[TeamContext] Merged cloud teams, total:', merged.length);
           }
@@ -90,7 +88,7 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
   const saveMutation = useMutation({
     mutationFn: async ({ key, updatedTeams }: { key: string; updatedTeams: Team[] }) => {
       console.log('[TeamContext] Persisting', updatedTeams.length, 'teams to key:', key);
-      await AsyncStorage.setItem(key, JSON.stringify(updatedTeams));
+      await secureStorage.setItem(key, updatedTeams);
       return updatedTeams;
     },
     onSuccess: (data, variables) => {
@@ -168,10 +166,9 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
 
     const cloudTeams = await downloadProfileData<Team>(sharedProfileId, 'teams');
     if (cloudTeams && activeProfileId) {
-      const localStored = await AsyncStorage.getItem(storageKey);
-      const localTeams: Team[] = localStored ? JSON.parse(localStored) : [];
+      const localTeams: Team[] = await secureStorage.getItem<Team[]>(storageKey) ?? [];
       const merged = mergeTeams(localTeams, cloudTeams);
-      await AsyncStorage.setItem(storageKey, JSON.stringify(merged));
+      await secureStorage.setItem(storageKey, merged);
       queryClient.setQueryData(['teams', storageKey], merged);
       console.log('[TeamContext] Force synced teams:', merged.length);
     }
