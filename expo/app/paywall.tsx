@@ -9,6 +9,9 @@ import { usePurchases } from '@/contexts/PurchasesContext';
 
 type PlanType = 'annual' | 'monthly';
 
+const MONTHLY_ID = 'com.snocoventures.gkstats.pro.monthly';
+const ANNUAL_ID = 'com.snocoventures.gkstats.pro.annual';
+
 const FEATURES = [
   'Unlimited games',
   'Unlimited goalkeeper profiles',
@@ -22,8 +25,9 @@ export default function PaywallScreen() {
   console.log('[Paywall] Screen rendered');
   const router = useRouter();
   const colors = useColors();
-  const { restorePurchases, isRestoring } = usePurchases();
+  const { restorePurchases, isRestoring, currentOffering, purchasePackage, isPro } = usePurchases();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('annual');
+  const [isPurchasing, setIsPurchasing] = useState<boolean>(false);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -37,13 +41,31 @@ export default function PaywallScreen() {
     setSelectedPlan(plan);
   }, []);
 
-  const handlePurchase = useCallback(() => {
+  const handlePurchase = useCallback(async () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Alert.alert(
-      'Coming Soon',
-      'In-app purchases are being updated for compatibility with the latest iOS. Please check back in a future update.'
+    if (!currentOffering) {
+      Alert.alert('Unavailable', 'Unable to load subscription options. Please try again later.');
+      return;
+    }
+    const targetId = selectedPlan === 'annual' ? ANNUAL_ID : MONTHLY_ID;
+    const pkg = currentOffering.availablePackages.find(
+      (p: any) => p.product.identifier === targetId
     );
-  }, []);
+    if (!pkg) {
+      Alert.alert('Unavailable', 'This plan is not available right now. Please try again later.');
+      console.log('[Paywall] Package not found for', targetId, 'in', currentOffering.availablePackages.map((p: any) => p.product.identifier));
+      return;
+    }
+    setIsPurchasing(true);
+    try {
+      const success = await purchasePackage(pkg);
+      if (success) {
+        router.back();
+      }
+    } finally {
+      setIsPurchasing(false);
+    }
+  }, [currentOffering, selectedPlan, purchasePackage, router]);
 
   const handleRestore = useCallback(async () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -97,10 +119,6 @@ export default function PaywallScreen() {
           ))}
         </View>
 
-        <View style={styles.unavailableBanner}>
-          <Text style={styles.unavailableText}>Subscriptions are being updated for iOS compatibility. Check back soon!</Text>
-        </View>
-
         <View style={styles.trialBadge}>
           <Text style={styles.trialBadgeText}>Start free — 7 days on us</Text>
         </View>
@@ -138,11 +156,14 @@ export default function PaywallScreen() {
 
         <TouchableOpacity
           testID="subscribe-button"
-          style={[styles.subscribeButton, styles.subscribeButtonDisabled]}
+          style={[styles.subscribeButton, isPurchasing && styles.subscribeButtonDisabled]}
           onPress={handlePurchase}
           activeOpacity={0.8}
+          disabled={isPurchasing}
         >
-          <Text style={styles.subscribeButtonText}>Coming Soon</Text>
+          <Text style={styles.subscribeButtonText}>
+            {isPurchasing ? 'Processing...' : 'Start Free Trial'}
+          </Text>
         </TouchableOpacity>
         <Text style={styles.captionText}>{captionText}</Text>
 
@@ -387,19 +408,6 @@ function createStyles(c: ThemeColors) {
       color: c.textMuted,
       textAlign: 'center' as const,
     },
-    unavailableBanner: {
-      backgroundColor: 'rgba(245, 158, 11, 0.15)',
-      borderRadius: 12,
-      padding: 14,
-      marginBottom: 20,
-      alignItems: 'center' as const,
-    },
-    unavailableText: {
-      fontSize: 13,
-      color: '#F59E0B',
-      fontWeight: '600' as const,
-      textAlign: 'center' as const,
-      lineHeight: 18,
-    },
+
   });
 }
