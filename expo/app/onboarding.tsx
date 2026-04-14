@@ -11,6 +11,8 @@ import {
   Platform,
   Animated,
   KeyboardAvoidingView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -76,11 +78,13 @@ export default function OnboardingScreen() {
   }, [router]);
 
   const handleGetStarted = useCallback(() => {
+    Keyboard.dismiss();
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     goToPage(1);
   }, [goToPage]);
 
   const handleCreateProfile = useCallback(() => {
+    Keyboard.dismiss();
     if (!keeperName.trim()) return;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const profile = createProfile(keeperName.trim(), birthYear.trim() || undefined);
@@ -95,6 +99,7 @@ export default function OnboardingScreen() {
   }, [goToPage]);
 
   const handleCreateTeam = useCallback(() => {
+    Keyboard.dismiss();
     if (!teamName.trim()) return;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const team = createTeam(seasonYear.trim() || new Date().getFullYear().toString(), teamName.trim());
@@ -107,6 +112,7 @@ export default function OnboardingScreen() {
   }, [goToPage]);
 
   const handleFinish = useCallback(() => {
+    Keyboard.dismiss();
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (createdProfileId) {
       router.replace('/(tabs)/dashboard');
@@ -202,6 +208,7 @@ export default function OnboardingScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={0}
         >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <ScrollView
             style={styles.pageScrollView}
             contentContainerStyle={styles.pageScrollContent}
@@ -265,6 +272,7 @@ export default function OnboardingScreen() {
               <Text style={styles.secondaryButtonText}>Skip for now</Text>
             </TouchableOpacity>
           </ScrollView>
+          </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
 
         {/* Screen 3 — Create Team */}
@@ -273,6 +281,7 @@ export default function OnboardingScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={0}
         >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <ScrollView
             style={styles.pageScrollView}
             contentContainerStyle={styles.pageScrollContent}
@@ -335,6 +344,7 @@ export default function OnboardingScreen() {
               <Text style={styles.secondaryButtonText}>Skip for now</Text>
             </TouchableOpacity>
           </ScrollView>
+          </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
 
         {/* Screen 4 — You're Ready */}

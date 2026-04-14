@@ -184,6 +184,7 @@ export default function GameTrackingScreen() {
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = useCallback(async () => {
+    Keyboard.dismiss();
     if (isSaving) return;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (isEditMode && existingGame) {
@@ -261,6 +262,7 @@ export default function GameTrackingScreen() {
   }, []);
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={styles.container}>
       <Stack.Screen
         options={{
@@ -398,6 +400,7 @@ export default function GameTrackingScreen() {
         </TouchableOpacity>
       </ScrollView>
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 

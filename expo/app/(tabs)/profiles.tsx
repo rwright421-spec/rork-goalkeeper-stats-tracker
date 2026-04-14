@@ -1,7 +1,7 @@
 // Profiles - Goalkeeper profile management screen
 import React, { useCallback, useMemo, useState } from 'react';
 import * as Sentry from '@sentry/react-native';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeftRight, Users, Pencil, ChevronRight } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -69,6 +69,7 @@ export default function ProfilesScreen() {
   }, [activeProfile]);
 
   const handleSaveEditProfile = useCallback(() => {
+    Keyboard.dismiss();
     if (!activeProfile || !editProfileName.trim()) return;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     updateProfile(activeProfile.id, editProfileName, editProfileBirthYear || undefined);
@@ -83,6 +84,7 @@ export default function ProfilesScreen() {
   }, []);
 
   return (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
@@ -244,6 +246,7 @@ export default function ProfilesScreen() {
         </View>
       </ScrollView>
     </View>
+    </TouchableWithoutFeedback>
   );
 }
 
