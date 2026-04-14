@@ -373,7 +373,7 @@ export default function GameTrackingScreen() {
             <View style={styles.scoreTeam}>
               <Text style={styles.scoreTeamLabel}>HOME</Text>
               {!isBoth && hasHome && !hasAway ? (
-                <TextInput testID="home-score-input" style={styles.scoreInput} value={homeScoreOverride} onChangeText={setHomeScoreOverride} keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.textMuted} maxLength={3} returnKeyType="done" onSubmitEditing={dismissKeyboard} inputAccessoryViewID={Platform.OS === 'ios' ? scoreInputAccessoryId : undefined} />
+                <TextInput testID="home-score-input" style={styles.scoreInput} value={homeScoreOverride} onChangeText={setHomeScoreOverride} keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.textMuted} maxLength={3} returnKeyType="done" onSubmitEditing={dismissKeyboard} inputAccessoryViewID={Platform.OS === 'ios' ? scoreInputAccessoryId : undefined} editable={true} selectTextOnFocus={true} />
               ) : (
                 <Text style={[styles.scoreValue, { color: colors.cardHome }]}>{computedFinalScore.home}</Text>
               )}
@@ -427,7 +427,7 @@ function createStyles(c: ThemeColors) {
     scoreTeam: { alignItems: 'center', flex: 1 },
     scoreTeamLabel: { fontSize: fontSize.sm, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
     scoreValue: { fontSize: fontSize.display, fontWeight: '800' as const },
-    scoreInput: { fontSize: fontSize.display, fontWeight: '800' as const, color: c.text, textAlign: 'center', backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.border, paddingHorizontal: 16, paddingVertical: 6, minWidth: 80 },
+    scoreInput: { fontSize: fontSize.display, fontWeight: '800' as const, color: c.text, textAlign: 'center' as const, backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.border, paddingHorizontal: 16, paddingVertical: 10, minWidth: 80, minHeight: 50 },
     scoreDash: { fontSize: fontSize.display2, fontWeight: '300' as const, color: c.textMuted },
     scoreHint: { fontSize: fontSize.sm, color: c.textMuted, textAlign: 'center', marginTop: 12, fontStyle: 'italic' },
     saveButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: c.primaryDark, borderRadius: 14, paddingVertical: 16, marginTop: 8 },
