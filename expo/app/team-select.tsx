@@ -9,11 +9,9 @@ import { ThemeColors } from '@/constants/themes';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
 import { fontSize } from '@/constants/typography';
-import { Team } from '@/types/game';
+import { Team, AGE_GROUP_OPTIONS } from '@/types/game';
 
-const currentYear = new Date().getFullYear();
-const YEARS: string[] = [];
-for (let y = currentYear; y >= 1975; y--) { YEARS.push(String(y)); }
+const AGE_GROUPS = AGE_GROUP_OPTIONS;
 
 const HALF_LENGTH_OPTIONS = [20, 25, 30, 35, 40, 45];
 
@@ -23,7 +21,7 @@ export default function TeamSelectScreen() {
   const { activeProfile } = useGoalkeepers();
   const { teams, isLoading, createTeam, updateTeam, deleteTeam, selectTeam, showAllGames } = useTeams();
   const [showCreate, setShowCreate] = useState(false);
-  const [newYear, setNewYear] = useState(String(currentYear));
+  const [newYear, setNewYear] = useState('U10');
   const [newTeamName, setNewTeamName] = useState('');
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
@@ -41,7 +39,7 @@ export default function TeamSelectScreen() {
     if (!newTeamName.trim()) return;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const team = createTeam(newYear, newTeamName, newHalfLength);
-    setNewTeamName(''); setNewYear(String(currentYear)); setShowCreate(false); setNewHalfLength(undefined); setHalfLengthPickerOpen(false);
+    setNewTeamName(''); setNewYear('U10'); setShowCreate(false); setNewHalfLength(undefined); setHalfLengthPickerOpen(false);
     selectTeam(team.id); router.push('/track');
   }, [newYear, newTeamName, newHalfLength, createTeam, selectTeam, router]);
 
@@ -79,16 +77,16 @@ export default function TeamSelectScreen() {
     if (editingTeam?.id === item.id) {
       return (
         <View style={styles.editCard}>
-          <Text style={styles.fieldLabel}>Year</Text>
+          <Text style={styles.fieldLabel}>Age Group</Text>
           <TouchableOpacity style={styles.yearSelector} onPress={() => setEditYearPickerOpen(!editYearPickerOpen)} activeOpacity={0.7}>
             <Text style={styles.yearText}>{editYear}</Text>
           </TouchableOpacity>
           {editYearPickerOpen && (
             <View style={styles.yearDropdown}>
               <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
-                {YEARS.map((yr) => (
-                  <TouchableOpacity key={yr} style={[styles.yearOption, editYear === yr && styles.yearOptionActive]} onPress={() => { setEditYear(yr); setEditYearPickerOpen(false); }} activeOpacity={0.7}>
-                    <Text style={[styles.yearOptionText, editYear === yr && styles.yearOptionTextActive]}>{yr}</Text>
+                {AGE_GROUPS.map((ag) => (
+                  <TouchableOpacity key={ag} style={[styles.yearOption, editYear === ag && styles.yearOptionActive]} onPress={() => { setEditYear(ag); setEditYearPickerOpen(false); }} activeOpacity={0.7}>
+                    <Text style={[styles.yearOptionText, editYear === ag && styles.yearOptionTextActive]}>{ag}</Text>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
@@ -124,7 +122,7 @@ export default function TeamSelectScreen() {
     return (
       <TouchableOpacity style={styles.teamCard} onPress={() => handleSelectTeam(item.id)} activeOpacity={0.7}>
         <View style={styles.teamBadge}><Text style={styles.teamBadgeText}>{item.year}</Text></View>
-        <View style={styles.teamInfo}><Text style={styles.teamName}>{item.teamName}</Text><Text style={styles.teamMeta}>{item.year} Season</Text></View>
+        <View style={styles.teamInfo}><Text style={styles.teamName}>{item.teamName}</Text><Text style={styles.teamMeta}>{item.year}</Text></View>
         <TouchableOpacity style={styles.teamEditBtn} onPress={() => handleEditTeam(item)} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}><Pencil size={14} color={colors.primary} /></TouchableOpacity>
         <TouchableOpacity style={styles.teamDeleteBtn} onPress={() => handleDeleteTeam(item)} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}><Trash2 size={14} color={colors.danger} /></TouchableOpacity>
         <ChevronRight size={18} color={colors.textMuted} />
@@ -149,12 +147,12 @@ export default function TeamSelectScreen() {
           </TouchableOpacity>
         ) : (
           <View style={styles.createForm}>
-            <Text style={styles.fieldLabel}>Year</Text>
+            <Text style={styles.fieldLabel}>Age Group</Text>
             <TouchableOpacity style={styles.yearSelector} onPress={() => setYearPickerOpen(!yearPickerOpen)} activeOpacity={0.7}><Text style={styles.yearText}>{newYear}</Text></TouchableOpacity>
             {yearPickerOpen && (
               <View style={styles.yearDropdown}>
                 <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
-                  {YEARS.map((yr) => (<TouchableOpacity key={yr} style={[styles.yearOption, newYear === yr && styles.yearOptionActive]} onPress={() => { setNewYear(yr); setYearPickerOpen(false); }} activeOpacity={0.7}><Text style={[styles.yearOptionText, newYear === yr && styles.yearOptionTextActive]}>{yr}</Text></TouchableOpacity>))}
+                  {AGE_GROUPS.map((ag) => (<TouchableOpacity key={ag} style={[styles.yearOption, newYear === ag && styles.yearOptionActive]} onPress={() => { setNewYear(ag); setYearPickerOpen(false); }} activeOpacity={0.7}><Text style={[styles.yearOptionText, newYear === ag && styles.yearOptionTextActive]}>{ag}</Text></TouchableOpacity>))}
                 </ScrollView>
               </View>
             )}

@@ -1,13 +1,21 @@
 export type KeeperSelection = 'home' | 'away' | 'both';
 
-export type AgeGroup = 'U8' | 'U9' | 'U10' | 'U11' | 'U12' | 'U13' | 'U14' | 'U15' | 'U16' | 'U17' | 'U18' | 'U19' | '';
+export type AgeGroup = 'U4' | 'U5' | 'U6' | 'U7' | 'U8' | 'U9' | 'U10' | 'U11' | 'U12' | 'U13' | 'U14' | 'U15' | 'U16' | 'U17' | 'U18' | 'U19' | 'High School' | 'College' | '';
+
+export const AGE_GROUP_OPTIONS: string[] = [
+  'U4', 'U5', 'U6', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12',
+  'U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19',
+  'High School', 'College',
+];
 
 export const AGE_GROUP_HALF_LENGTHS: Record<string, number> = {
+  U4: 20, U5: 20, U6: 20, U7: 20,
   U8: 25, U9: 25, U10: 25,
   U11: 30, U12: 30,
   U13: 35, U14: 35,
   U15: 40, U16: 40,
   U17: 45, U18: 45, U19: 45,
+  'High School': 40, 'College': 45,
 };
 
 export const DEFAULT_HALF_LENGTH = 40;

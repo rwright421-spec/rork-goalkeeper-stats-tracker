@@ -29,16 +29,18 @@ import { ThemeColors } from '@/constants/themes';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
 import { useGames } from '@/contexts/GameContext';
-import { Team } from '@/types/game';
+import { Team, AGE_GROUP_OPTIONS } from '@/types/game';
 import SyncStatusBanner from '@/components/SyncStatusBanner';
 import { DashboardSkeleton, TeamListSkeleton } from '@/components/LoadingSkeleton';
 import { fontSize } from '@/constants/typography';
 
 
+const AGE_GROUPS = AGE_GROUP_OPTIONS;
+
 const currentYear = new Date().getFullYear();
-const YEARS: string[] = [];
+const BIRTH_YEARS: string[] = [];
 for (let y = currentYear; y >= 1975; y--) {
-  YEARS.push(String(y));
+  BIRTH_YEARS.push(String(y));
 }
 
 const HALF_LENGTH_OPTIONS = [20, 25, 30, 35, 40, 45];
@@ -61,7 +63,7 @@ export default function DashboardScreen() {
   const { allGames, isLoading: gamesLoading } = useGames();
 
   const [showCreateTeam, setShowCreateTeam] = useState(false);
-  const [newYear, setNewYear] = useState(String(currentYear));
+  const [newYear, setNewYear] = useState('U10');
   const [newTeamName, setNewTeamName] = useState('');
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
@@ -142,7 +144,7 @@ export default function DashboardScreen() {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     createTeam(newYear, newTeamName, newHalfLength);
     setNewTeamName('');
-    setNewYear(String(currentYear));
+    setNewYear('U10');
     setNewHalfLength(undefined);
     setShowCreateTeam(false);
     setYearPickerOpen(false);
@@ -258,7 +260,7 @@ export default function DashboardScreen() {
                       Not set
                     </Text>
                   </TouchableOpacity>
-                  {YEARS.map((yr) => (
+                  {BIRTH_YEARS.map((yr) => (
                     <TouchableOpacity
                       key={yr}
                       style={[styles.yearOption, editProfileBirthYear === yr && styles.yearOptionActive]}
@@ -384,7 +386,7 @@ export default function DashboardScreen() {
                 </TouchableOpacity>
               ) : (
                 <View style={styles.createTeamForm}>
-                  <Text style={styles.fieldLabel}>Year</Text>
+                  <Text style={styles.fieldLabel}>Age Group</Text>
                   <TouchableOpacity
                     style={styles.yearSelector}
                     onPress={() => setYearPickerOpen(!yearPickerOpen)}
@@ -395,18 +397,18 @@ export default function DashboardScreen() {
                   {yearPickerOpen && (
                     <View style={styles.yearDropdown}>
                       <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
-                        {YEARS.map((yr) => (
+                        {AGE_GROUPS.map((ag) => (
                           <TouchableOpacity
-                            key={yr}
-                            style={[styles.yearOption, newYear === yr && styles.yearOptionActive]}
+                            key={ag}
+                            style={[styles.yearOption, newYear === ag && styles.yearOptionActive]}
                             onPress={() => {
-                              setNewYear(yr);
+                              setNewYear(ag);
                               setYearPickerOpen(false);
                             }}
                             activeOpacity={0.7}
                           >
-                            <Text style={[styles.yearOptionText, newYear === yr && styles.yearOptionTextActive]}>
-                              {yr}
+                            <Text style={[styles.yearOptionText, newYear === ag && styles.yearOptionTextActive]}>
+                              {ag}
                             </Text>
                           </TouchableOpacity>
                         ))}
@@ -498,7 +500,7 @@ export default function DashboardScreen() {
                   if (editingTeam?.id === team.id) {
                     return (
                       <View key={team.id} style={styles.editTeamCard}>
-                        <Text style={styles.fieldLabel}>Year</Text>
+                        <Text style={styles.fieldLabel}>Age Group</Text>
                         <TouchableOpacity
                           style={styles.yearSelector}
                           onPress={() => setEditYearPickerOpen(!editYearPickerOpen)}
@@ -509,20 +511,20 @@ export default function DashboardScreen() {
                         {editYearPickerOpen && (
                           <View style={styles.yearDropdown}>
                             <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
-                              {YEARS.map((yr) => (
+                              {AGE_GROUPS.map((ag) => (
                                 <TouchableOpacity
-                                  key={yr}
-                                  style={[styles.yearOption, editYear === yr && styles.yearOptionActive]}
+                                  key={ag}
+                                  style={[styles.yearOption, editYear === ag && styles.yearOptionActive]}
                                   onPress={() => {
-                                    setEditYear(yr);
+                                    setEditYear(ag);
                                     setEditYearPickerOpen(false);
                                   }}
                                   activeOpacity={0.7}
                                 >
                                   <Text
-                                    style={[styles.yearOptionText, editYear === yr && styles.yearOptionTextActive]}
+                                    style={[styles.yearOptionText, editYear === ag && styles.yearOptionTextActive]}
                                   >
-                                    {yr}
+                                    {ag}
                                   </Text>
                                 </TouchableOpacity>
                               ))}

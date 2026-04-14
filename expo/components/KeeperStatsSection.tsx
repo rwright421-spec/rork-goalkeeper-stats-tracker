@@ -6,7 +6,7 @@ import SavePercentageBadge from '@/components/SavePercentageBadge';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { fontSize } from '@/constants/typography';
-import { KeeperData, DistributionStats, PenaltyStats, GoalkeeperProfile, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getShotsFaced, getTotalShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, getHalfLengthForAgeGroup, defaultHalfStats } from '@/types/game';
+import { KeeperData, DistributionStats, PenaltyStats, GoalkeeperProfile, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getShotsFaced, getTotalShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, getHalfLengthForAgeGroup, defaultHalfStats, AGE_GROUP_OPTIONS } from '@/types/game';
 import KeeperSelectorSheet, { KeeperSelectorButton, KeeperSelectionState } from '@/components/KeeperSelectorSheet';
 
 interface KeeperStatsSectionProps {
@@ -20,9 +20,7 @@ interface KeeperStatsSectionProps {
   ageGroup?: string;
 }
 
-const currentYear = new Date().getFullYear();
-const YEARS: string[] = [];
-for (let y = currentYear; y >= 1975; y--) { YEARS.push(String(y)); }
+const AGE_GROUPS = AGE_GROUP_OPTIONS;
 
 export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate, accentColor, showShootout, profiles, onCreateProfile, ageGroup }: KeeperStatsSectionProps) {
   const colors = useColors();
@@ -225,7 +223,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         </View>
         <View style={styles.inputRow}>
           <View style={[styles.inputGroup, { flex: 1 }]}>
-            <Text style={styles.inputLabel}>Year</Text>
+            <Text style={styles.inputLabel}>Age Group</Text>
             <TouchableOpacity testID={`${label}-year`} style={styles.yearSelector} onPress={() => setYearPickerOpen(!yearPickerOpen)} activeOpacity={0.7}>
               <Text style={[styles.yearText, !keeper.year && styles.yearPlaceholder]}>{keeper.year || 'Select'}</Text>
               <ChevronDown size={16} color={colors.textMuted} />
@@ -233,9 +231,9 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
             {yearPickerOpen && (
               <View style={styles.yearDropdown}>
                 <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
-                  {YEARS.map((yr) => (
-                    <TouchableOpacity key={yr} style={[styles.yearOption, keeper.year === yr && styles.yearOptionActive]} onPress={() => { updateField('year', yr); setYearPickerOpen(false); }} activeOpacity={0.7}>
-                      <Text style={[styles.yearOptionText, keeper.year === yr && styles.yearOptionTextActive]}>{yr}</Text>
+                  {AGE_GROUPS.map((ag) => (
+                    <TouchableOpacity key={ag} style={[styles.yearOption, keeper.year === ag && styles.yearOptionActive]} onPress={() => { updateField('year', ag); setYearPickerOpen(false); }} activeOpacity={0.7}>
+                      <Text style={[styles.yearOptionText, keeper.year === ag && styles.yearOptionTextActive]}>{ag}</Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
@@ -277,7 +275,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
             </View>
             <View style={styles.inputRow}>
               <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={styles.inputLabel}>Year</Text>
+                <Text style={styles.inputLabel}>Age Group</Text>
                 <TouchableOpacity testID={`${label}-2nd-half-year`} style={styles.yearSelector} onPress={() => setSecondHalfYearPickerOpen(!secondHalfYearPickerOpen)} activeOpacity={0.7}>
                   <Text style={[styles.yearText, !keeper.secondHalfYear && styles.yearPlaceholder]}>{keeper.secondHalfYear || 'Select'}</Text>
                   <ChevronDown size={16} color={colors.textMuted} />
@@ -285,9 +283,9 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
                 {secondHalfYearPickerOpen && (
                   <View style={styles.yearDropdown}>
                     <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
-                      {YEARS.map((yr) => (
-                        <TouchableOpacity key={yr} style={[styles.yearOption, keeper.secondHalfYear === yr && styles.yearOptionActive]} onPress={() => { onUpdate({ ...keeper, secondHalfYear: yr }); setSecondHalfYearPickerOpen(false); }} activeOpacity={0.7}>
-                          <Text style={[styles.yearOptionText, keeper.secondHalfYear === yr && styles.yearOptionTextActive]}>{yr}</Text>
+                      {AGE_GROUPS.map((ag) => (
+                        <TouchableOpacity key={ag} style={[styles.yearOption, keeper.secondHalfYear === ag && styles.yearOptionActive]} onPress={() => { onUpdate({ ...keeper, secondHalfYear: ag }); setSecondHalfYearPickerOpen(false); }} activeOpacity={0.7}>
+                          <Text style={[styles.yearOptionText, keeper.secondHalfYear === ag && styles.yearOptionTextActive]}>{ag}</Text>
                         </TouchableOpacity>
                       ))}
                     </ScrollView>
