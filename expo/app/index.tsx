@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import * as Sentry from '@sentry/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Shield, UserPlus, Users, UserX, Trash2, ChevronRight, Pencil } from 'lucide-react-native';
@@ -24,11 +25,21 @@ export default function GoalkeeperSelectScreen() {
 
   useEffect(() => {
     if (isLoading) return;
-    if (profiles.length === 0) {
-      router.replace('/onboarding');
-    } else {
-      setOnboardingChecked(true);
-    }
+
+    const checkOnboarding = async () => {
+      if (profiles.length === 0) {
+        const onboardingDone = await AsyncStorage.getItem('onboarding_complete');
+        if (onboardingDone === 'true') {
+          setOnboardingChecked(true);
+        } else {
+          router.replace('/onboarding');
+        }
+      } else {
+        setOnboardingChecked(true);
+      }
+    };
+
+    checkOnboarding();
   }, [isLoading, profiles.length, router]);
 
   const [showCreate, setShowCreate] = useState(false);

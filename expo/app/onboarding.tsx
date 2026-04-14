@@ -1,5 +1,6 @@
 // Onboarding - First-time user welcome and setup flow
 import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -73,8 +74,9 @@ export default function OnboardingScreen() {
     }).start();
   }, [dotAnim]);
 
-  const handleSkipAll = useCallback(() => {
+  const handleSkipAll = useCallback(async () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await AsyncStorage.setItem('onboarding_complete', 'true');
     router.replace('/');
   }, [router]);
 
@@ -112,9 +114,10 @@ export default function OnboardingScreen() {
     goToPage(3);
   }, [goToPage]);
 
-  const handleFinish = useCallback(() => {
+  const handleFinish = useCallback(async () => {
     Keyboard.dismiss();
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    await AsyncStorage.setItem('onboarding_complete', 'true');
     if (createdProfileId) {
       router.replace('/(tabs)/dashboard');
     } else {
@@ -209,7 +212,6 @@ export default function OnboardingScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={0}
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <ScrollView
             style={styles.pageScrollView}
             contentContainerStyle={styles.pageScrollContent}
@@ -273,7 +275,6 @@ export default function OnboardingScreen() {
               <Text style={styles.secondaryButtonText}>Skip for now</Text>
             </TouchableOpacity>
           </ScrollView>
-          </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
 
         {/* Screen 3 — Create Team */}
@@ -282,7 +283,6 @@ export default function OnboardingScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           keyboardVerticalOffset={0}
         >
-          <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
           <ScrollView
             style={styles.pageScrollView}
             contentContainerStyle={styles.pageScrollContent}
@@ -345,7 +345,6 @@ export default function OnboardingScreen() {
               <Text style={styles.secondaryButtonText}>Skip for now</Text>
             </TouchableOpacity>
           </ScrollView>
-          </TouchableWithoutFeedback>
         </KeyboardAvoidingView>
 
         {/* Screen 4 — You're Ready */}
