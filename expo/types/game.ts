@@ -105,6 +105,7 @@ export interface SavedGame {
   awayKeeper?: KeeperData;
   finalScore?: FinalScore;
   createdAt: string;
+  pendingSync?: boolean;
 }
 
 function createEmptyDistribution(): DistributionStats {

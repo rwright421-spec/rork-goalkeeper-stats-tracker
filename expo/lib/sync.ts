@@ -128,6 +128,56 @@ export async function downloadAllProfileData(
   };
 }
 
+export async function generateServerGameId(): Promise<string | null> {
+  const sb = getSupabase();
+  if (!sb) {
+    console.log('[Sync] No Supabase client — cannot generate server game ID');
+    return null;
+  }
+
+  try {
+    const { data, error } = await sb.rpc('generate_game_id');
+    if (error) {
+      console.log('[Sync] generate_game_id RPC error:', error.message, error.code);
+      return null;
+    }
+    if (data && typeof data === 'string') {
+      console.log('[Sync] Server-generated game ID:', data);
+      return data;
+    }
+    console.log('[Sync] Unexpected RPC response:', data);
+    return null;
+  } catch (e) {
+    console.log('[Sync] generateServerGameId network error (likely offline):', e);
+    return null;
+  }
+}
+
+export function createLocalGameId(): string {
+  return 'local_' + Date.now().toString() + Math.random().toString(36).slice(2, 8);
+}
+
+export function isLocalGameId(id: string): boolean {
+  return id.startsWith('local_');
+}
+
+export async function syncPendingGame(
+  game: SavedGame,
+): Promise<{ id: string; synced: boolean }> {
+  if (!game.pendingSync) {
+    return { id: game.id, synced: true };
+  }
+
+  const serverId = await generateServerGameId();
+  if (!serverId) {
+    console.log('[Sync] Still offline — cannot sync pending game:', game.id);
+    return { id: game.id, synced: false };
+  }
+
+  console.log('[Sync] Synced pending game. Old ID:', game.id, '-> New ID:', serverId);
+  return { id: serverId, synced: true };
+}
+
 export async function getCloudUpdateTime(
   sharedProfileId: string,
   dataKey: 'teams' | 'games',

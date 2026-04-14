@@ -9,6 +9,7 @@ import { ThemeColors } from '@/constants/themes';
 import { KeeperSelection, KeeperData, FinalScore, createEmptyKeeperData, SavedGame, GoalkeeperProfile, getTotalGoalsAgainst, normalizeKeeper } from '@/types/game';
 import { useGames, FREE_GAME_LIMIT } from '@/contexts/GameContext';
 import { usePurchases } from '@/contexts/PurchasesContext';
+import { generateServerGameId, createLocalGameId } from '@/lib/sync';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
 import { useOpponents } from '@/contexts/OpponentContext';
@@ -183,7 +184,10 @@ export default function GameTrackingScreen() {
     return { home: awayGoalsAgainst + awayShootoutGA, away: awayScore };
   }, [isBoth, hasHome, homeGoalsAgainst, awayGoalsAgainst, homeScoreOverride, awayScoreOverride, homeShootoutGA, awayShootoutGA]);
 
-  const handleSave = useCallback(() => {
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = useCallback(async () => {
+    if (isSaving) return;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     if (isEditMode && existingGame) {
       const opponentName = editGameName.trim() || existingGame.setup.gameName;
@@ -198,30 +202,59 @@ export default function GameTrackingScreen() {
       updateGame(updated);
       Alert.alert('Game Updated', 'Stats have been updated.', [{ text: 'OK', onPress: () => { if (Platform.OS === 'web') { router.replace('/(tabs)/dashboard'); } else { router.dismissAll(); router.replace('/(tabs)/dashboard'); } } }]);
     } else {
-      const finalEventName = isQuickStart ? (editEventName.trim() || params.eventName || '') : (params.eventName || '');
-      const finalDate = isQuickStart ? (editDate.trim() || params.date || '') : (params.date || '');
-      const finalGameName = isQuickStart ? (editGameName.trim() || params.gameName || '') : (params.gameName || '');
-      const finalAgeGroup = isQuickStart ? (editAgeGroup || params.ageGroup || '') : (params.ageGroup || '');
-      if (finalGameName) addOpponent(finalGameName);
-      const game: SavedGame = {
-        id: Date.now().toString() + Math.random().toString(36).slice(2, 8),
-        teamId: activeTeamId ?? undefined,
-        setup: { eventName: finalEventName, date: finalDate, gameName: finalGameName, keeperSelection, ageGroup: finalAgeGroup as any },
-        homeKeeper: hasHome ? homeKeeper : undefined,
-        awayKeeper: hasAway ? awayKeeper : undefined,
-        finalScore: computedFinalScore,
-        createdAt: new Date().toISOString(),
-      };
       if (!isPro && isAtFreeLimit) {
         console.log('[GameTracking] Free limit reached at save time (fallback gate). Count:', totalGameCount);
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         router.push('/paywall');
         return;
       }
+
+      const finalEventName = isQuickStart ? (editEventName.trim() || params.eventName || '') : (params.eventName || '');
+      const finalDate = isQuickStart ? (editDate.trim() || params.date || '') : (params.date || '');
+      const finalGameName = isQuickStart ? (editGameName.trim() || params.gameName || '') : (params.gameName || '');
+      const finalAgeGroup = isQuickStart ? (editAgeGroup || params.ageGroup || '') : (params.ageGroup || '');
+      if (finalGameName) addOpponent(finalGameName);
+
+      setIsSaving(true);
+      let gameId: string;
+      let pendingSync = false;
+
+      try {
+        console.log('[GameTracking] Requesting server-generated game ID from Supabase...');
+        const serverId = await generateServerGameId();
+        if (serverId) {
+          gameId = serverId;
+          console.log('[GameTracking] Using Supabase-generated ID:', gameId);
+        } else {
+          gameId = createLocalGameId();
+          pendingSync = true;
+          console.log('[GameTracking] Offline — using local ID:', gameId);
+        }
+      } catch {
+        gameId = createLocalGameId();
+        pendingSync = true;
+        console.log('[GameTracking] Error generating server ID — using local ID:', gameId);
+      }
+
+      const game: SavedGame = {
+        id: gameId,
+        teamId: activeTeamId ?? undefined,
+        setup: { eventName: finalEventName, date: finalDate, gameName: finalGameName, keeperSelection, ageGroup: finalAgeGroup as any },
+        homeKeeper: hasHome ? homeKeeper : undefined,
+        awayKeeper: hasAway ? awayKeeper : undefined,
+        finalScore: computedFinalScore,
+        createdAt: new Date().toISOString(),
+        ...(pendingSync ? { pendingSync: true } : {}),
+      };
+
       addGame(game);
-      Alert.alert('Game Saved', 'Stats have been saved to Prior Games.', [{ text: 'OK', onPress: () => { if (Platform.OS === 'web') { router.replace('/(tabs)/dashboard'); } else { router.dismissAll(); router.replace('/(tabs)/dashboard'); } } }]);
+      setIsSaving(false);
+      const savedMsg = pendingSync
+        ? 'Stats saved locally. Will sync with server when online.'
+        : 'Stats have been saved to Prior Games.';
+      Alert.alert('Game Saved', savedMsg, [{ text: 'OK', onPress: () => { if (Platform.OS === 'web') { router.replace('/(tabs)/dashboard'); } else { router.dismissAll(); router.replace('/(tabs)/dashboard'); } } }]);
     }
-  }, [isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent, isPro, isAtFreeLimit, totalGameCount]);
+  }, [isSaving, isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent, isPro, isAtFreeLimit, totalGameCount]);
 
   const headerSubtitle = useMemo(() => {
     if (isEditMode) return `${editEventName} · ${editDate}`;

@@ -6,7 +6,7 @@ import { SavedGame, normalizeKeeper, normalizeHalf } from '@/types/game';
 import { validateAndSanitizeArray } from '@/utils/validation';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
-import { uploadProfileData, downloadProfileData, GAME_LIMIT_ERROR_KEY } from '@/lib/sync';
+import { uploadProfileData, downloadProfileData, GAME_LIMIT_ERROR_KEY, syncPendingGame, isLocalGameId } from '@/lib/sync';
 
 export const FREE_GAME_LIMIT = 5;
 
@@ -100,6 +100,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
   const sharedProfileId = activeProfile?.sharedProfileId;
   const isShared = !!activeProfile?.isShared && !!sharedProfileId;
   const [gameLimitExceeded, setGameLimitExceeded] = useState<boolean>(false);
+  const pendingSyncInProgress = useRef(false);
 
   const gamesQuery = useQuery({
     queryKey: ['games', storageKey],
@@ -185,6 +186,62 @@ export const [GameProvider, useGames] = createContextHook(() => {
   const clearGameLimitExceeded = useCallback(() => {
     setGameLimitExceeded(false);
   }, []);
+
+  useEffect(() => {
+    if (pendingSyncInProgress.current) return;
+    const pendingGames = allGames.filter(g => g.pendingSync && isLocalGameId(g.id));
+    if (pendingGames.length === 0) return;
+
+    console.log('[GameContext] Found', pendingGames.length, 'games with pendingSync flag');
+    pendingSyncInProgress.current = true;
+
+    void (async () => {
+      try {
+        let changed = false;
+        const currentGames = queryClient.getQueryData<SavedGame[]>(['games', storageKey]) ?? [];
+        const updatedGames = [...currentGames];
+
+        for (const pending of pendingGames) {
+          const result = await syncPendingGame(pending);
+          if (result.synced && result.id !== pending.id) {
+            const idx = updatedGames.findIndex(g => g.id === pending.id);
+            if (idx !== -1) {
+              updatedGames[idx] = {
+                ...updatedGames[idx],
+                id: result.id,
+                pendingSync: undefined,
+              };
+              changed = true;
+              console.log('[GameContext] Replaced local ID', pending.id, '-> server ID', result.id);
+            }
+          }
+        }
+
+        if (changed) {
+          queryClient.setQueryData(['games', storageKey], updatedGames);
+          if (storageKey !== 'gk_tracker_games_guest') {
+            await AsyncStorage.setItem(storageKey, JSON.stringify(updatedGames));
+            console.log('[GameContext] Persisted synced games to AsyncStorage');
+          }
+
+          if (isShared && sharedProfileId && supabaseReady) {
+            try {
+              await uploadProfileData(sharedProfileId, 'games', updatedGames);
+              console.log('[GameContext] Uploaded synced games to cloud');
+            } catch (e: any) {
+              if (e?.message === GAME_LIMIT_ERROR_KEY) {
+                setGameLimitExceeded(true);
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.log('[GameContext] Pending sync error:', e);
+      } finally {
+        pendingSyncInProgress.current = false;
+      }
+    })();
+  }, [allGames, storageKey, queryClient, isShared, sharedProfileId, supabaseReady]);
 
   const addGame = useCallback((game: SavedGame) => {
     const currentGames = queryClient.getQueryData<SavedGame[]>(['games', storageKey]) ?? [];
