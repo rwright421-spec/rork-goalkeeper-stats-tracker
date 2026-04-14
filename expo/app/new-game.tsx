@@ -420,7 +420,7 @@ function createStyles(c: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.background },
     scrollView: { flex: 1 },
-    scrollContent: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 60 },
+    scrollContent: { paddingHorizontal: 28, paddingTop: 20, paddingBottom: 60 },
     sectionLabel: { fontSize: fontSize.body2, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 },
     inputGroup: { marginBottom: 16 },
     inputLabel: { fontSize: fontSize.body, color: c.textSecondary, fontWeight: '600' as const, marginBottom: 8 },

@@ -776,7 +776,7 @@ function createStyles(c: ThemeColors) {
       flex: 1,
     },
     scrollContent: {
-      paddingHorizontal: 20,
+      paddingHorizontal: 28,
     },
     profileHeader: {
       flexDirection: 'row',
