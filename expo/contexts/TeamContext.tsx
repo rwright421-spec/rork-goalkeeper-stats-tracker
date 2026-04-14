@@ -42,6 +42,8 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
   const [viewAllGames, setViewAllGames] = useState(true);
   const syncInProgress = useRef(false);
   const lastSyncTime = useRef<number>(0);
+  const isDirty = useRef(false);
+  const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const sharedProfileId = activeProfile?.sharedProfileId;
   const isShared = !!activeProfile?.isShared && !!sharedProfileId;
@@ -53,46 +55,79 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
     staleTime: 0,
   });
 
-  useEffect(() => {
+  const runTeamSync = useCallback(async (force?: boolean) => {
     if (!isShared || !sharedProfileId || !supabaseReady || syncInProgress.current) return;
-    const now = Date.now();
-    if (now - lastSyncTime.current < 10000) return;
+    if (!force && !isDirty.current) {
+      console.log('[TeamContext] Skipping sync — not dirty');
+      return;
+    }
 
     syncInProgress.current = true;
-    lastSyncTime.current = now;
+    lastSyncTime.current = Date.now();
+    markSyncing();
 
-    void (async () => {
-      markSyncing();
-      try {
-        const cloudTeams = await downloadProfileData<Team>(sharedProfileId, 'teams');
-        if (cloudTeams && cloudTeams.length > 0 && activeProfileId) {
-          const localTeams: Team[] = await secureStorage.getItem<Team[]>(storageKey) ?? [];
-
-          const merged = mergeTeams(localTeams, cloudTeams);
-          if (merged.length !== localTeams.length || JSON.stringify(merged) !== JSON.stringify(localTeams)) {
-            await secureStorage.setItem(storageKey, merged);
-            queryClient.setQueryData(['teams', storageKey], merged);
-            console.log('[TeamContext] Merged cloud teams, total:', merged.length);
-          }
-        }
-        markSuccess();
-      } catch (e) {
-        console.log('[TeamContext] Cloud sync error:', e);
-        Sentry.captureException(e);
-        markFailed(async () => {
-          const retryCloud = await downloadProfileData<Team>(sharedProfileId!, 'teams');
-          if (retryCloud && retryCloud.length > 0 && activeProfileId) {
-            const retryLocal: Team[] = await secureStorage.getItem<Team[]>(storageKey) ?? [];
-            const retryMerged = mergeTeams(retryLocal, retryCloud);
-            await secureStorage.setItem(storageKey, retryMerged);
-            queryClient.setQueryData(['teams', storageKey], retryMerged);
-          }
-        });
-      } finally {
-        syncInProgress.current = false;
+    try {
+      if (isDirty.current) {
+        const currentData = queryClient.getQueryData<Team[]>(['teams', storageKey]) ?? [];
+        console.log('[TeamContext] Batch uploading', currentData.length, 'teams');
+        await uploadProfileData(sharedProfileId, 'teams', currentData);
+        isDirty.current = false;
       }
-    })();
-  }, [isShared, sharedProfileId, supabaseReady, activeProfileId, storageKey, queryClient]);
+
+      const cloudTeams = await downloadProfileData<Team>(sharedProfileId, 'teams');
+      if (cloudTeams && cloudTeams.length > 0 && activeProfileId) {
+        const localTeams: Team[] = await secureStorage.getItem<Team[]>(storageKey) ?? [];
+
+        const merged = mergeTeams(localTeams, cloudTeams);
+        if (merged.length !== localTeams.length || JSON.stringify(merged) !== JSON.stringify(localTeams)) {
+          await secureStorage.setItem(storageKey, merged);
+          queryClient.setQueryData(['teams', storageKey], merged);
+          console.log('[TeamContext] Merged cloud teams, total:', merged.length);
+        }
+      }
+      markSuccess();
+    } catch (e) {
+      console.log('[TeamContext] Cloud sync error:', e);
+      Sentry.captureException(e);
+      markFailed(async () => {
+        const currentData = queryClient.getQueryData<Team[]>(['teams', storageKey]) ?? [];
+        await uploadProfileData(sharedProfileId!, 'teams', currentData);
+        isDirty.current = false;
+        const retryCloud = await downloadProfileData<Team>(sharedProfileId!, 'teams');
+        if (retryCloud && retryCloud.length > 0 && activeProfileId) {
+          const retryLocal: Team[] = await secureStorage.getItem<Team[]>(storageKey) ?? [];
+          const retryMerged = mergeTeams(retryLocal, retryCloud);
+          await secureStorage.setItem(storageKey, retryMerged);
+          queryClient.setQueryData(['teams', storageKey], retryMerged);
+        }
+      });
+    } finally {
+      syncInProgress.current = false;
+    }
+  }, [isShared, sharedProfileId, supabaseReady, activeProfileId, storageKey, queryClient, markSyncing, markSuccess, markFailed]);
+
+  useEffect(() => {
+    if (!isShared || !sharedProfileId || !supabaseReady) {
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
+      }
+      return;
+    }
+
+    void runTeamSync(true);
+
+    syncIntervalRef.current = setInterval(() => {
+      void runTeamSync();
+    }, 60000);
+
+    return () => {
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
+      }
+    };
+  }, [isShared, sharedProfileId, supabaseReady, runTeamSync]);
 
   const teams = useMemo(() => teamsQuery.data ?? [], [teamsQuery.data]);
 
@@ -111,20 +146,8 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
       queryClient.setQueryData(['teams', variables.key], data);
 
       if (isShared && sharedProfileId && supabaseReady) {
-        console.log('[TeamContext] Uploading teams to cloud for shared profile');
-        void (async () => {
-          markSyncing();
-          try {
-            await uploadProfileData(sharedProfileId, 'teams', data);
-            markSuccess();
-          } catch (e) {
-            console.log('[TeamContext] Upload error:', e);
-            Sentry.captureException(e);
-            markFailed(async () => {
-              await uploadProfileData(sharedProfileId!, 'teams', data);
-            });
-          }
-        })();
+        isDirty.current = true;
+        console.log('[TeamContext] Marked dirty — will batch sync on next interval');
       }
     },
   });
@@ -190,18 +213,11 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
 
   const forceSync = useCallback(async () => {
     if (!isShared || !sharedProfileId || !supabaseReady) return;
+    isDirty.current = true;
     syncInProgress.current = false;
-    lastSyncTime.current = 0;
-
-    const cloudTeams = await downloadProfileData<Team>(sharedProfileId, 'teams');
-    if (cloudTeams && activeProfileId) {
-      const localTeams: Team[] = await secureStorage.getItem<Team[]>(storageKey) ?? [];
-      const merged = mergeTeams(localTeams, cloudTeams);
-      await secureStorage.setItem(storageKey, merged);
-      queryClient.setQueryData(['teams', storageKey], merged);
-      console.log('[TeamContext] Force synced teams:', merged.length);
-    }
-  }, [isShared, sharedProfileId, supabaseReady, activeProfileId, storageKey, queryClient]);
+    console.log('[TeamContext] Force sync triggered');
+    await runTeamSync(true);
+  }, [isShared, sharedProfileId, supabaseReady, runTeamSync]);
 
   return useMemo(() => ({
     teams,

@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking, Platform, ActivityIndicator } from 'react-native';
-import { Check, Palette, Users, Trash2, MessageSquare, ExternalLink, Upload, Download, Database } from 'lucide-react-native';
+import { Check, Palette, Users, Trash2, MessageSquare, ExternalLink, Upload, Download, Database, RefreshCw } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
@@ -12,6 +12,8 @@ import { useOpponents } from '@/contexts/OpponentContext';
 import SyncStatusBanner from '@/components/SyncStatusBanner';
 import { gatherExportData, validateImportPayload, mergeImportData } from '@/utils/dataTransfer';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
+import { useGames } from '@/contexts/GameContext';
+import { useTeams } from '@/contexts/TeamContext';
 
 export default function SettingsScreen() {
   const { themeName, setTheme } = useTheme();
@@ -19,8 +21,11 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { opponents, removeOpponent } = useOpponents();
   const { refreshProfiles } = useGoalkeepers();
+  const { forceSync: forceSyncGames } = useGames();
+  const { forceSync: forceSyncTeams } = useTeams();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [isSyncingNow, setIsSyncingNow] = useState(false);
 
   const handleThemeSelect = useCallback((key: ThemeName) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -47,6 +52,27 @@ export default function SettingsScreen() {
       ]
     );
   }, [removeOpponent]);
+
+  const handleSyncNow = useCallback(async () => {
+    setIsSyncingNow(true);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    console.log('[Settings] Sync Now triggered');
+    try {
+      await Promise.all([
+        forceSyncGames(),
+        forceSyncTeams(),
+      ]);
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      Alert.alert('Sync Complete', 'All data has been synced successfully.');
+      console.log('[Settings] Sync Now complete');
+    } catch (e) {
+      console.log('[Settings] Sync Now error:', e);
+      Sentry.captureException(e);
+      Alert.alert('Sync Failed', 'Something went wrong during sync. Please try again.');
+    } finally {
+      setIsSyncingNow(false);
+    }
+  }, [forceSyncGames, forceSyncTeams]);
 
   const handleExport = useCallback(async () => {
     setIsExporting(true);
@@ -238,6 +264,23 @@ export default function SettingsScreen() {
         </View>
         <Text style={styles.sectionSubtitle}>Back up your data or restore from a previous export.</Text>
 
+        <TouchableOpacity
+          testID="sync-now-btn"
+          style={[styles.dataButton, styles.syncButton]}
+          activeOpacity={0.7}
+          onPress={handleSyncNow}
+          disabled={isSyncingNow}
+        >
+          {isSyncingNow ? (
+            <ActivityIndicator size="small" color={colors.primary} />
+          ) : (
+            <RefreshCw size={18} color={colors.primary} />
+          )}
+          <Text style={[styles.dataButtonText, { color: colors.primary }]}>
+            {isSyncingNow ? 'Syncing...' : 'Sync Now'}
+          </Text>
+        </TouchableOpacity>
+
         <View style={styles.dataButtonRow}>
           <TouchableOpacity
             testID="export-data-btn"
@@ -367,6 +410,7 @@ function createStyles(c: ThemeColors) {
     themeLabel: { fontSize: 15, fontWeight: '600' as const, color: c.textSecondary },
     themeLabelActive: { color: c.primary, fontWeight: '700' as const },
     checkBadge: { width: 26, height: 26, borderRadius: 13, backgroundColor: c.primaryGlow, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.primary },
+    syncButton: { backgroundColor: c.primaryGlow, borderColor: c.primary, marginBottom: 10 },
     dataButtonRow: { gap: 10 },
     dataButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 10, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 20, borderWidth: 1 },
     exportButton: { backgroundColor: c.primaryGlow, borderColor: c.primary },

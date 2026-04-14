@@ -98,6 +98,8 @@ export const [GameProvider, useGames] = createContextHook(() => {
   const prevKeyRef = useRef(storageKey);
   const syncInProgress = useRef(false);
   const lastSyncTime = useRef<number>(0);
+  const isDirty = useRef(false);
+  const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const sharedProfileId = activeProfile?.sharedProfileId;
   const isShared = !!activeProfile?.isShared && !!sharedProfileId;
@@ -127,48 +129,81 @@ export const [GameProvider, useGames] = createContextHook(() => {
     }
   }, [storageKey, queryClient]);
 
-  useEffect(() => {
+  const runGameSync = useCallback(async (force?: boolean) => {
     if (!isShared || !sharedProfileId || !supabaseReady || syncInProgress.current) return;
-    const now = Date.now();
-    if (now - lastSyncTime.current < 10000) return;
+    if (!force && !isDirty.current) {
+      console.log('[GameContext] Skipping sync — not dirty');
+      return;
+    }
 
     syncInProgress.current = true;
-    lastSyncTime.current = now;
+    lastSyncTime.current = Date.now();
+    markSyncing();
 
-    void (async () => {
-      markSyncing();
-      try {
-        const cloudGames = await downloadProfileData<SavedGame>(sharedProfileId, 'games');
-        if (cloudGames && cloudGames.length > 0 && activeProfileId) {
-          const localGamesRaw = await secureStorage.getItem<SavedGame[]>(storageKey);
-          const localGames: SavedGame[] = localGamesRaw ? localGamesRaw.map(migrateSavedGame) : [];
-
-          const merged = mergeGames(localGames, cloudGames);
-          if (merged.length !== localGames.length || JSON.stringify(merged) !== JSON.stringify(localGames)) {
-            await secureStorage.setItem(storageKey, merged);
-            queryClient.setQueryData(['games', storageKey], merged);
-            console.log('[GameContext] Merged cloud games, total:', merged.length);
-          }
-        }
-        markSuccess();
-      } catch (e) {
-        console.log('[GameContext] Cloud sync error:', e);
-        Sentry.captureException(e);
-        markFailed(async () => {
-          const retryCloudGames = await downloadProfileData<SavedGame>(sharedProfileId!, 'games');
-          if (retryCloudGames && retryCloudGames.length > 0 && activeProfileId) {
-            const retryLocalRaw = await secureStorage.getItem<SavedGame[]>(storageKey);
-            const retryLocal: SavedGame[] = retryLocalRaw ? retryLocalRaw.map(migrateSavedGame) : [];
-            const retryMerged = mergeGames(retryLocal, retryCloudGames);
-            await secureStorage.setItem(storageKey, retryMerged);
-            queryClient.setQueryData(['games', storageKey], retryMerged);
-          }
-        });
-      } finally {
-        syncInProgress.current = false;
+    try {
+      if (isDirty.current) {
+        const currentData = queryClient.getQueryData<SavedGame[]>(['games', storageKey]) ?? [];
+        console.log('[GameContext] Batch uploading', currentData.length, 'games');
+        await uploadProfileData(sharedProfileId, 'games', currentData);
+        isDirty.current = false;
       }
-    })();
-  }, [isShared, sharedProfileId, supabaseReady, activeProfileId, storageKey, queryClient]);
+
+      const cloudGames = await downloadProfileData<SavedGame>(sharedProfileId, 'games');
+      if (cloudGames && cloudGames.length > 0 && activeProfileId) {
+        const localGamesRaw = await secureStorage.getItem<SavedGame[]>(storageKey);
+        const localGames: SavedGame[] = localGamesRaw ? localGamesRaw.map(migrateSavedGame) : [];
+
+        const merged = mergeGames(localGames, cloudGames);
+        if (merged.length !== localGames.length || JSON.stringify(merged) !== JSON.stringify(localGames)) {
+          await secureStorage.setItem(storageKey, merged);
+          queryClient.setQueryData(['games', storageKey], merged);
+          console.log('[GameContext] Merged cloud games, total:', merged.length);
+        }
+      }
+      markSuccess();
+    } catch (e) {
+      console.log('[GameContext] Cloud sync error:', e);
+      Sentry.captureException(e);
+      markFailed(async () => {
+        const currentData = queryClient.getQueryData<SavedGame[]>(['games', storageKey]) ?? [];
+        await uploadProfileData(sharedProfileId!, 'games', currentData);
+        isDirty.current = false;
+        const retryCloudGames = await downloadProfileData<SavedGame>(sharedProfileId!, 'games');
+        if (retryCloudGames && retryCloudGames.length > 0 && activeProfileId) {
+          const retryLocalRaw = await secureStorage.getItem<SavedGame[]>(storageKey);
+          const retryLocal: SavedGame[] = retryLocalRaw ? retryLocalRaw.map(migrateSavedGame) : [];
+          const retryMerged = mergeGames(retryLocal, retryCloudGames);
+          await secureStorage.setItem(storageKey, retryMerged);
+          queryClient.setQueryData(['games', storageKey], retryMerged);
+        }
+      });
+    } finally {
+      syncInProgress.current = false;
+    }
+  }, [isShared, sharedProfileId, supabaseReady, activeProfileId, storageKey, queryClient, markSyncing, markSuccess, markFailed]);
+
+  useEffect(() => {
+    if (!isShared || !sharedProfileId || !supabaseReady) {
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
+      }
+      return;
+    }
+
+    void runGameSync(true);
+
+    syncIntervalRef.current = setInterval(() => {
+      void runGameSync();
+    }, 60000);
+
+    return () => {
+      if (syncIntervalRef.current) {
+        clearInterval(syncIntervalRef.current);
+        syncIntervalRef.current = null;
+      }
+    };
+  }, [isShared, sharedProfileId, supabaseReady, runGameSync]);
 
   const saveMutation = useMutation({
     mutationFn: async ({ key, updatedGames }: { key: string; updatedGames: SavedGame[] }) => {
@@ -184,24 +219,8 @@ export const [GameProvider, useGames] = createContextHook(() => {
       queryClient.setQueryData(['games', variables.key], data);
 
       if (isShared && sharedProfileId && supabaseReady) {
-        console.log('[GameContext] Uploading games to cloud for shared profile');
-        void (async () => {
-          markSyncing();
-          try {
-            await uploadProfileData(sharedProfileId, 'games', data);
-            markSuccess();
-          } catch (e: any) {
-            if (e?.message === GAME_LIMIT_ERROR_KEY) {
-              console.log('[GameContext] Server rejected sync: game limit exceeded');
-              setGameLimitExceeded(true);
-            } else {
-              Sentry.captureException(e);
-              markFailed(async () => {
-                await uploadProfileData(sharedProfileId!, 'games', data);
-              });
-            }
-          }
-        })();
+        isDirty.current = true;
+        console.log('[GameContext] Marked dirty — will batch sync on next interval');
       }
     },
   });
@@ -340,19 +359,11 @@ export const [GameProvider, useGames] = createContextHook(() => {
 
   const forceSync = useCallback(async () => {
     if (!isShared || !sharedProfileId || !supabaseReady) return;
+    isDirty.current = true;
     syncInProgress.current = false;
-    lastSyncTime.current = 0;
-
-    const cloudGames = await downloadProfileData<SavedGame>(sharedProfileId, 'games');
-    if (cloudGames && activeProfileId) {
-      const localGamesRaw = await secureStorage.getItem<SavedGame[]>(storageKey);
-      const localGames: SavedGame[] = localGamesRaw ? localGamesRaw.map(migrateSavedGame) : [];
-      const merged = mergeGames(localGames, cloudGames);
-      await secureStorage.setItem(storageKey, merged);
-      queryClient.setQueryData(['games', storageKey], merged);
-      console.log('[GameContext] Force synced games:', merged.length);
-    }
-  }, [isShared, sharedProfileId, supabaseReady, activeProfileId, storageKey, queryClient]);
+    console.log('[GameContext] Force sync triggered');
+    await runGameSync(true);
+  }, [isShared, sharedProfileId, supabaseReady, runGameSync]);
 
   const { profiles } = useGoalkeepers();
   const [globalGameCount, setGlobalGameCount] = useState<number>(0);
