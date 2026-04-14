@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Sentry from '@sentry/react-native';
+import Constants from 'expo-constants';
 import { useTheme, useColors } from '@/contexts/ThemeContext';
 import { ThemeName, themeOptions, ThemeColors } from '@/constants/themes';
 import { useOpponents } from '@/contexts/OpponentContext';
@@ -375,7 +376,8 @@ export default function SettingsScreen() {
           style={styles.feedbackButton}
           activeOpacity={0.7}
           onPress={() => {
-            const mailUrl = 'mailto:gkstatsapp@gmail.com?subject=GK%20Stats%20Feedback&body=App%20Version%3A%20%5Bversion%5D%0A%0AWhat%20I%20found%3A%0A%0A%0AWhat%20I%20expected%3A%0A%0A%0ADevice%20%2F%20iOS%20version%3A%0A';
+            const appVersion = Constants.expoConfig?.version ?? 'unknown';
+            const mailUrl = `mailto:gkstatsapp@gmail.com?subject=${encodeURIComponent('GK Stats App Feedback')}&body=${encodeURIComponent(`App Version: ${appVersion}`)}`;
             Linking.openURL(mailUrl).catch(() => {
               Alert.alert('Unable to Open Mail', 'Please send feedback to gkstatsapp@gmail.com');
             });
