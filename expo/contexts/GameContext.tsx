@@ -57,7 +57,6 @@ function getStorageKey(profileId: string | null, isGuest: boolean): string {
 
 async function loadGamesFromStorage(storageKey: string): Promise<SavedGame[]> {
   try {
-    console.log('[GameContext] Loading games for key:', storageKey);
     const stored = await secureStorage.getItem<unknown[]>(storageKey);
     if (stored) {
       const validated = validateAndSanitizeArray('SavedGame', stored);
@@ -73,17 +72,13 @@ async function loadGamesFromStorage(storageKey: string): Promise<SavedGame[]> {
       });
 
       if (didBackfill) {
-        console.log('[GameContext] Backfilled defaultHalfStats into games missing half data for key:', storageKey);
         await secureStorage.setItem(storageKey, backfilled);
       }
 
-      console.log('[GameContext] Loaded', backfilled.length, 'games for key:', storageKey);
       return backfilled;
     }
-    console.log('[GameContext] No games found for key:', storageKey);
     return [];
   } catch (e) {
-    console.log('[GameContext] Error loading games:', e);
     Sentry.captureException(e);
     return [];
   }
@@ -122,7 +117,6 @@ export const [GameProvider, useGames] = createContextHook(() => {
 
   useEffect(() => {
     if (prevKeyRef.current !== storageKey) {
-      console.log('[GameContext] Storage key changed from', prevKeyRef.current, 'to', storageKey);
       prevKeyRef.current = storageKey;
       lastSyncTime.current = 0;
       void queryClient.invalidateQueries({ queryKey: ['games', storageKey] });
@@ -132,7 +126,6 @@ export const [GameProvider, useGames] = createContextHook(() => {
   const runGameSync = useCallback(async (force?: boolean) => {
     if (!isShared || !sharedProfileId || !supabaseReady || syncInProgress.current) return;
     if (!force && !isDirty.current) {
-      console.log('[GameContext] Skipping sync — not dirty');
       return;
     }
 
@@ -143,7 +136,6 @@ export const [GameProvider, useGames] = createContextHook(() => {
     try {
       if (isDirty.current) {
         const currentData = queryClient.getQueryData<SavedGame[]>(['games', storageKey]) ?? [];
-        console.log('[GameContext] Batch uploading', currentData.length, 'games');
         await uploadProfileData(sharedProfileId, 'games', currentData);
         isDirty.current = false;
       }
@@ -157,12 +149,10 @@ export const [GameProvider, useGames] = createContextHook(() => {
         if (merged.length !== localGames.length || JSON.stringify(merged) !== JSON.stringify(localGames)) {
           await secureStorage.setItem(storageKey, merged);
           queryClient.setQueryData(['games', storageKey], merged);
-          console.log('[GameContext] Merged cloud games, total:', merged.length);
         }
       }
       markSuccess();
     } catch (e) {
-      console.log('[GameContext] Cloud sync error:', e);
       Sentry.captureException(e);
       markFailed(async () => {
         const currentData = queryClient.getQueryData<SavedGame[]>(['games', storageKey]) ?? [];
@@ -208,10 +198,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
   const saveMutation = useMutation({
     mutationFn: async ({ key, updatedGames }: { key: string; updatedGames: SavedGame[] }) => {
       if (key !== 'gk_tracker_games_guest') {
-        console.log('[GameContext] Persisting', updatedGames.length, 'games to key:', key);
         await secureStorage.setItem(key, updatedGames);
-      } else {
-        console.log('[GameContext] Guest mode - not persisting games');
       }
       return updatedGames;
     },
@@ -220,7 +207,6 @@ export const [GameProvider, useGames] = createContextHook(() => {
 
       if (isShared && sharedProfileId && supabaseReady) {
         isDirty.current = true;
-        console.log('[GameContext] Marked dirty — will batch sync on next interval');
       }
     },
   });
@@ -234,7 +220,6 @@ export const [GameProvider, useGames] = createContextHook(() => {
     const pendingGames = allGames.filter(g => g.pendingSync && isLocalGameId(g.id));
     if (pendingGames.length === 0) return;
 
-    console.log('[GameContext] Found', pendingGames.length, 'games with pendingSync flag');
     pendingSyncInProgress.current = true;
 
     void (async () => {
@@ -254,7 +239,6 @@ export const [GameProvider, useGames] = createContextHook(() => {
                 pendingSync: undefined,
               };
               changed = true;
-              console.log('[GameContext] Replaced local ID', pending.id, '-> server ID', result.id);
             }
           }
         }
@@ -263,14 +247,12 @@ export const [GameProvider, useGames] = createContextHook(() => {
           queryClient.setQueryData(['games', storageKey], updatedGames);
           if (storageKey !== 'gk_tracker_games_guest') {
             await secureStorage.setItem(storageKey, updatedGames);
-            console.log('[GameContext] Persisted synced games to secureStorage');
           }
 
           if (isShared && sharedProfileId && supabaseReady) {
             markSyncing();
             try {
               await uploadProfileData(sharedProfileId, 'games', updatedGames);
-              console.log('[GameContext] Uploaded synced games to cloud');
               markSuccess();
             } catch (e: any) {
               if (e?.message === GAME_LIMIT_ERROR_KEY) {
@@ -285,7 +267,6 @@ export const [GameProvider, useGames] = createContextHook(() => {
           }
         }
       } catch (e) {
-        console.log('[GameContext] Pending sync error:', e);
         Sentry.captureException(e);
       } finally {
         pendingSyncInProgress.current = false;
@@ -298,7 +279,6 @@ export const [GameProvider, useGames] = createContextHook(() => {
     const updated = [game, ...currentGames];
     queryClient.setQueryData(['games', storageKey], updated);
     saveMutation.mutate({ key: storageKey, updatedGames: updated });
-    console.log('[GameContext] Added game, total now:', updated.length);
   }, [storageKey, saveMutation, queryClient]);
 
   const deleteGame = useCallback((gameId: string) => {
@@ -306,7 +286,6 @@ export const [GameProvider, useGames] = createContextHook(() => {
     const updated = currentGames.filter(g => g.id !== gameId);
     queryClient.setQueryData(['games', storageKey], updated);
     saveMutation.mutate({ key: storageKey, updatedGames: updated });
-    console.log('[GameContext] Deleted game, total now:', updated.length);
   }, [storageKey, saveMutation, queryClient]);
 
   const updateGame = useCallback((updatedGame: SavedGame) => {
@@ -314,7 +293,6 @@ export const [GameProvider, useGames] = createContextHook(() => {
     const updated = currentGames.map(g => g.id === updatedGame.id ? updatedGame : g);
     queryClient.setQueryData(['games', storageKey], updated);
     saveMutation.mutate({ key: storageKey, updatedGames: updated });
-    console.log('[GameContext] Updated game:', updatedGame.id);
   }, [storageKey, saveMutation, queryClient]);
 
   const getGame = useCallback((gameId: string): SavedGame | undefined => {
@@ -327,7 +305,6 @@ export const [GameProvider, useGames] = createContextHook(() => {
       const currentGames = queryClient.getQueryData<SavedGame[]>(['games', storageKey]) ?? [];
       const gameToMove = currentGames.find(g => g.id === gameId);
       if (!gameToMove) {
-        console.log('[GameContext] Game not found for move:', gameId);
         return false;
       }
 
@@ -342,16 +319,13 @@ export const [GameProvider, useGames] = createContextHook(() => {
       const updatedDestGames = [movedGame, ...destGames];
       await secureStorage.setItem(destKey, updatedDestGames);
       queryClient.setQueryData(['games', destKey], updatedDestGames);
-      console.log('[GameContext] Added game to destination profile:', destinationProfileId);
 
       const updatedSourceGames = currentGames.filter(g => g.id !== gameId);
       queryClient.setQueryData(['games', storageKey], updatedSourceGames);
       await secureStorage.setItem(storageKey, updatedSourceGames);
-      console.log('[GameContext] Removed game from source, remaining:', updatedSourceGames.length);
 
       return true;
     } catch (e) {
-      console.log('[GameContext] Error moving game:', e);
       Sentry.captureException(e);
       return false;
     }
@@ -361,7 +335,6 @@ export const [GameProvider, useGames] = createContextHook(() => {
     if (!isShared || !sharedProfileId || !supabaseReady) return;
     isDirty.current = true;
     syncInProgress.current = false;
-    console.log('[GameContext] Force sync triggered');
     await runGameSync(true);
   }, [isShared, sharedProfileId, supabaseReady, runGameSync]);
 
@@ -385,11 +358,9 @@ export const [GameProvider, useGames] = createContextHook(() => {
           }
         }
         if (!cancelled) {
-          console.log('[GameContext] Global game count across all profiles:', total);
           setGlobalGameCount(total);
         }
       } catch (e) {
-        console.log('[GameContext] Error counting global games:', e);
         Sentry.captureException(e);
       }
     }

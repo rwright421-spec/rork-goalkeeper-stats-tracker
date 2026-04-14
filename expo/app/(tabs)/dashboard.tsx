@@ -103,7 +103,7 @@ export default function DashboardScreen() {
     if (Platform.OS === 'web') {
       router.replace('/');
     } else {
-      try { router.dismissAll(); } catch (e) { console.log('[Dashboard] dismissAll error:', e); }
+      try { router.dismissAll(); } catch (_e) { /* dismissAll may fail if no screens to dismiss */ }
       setTimeout(() => router.replace('/'), 100);
     }
   }, [clearSelection, clearTeamSelection, router]);

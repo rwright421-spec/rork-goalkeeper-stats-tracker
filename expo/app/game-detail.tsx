@@ -190,7 +190,6 @@ function KeeperDetailBlock({ keeper, label, color, colors, ageGroup }: { keeper:
 }
 
 export default function GameDetailScreen() {
-  console.log("[GameDetail] Screen rendered");
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const colors = useColors();

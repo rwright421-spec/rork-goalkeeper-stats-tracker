@@ -29,7 +29,6 @@ const AGE_GROUPS: AgeGroup[] = ['U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', '
 const HALF_LENGTH_OPTIONS = [20, 25, 30, 35, 40, 45];
 
 export default function NewGameScreen() {
-  console.log("[NewGame] Screen rendered");
   const router = useRouter();
   const colors = useColors();
   const [eventName, setEventName] = useState('');
@@ -328,7 +327,6 @@ export default function NewGameScreen() {
                     setNewTeamHalfLength(undefined);
                     setNewTeamHalfLengthPickerOpen(false);
                     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                    console.log('[NewGame] Created and selected new team:', newTeam.teamName);
                   }}
                   disabled={!newTeamName.trim() || !newTeamYear.trim()}
                   activeOpacity={0.7}

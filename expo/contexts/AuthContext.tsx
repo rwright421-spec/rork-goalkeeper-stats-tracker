@@ -17,13 +17,10 @@ async function loadUserIdentity(): Promise<{ userId: string; displayName: string
     if (!userId) {
       userId = generateUserId();
       await secureStorage.setRawString(USER_ID_KEY, userId);
-      console.log('[Auth] Generated new user ID:', userId);
     }
     const displayName = (await secureStorage.getRawString(DISPLAY_NAME_KEY)) || '';
-    console.log('[Auth] Loaded identity - userId:', userId, 'displayName:', displayName);
     return { userId, displayName };
   } catch (e) {
-    console.log('[Auth] Error loading identity:', e);
     Sentry.captureException(e);
     const fallback = generateUserId();
     return { userId: fallback, displayName: '' };

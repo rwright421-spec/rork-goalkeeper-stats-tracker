@@ -44,7 +44,6 @@ export default function ProfilesScreen() {
         router.replace('/');
       }
     } catch (e) {
-      console.log('[Profiles] Navigation error, falling back to replace:', e);
       Sentry.captureException(e);
       router.replace('/');
     }
@@ -75,7 +74,7 @@ export default function ProfilesScreen() {
     updateProfile(activeProfile.id, editProfileName, editProfileBirthYear || undefined);
     setEditingProfileMode(false);
     setEditProfileYearPickerOpen(false);
-    console.log('[Profiles] Profile updated:', activeProfile.id);
+
   }, [activeProfile, editProfileName, editProfileBirthYear, updateProfile]);
 
   const handleCancelEditProfile = useCallback(() => {

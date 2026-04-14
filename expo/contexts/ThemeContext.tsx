@@ -18,7 +18,6 @@ export const [ThemeProvider, useTheme] = createContextHook(() => {
           setThemeName(stored as ThemeName);
         }
       } catch (e) {
-        console.log('[ThemeContext] Failed to load theme:', e);
         Sentry.captureException(e);
       } finally {
         setIsLoaded(true);
@@ -29,7 +28,6 @@ export const [ThemeProvider, useTheme] = createContextHook(() => {
   const setTheme = useCallback((name: ThemeName) => {
     setThemeName(name);
     void AsyncStorage.setItem(THEME_STORAGE_KEY, name).catch((e) => {
-      console.log('[ThemeContext] Failed to save theme:', e);
       Sentry.captureException(e);
     });
   }, []);

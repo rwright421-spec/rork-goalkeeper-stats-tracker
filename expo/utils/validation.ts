@@ -174,14 +174,11 @@ export function validateAndSanitize<T extends SchemaType>(
   const result = schema.safeParse(data);
 
   if (result.success) {
-    console.log(`[Validation] ${schemaType} passed validation`);
     return { success: true, data: result.data as SchemaOutput<T> };
   }
 
   const errorDetails = result.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ');
   const shape = describeShape(data);
-
-  console.log(`[Validation] ${schemaType} failed validation:`, errorDetails);
 
   if (__DEV__) {
     console.warn(`[Validation DEV] ${schemaType} validation failed:\n  Shape: ${shape}\n  Errors: ${errorDetails}`);
@@ -211,10 +208,8 @@ export function validateAndSanitizeArray<T extends SchemaType>(
       validated.push(result.data);
     } else {
       skippedCount++;
-      console.log(`[Validation] Skipping invalid ${schemaType} item:`, result.error);
     }
   }
-  console.log(`[Validation] ${schemaType} array: ${validated.length}/${data.length} items valid`);
 
   if (skippedCount > 0) {
     if (__DEV__) {

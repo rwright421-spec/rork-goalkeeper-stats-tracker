@@ -17,7 +17,6 @@ import { useOpponents } from '@/contexts/OpponentContext';
 import KeeperStatsSection from '@/components/KeeperStatsSection';
 
 export default function GameTrackingScreen() {
-  console.log("[GameTracking] Screen rendered");
   const router = useRouter();
   const colors = useColors();
   const params = useLocalSearchParams<{
@@ -40,7 +39,6 @@ export default function GameTrackingScreen() {
 
   useEffect(() => {
     if (gameLimitExceeded && !isPro) {
-      console.log('[GameTracking] Server-side game limit exceeded — showing paywall');
       clearGameLimitExceeded();
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       router.push('/paywall');
@@ -81,7 +79,6 @@ export default function GameTrackingScreen() {
       data.keeperIsLinked = true;
       data.secondHalfKeeperProfileId = activeProfile.id;
       data.secondHalfKeeperIsLinked = true;
-      console.log('[GameTracking] Auto-linked home keeper to profile:', activeProfile.id, activeProfile.name);
     }
     return data;
   });
@@ -96,7 +93,6 @@ export default function GameTrackingScreen() {
       data.keeperIsLinked = true;
       data.secondHalfKeeperProfileId = activeProfile.id;
       data.secondHalfKeeperIsLinked = true;
-      console.log('[GameTracking] Auto-linked away keeper to profile:', activeProfile.id, activeProfile.name);
     }
     return data;
   });
@@ -204,7 +200,6 @@ export default function GameTrackingScreen() {
       Alert.alert('Game Updated', 'Stats have been updated.', [{ text: 'OK', onPress: () => { if (Platform.OS === 'web') { router.replace('/(tabs)/dashboard'); } else { router.dismissAll(); router.replace('/(tabs)/dashboard'); } } }]);
     } else {
       if (!isPro && isAtFreeLimit) {
-        console.log('[GameTracking] Free limit reached at save time (fallback gate). Count:', totalGameCount);
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         router.push('/paywall');
         return;
@@ -221,21 +216,17 @@ export default function GameTrackingScreen() {
       let pendingSync = false;
 
       try {
-        console.log('[GameTracking] Requesting server-generated game ID from Supabase...');
         const serverId = await generateServerGameId();
         if (serverId) {
           gameId = serverId;
-          console.log('[GameTracking] Using Supabase-generated ID:', gameId);
         } else {
           gameId = createLocalGameId();
           pendingSync = true;
-          console.log('[GameTracking] Offline — using local ID:', gameId);
         }
       } catch (e) {
         Sentry.captureException(e);
         gameId = createLocalGameId();
         pendingSync = true;
-        console.log('[GameTracking] Error generating server ID — using local ID:', gameId);
       }
 
       const game: SavedGame = {

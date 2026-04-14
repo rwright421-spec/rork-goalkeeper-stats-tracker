@@ -14,7 +14,6 @@ async function loadOpponents(): Promise<string[]> {
     }
     return [];
   } catch (e) {
-    console.log('[OpponentContext] Error loading opponents:', e);
     Sentry.captureException(e);
     return [];
   }
@@ -61,7 +60,6 @@ export const [OpponentProvider, useOpponents] = createContextHook(() => {
       if (updated.length === current.length) return;
       queryClient.setQueryData(['opponents'], updated);
       saveMutation.mutate(updated);
-      console.log('[OpponentContext] Added opponent:', name.trim());
     },
     [queryClient, saveMutation]
   );
@@ -74,7 +72,6 @@ export const [OpponentProvider, useOpponents] = createContextHook(() => {
       );
       queryClient.setQueryData(['opponents'], updated);
       saveMutation.mutate(updated);
-      console.log('[OpponentContext] Removed opponent:', name);
     },
     [queryClient, saveMutation]
   );

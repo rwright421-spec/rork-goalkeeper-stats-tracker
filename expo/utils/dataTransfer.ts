@@ -29,10 +29,7 @@ const ExportPayloadSchema = z.object({
 });
 
 export async function gatherExportData(): Promise<ExportPayload> {
-  console.log('[dataTransfer] Gathering all data for export...');
-
   const profiles = await secureStorage.getItem<GoalkeeperProfile[]>('gk_tracker_profiles') ?? [];
-  console.log('[dataTransfer] Found', profiles.length, 'profiles');
 
   const games: Record<string, SavedGame[]> = {};
   const teams: Record<string, Team[]> = {};
@@ -40,7 +37,6 @@ export async function gatherExportData(): Promise<ExportPayload> {
   const guestGames = await secureStorage.getItem<SavedGame[]>('gk_tracker_games_guest');
   if (guestGames && guestGames.length > 0) {
     games['guest'] = guestGames;
-    console.log('[dataTransfer] Found', guestGames.length, 'guest games');
   }
 
   const guestTeams = await secureStorage.getItem<Team[]>('gk_tracker_teams_guest');
@@ -52,13 +48,11 @@ export async function gatherExportData(): Promise<ExportPayload> {
     const profileGames = await secureStorage.getItem<SavedGame[]>(`gk_tracker_games_${profile.id}`);
     if (profileGames && profileGames.length > 0) {
       games[profile.id] = profileGames;
-      console.log('[dataTransfer] Found', profileGames.length, 'games for profile', profile.id);
     }
 
     const profileTeams = await secureStorage.getItem<Team[]>(`gk_tracker_teams_${profile.id}`);
     if (profileTeams && profileTeams.length > 0) {
       teams[profile.id] = profileTeams;
-      console.log('[dataTransfer] Found', profileTeams.length, 'teams for profile', profile.id);
     }
   }
 
@@ -70,7 +64,6 @@ export async function gatherExportData(): Promise<ExportPayload> {
     teams,
   };
 
-  console.log('[dataTransfer] Export payload assembled');
   return payload;
 }
 
@@ -91,7 +84,7 @@ export function validateImportPayload(raw: unknown): { success: true; data: Expo
   const parsed = ExportPayloadSchema.safeParse(raw);
   if (!parsed.success) {
     const msg = parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ');
-    console.log('[dataTransfer] Import validation failed:', msg);
+    Sentry.captureMessage('Import validation failed', { level: 'warning', extra: { errors: msg } });
     return { success: false, error: `Invalid export file structure: ${msg}` };
   }
 
@@ -126,7 +119,6 @@ export function validateImportPayload(raw: unknown): { success: true; data: Expo
 }
 
 export async function mergeImportData(importData: ExportPayload): Promise<ImportResult> {
-  console.log('[dataTransfer] Starting import merge...');
   const result: ImportResult = {
     profilesAdded: 0,
     profilesSkipped: 0,
@@ -147,15 +139,12 @@ export async function mergeImportData(importData: ExportPayload): Promise<Import
       if (importDate > existingDate) {
         existingProfileMap.set(profile.id, profile);
         result.profilesAdded++;
-        console.log('[dataTransfer] Updated newer profile:', profile.id);
       } else {
         result.profilesSkipped++;
-        console.log('[dataTransfer] Skipped older profile:', profile.id);
       }
     } else {
       existingProfileMap.set(profile.id, profile);
       result.profilesAdded++;
-      console.log('[dataTransfer] Added new profile:', profile.id);
     }
   }
 
@@ -188,7 +177,6 @@ export async function mergeImportData(importData: ExportPayload): Promise<Import
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
     await secureStorage.setItem(storageKey, mergedGames);
-    console.log('[dataTransfer] Merged games for key:', storageKey, '- total:', mergedGames.length);
   }
 
   for (const [profileKey, importTeams] of Object.entries(importData.teams)) {
@@ -217,9 +205,7 @@ export async function mergeImportData(importData: ExportPayload): Promise<Import
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
     await secureStorage.setItem(storageKey, mergedTeams);
-    console.log('[dataTransfer] Merged teams for key:', storageKey, '- total:', mergedTeams.length);
   }
 
-  console.log('[dataTransfer] Import complete:', result);
   return result;
 }

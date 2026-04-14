@@ -17,7 +17,6 @@ for (let y = currentYear; y >= 1975; y--) { YEARS.push(String(y)); }
 const HALF_LENGTH_OPTIONS = [20, 25, 30, 35, 40, 45];
 
 export default function TeamSelectScreen() {
-  console.log("[TeamSelect] Screen rendered");
   const router = useRouter();
   const colors = useColors();
   const { activeProfile } = useGoalkeepers();

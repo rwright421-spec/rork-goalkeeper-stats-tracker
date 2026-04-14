@@ -18,16 +18,13 @@ function getTeamsKey(profileId: string | null): string {
 
 async function loadTeams(key: string): Promise<Team[]> {
   try {
-    console.log('[TeamContext] Loading teams for key:', key);
     const stored = await secureStorage.getItem<unknown[]>(key);
     if (stored) {
       const validated = validateAndSanitizeArray('Team', stored);
-      console.log('[TeamContext] Loaded', validated.length, 'teams');
       return validated;
     }
     return [];
   } catch (e) {
-    console.log('[TeamContext] Error loading teams:', e);
     Sentry.captureException(e);
     return [];
   }
@@ -58,7 +55,6 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
   const runTeamSync = useCallback(async (force?: boolean) => {
     if (!isShared || !sharedProfileId || !supabaseReady || syncInProgress.current) return;
     if (!force && !isDirty.current) {
-      console.log('[TeamContext] Skipping sync — not dirty');
       return;
     }
 
@@ -69,7 +65,6 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
     try {
       if (isDirty.current) {
         const currentData = queryClient.getQueryData<Team[]>(['teams', storageKey]) ?? [];
-        console.log('[TeamContext] Batch uploading', currentData.length, 'teams');
         await uploadProfileData(sharedProfileId, 'teams', currentData);
         isDirty.current = false;
       }
@@ -82,12 +77,10 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
         if (merged.length !== localTeams.length || JSON.stringify(merged) !== JSON.stringify(localTeams)) {
           await secureStorage.setItem(storageKey, merged);
           queryClient.setQueryData(['teams', storageKey], merged);
-          console.log('[TeamContext] Merged cloud teams, total:', merged.length);
         }
       }
       markSuccess();
     } catch (e) {
-      console.log('[TeamContext] Cloud sync error:', e);
       Sentry.captureException(e);
       markFailed(async () => {
         const currentData = queryClient.getQueryData<Team[]>(['teams', storageKey]) ?? [];
@@ -138,7 +131,6 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
 
   const saveMutation = useMutation({
     mutationFn: async ({ key, updatedTeams }: { key: string; updatedTeams: Team[] }) => {
-      console.log('[TeamContext] Persisting', updatedTeams.length, 'teams to key:', key);
       await secureStorage.setItem(key, updatedTeams);
       return updatedTeams;
     },
@@ -147,7 +139,6 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
 
       if (isShared && sharedProfileId && supabaseReady) {
         isDirty.current = true;
-        console.log('[TeamContext] Marked dirty — will batch sync on next interval');
       }
     },
   });
@@ -165,7 +156,6 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
     const updated = [team, ...currentTeams];
     queryClient.setQueryData(['teams', storageKey], updated);
     saveMutation.mutate({ key: storageKey, updatedTeams: updated });
-    console.log('[TeamContext] Created team:', team.teamName, team.year, 'halfLength:', halfLengthMinutes);
     return team;
   }, [activeProfileId, storageKey, saveMutation, queryClient]);
 
@@ -191,7 +181,6 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
   const selectTeam = useCallback((teamId: string) => {
     setActiveTeamId(teamId);
     setViewAllGames(false);
-    console.log('[TeamContext] Selected team:', teamId);
   }, []);
 
   const clearTeamSelection = useCallback(() => {
@@ -202,7 +191,6 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
   const showAllGames = useCallback(() => {
     setActiveTeamId(null);
     setViewAllGames(true);
-    console.log('[TeamContext] Viewing all games');
   }, []);
 
   useEffect(() => {
@@ -215,7 +203,6 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
     if (!isShared || !sharedProfileId || !supabaseReady) return;
     isDirty.current = true;
     syncInProgress.current = false;
-    console.log('[TeamContext] Force sync triggered');
     await runTeamSync(true);
   }, [isShared, sharedProfileId, supabaseReady, runTeamSync]);
 

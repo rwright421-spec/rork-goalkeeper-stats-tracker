@@ -29,7 +29,6 @@ export const [SyncStatusProvider, useSyncStatus] = createContextHook(() => {
 
   const markSyncing = useCallback(() => {
     setSyncStatus('syncing');
-    console.log('[SyncStatus] Status -> syncing');
   }, []);
 
   const markSuccess = useCallback(() => {
@@ -38,7 +37,6 @@ export const [SyncStatusProvider, useSyncStatus] = createContextHook(() => {
     pendingRetryFn.current = null;
     setSyncStatus('idle');
     setShowSuccess(true);
-    console.log('[SyncStatus] Status -> idle (success)');
     setTimeout(() => setShowSuccess(false), 2500);
   }, [clearRetryTimer]);
 
@@ -47,12 +45,10 @@ export const [SyncStatusProvider, useSyncStatus] = createContextHook(() => {
     if (attempt >= MAX_RETRIES) {
       setSyncStatus('error');
       pendingRetryFn.current = retryFn;
-      console.log('[SyncStatus] Max retries reached, status -> error');
       return;
     }
 
     const delay = BACKOFF_DELAYS[attempt] ?? BACKOFF_DELAYS[BACKOFF_DELAYS.length - 1];
-    console.log('[SyncStatus] Scheduling retry', attempt + 1, 'in', delay, 'ms');
     setSyncStatus('error');
 
     clearRetryTimer();
@@ -65,10 +61,8 @@ export const [SyncStatusProvider, useSyncStatus] = createContextHook(() => {
         pendingRetryFn.current = null;
         setSyncStatus('idle');
         setShowSuccess(true);
-        console.log('[SyncStatus] Retry succeeded');
         setTimeout(() => setShowSuccess(false), 2500);
       } catch (e) {
-        console.log('[SyncStatus] Retry failed:', e);
         Sentry.captureException(e);
         scheduleRetry(retryFn);
       }
@@ -76,7 +70,6 @@ export const [SyncStatusProvider, useSyncStatus] = createContextHook(() => {
   }, [clearRetryTimer]);
 
   const markFailed = useCallback((retryFn: () => Promise<void>) => {
-    console.log('[SyncStatus] Sync failed, starting backoff');
     pendingRetryFn.current = retryFn;
     retryCount.current = 0;
     scheduleRetry(retryFn);
@@ -85,23 +78,19 @@ export const [SyncStatusProvider, useSyncStatus] = createContextHook(() => {
   const manualRetry = useCallback(async () => {
     const fn = pendingRetryFn.current;
     if (!fn) {
-      console.log('[SyncStatus] No pending retry function');
       return;
     }
     clearRetryTimer();
     retryCount.current = 0;
     setSyncStatus('syncing');
-    console.log('[SyncStatus] Manual retry triggered');
     try {
       await fn();
       retryCount.current = 0;
       pendingRetryFn.current = null;
       setSyncStatus('idle');
       setShowSuccess(true);
-      console.log('[SyncStatus] Manual retry succeeded');
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (e) {
-      console.log('[SyncStatus] Manual retry failed:', e);
       Sentry.captureException(e);
       scheduleRetry(fn);
     }

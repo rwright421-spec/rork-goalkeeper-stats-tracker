@@ -58,7 +58,6 @@ export default React.memo(function SyncStatusBanner() {
   });
 
   const handleRetry = useCallback(() => {
-    console.log('[SyncStatusBanner] User tapped retry');
     void manualRetry();
   }, [manualRetry]);
 

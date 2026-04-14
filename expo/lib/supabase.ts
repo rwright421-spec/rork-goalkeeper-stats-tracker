@@ -4,23 +4,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let supabaseInstance: SupabaseClient | null = null;
 
-// ---------------------------------------------------------------------------
-// Supabase key usage:
-//
-// ANON KEY (EXPO_PUBLIC_SUPABASE_ANON_KEY)
-//   - Used by createClient() below for the initial connection.
-//   - Safe for client-side use; limited by Row Level Security (RLS) policies.
-//   - Suitable for: table creation checks, public reads, unauthenticated RPCs.
-//
-// USER JWT (authenticated session token)
-//   - Required for any query that touches user-specific data:
-//       • games, goalkeeper profiles, teams, profile_data
-//   - After the user authenticates, call supabase.auth.setSession() so that
-//     subsequent requests automatically include the user's JWT in the
-//     Authorization header instead of the anon key.
-//   - RLS policies on those tables should restrict access based on auth.uid().
-// ---------------------------------------------------------------------------
-
 export function getSupabase(): SupabaseClient | null {
   if (supabaseInstance) return supabaseInstance;
 
@@ -35,7 +18,7 @@ export function getSupabase(): SupabaseClient | null {
   }
 
   if (!url || !key) {
-    console.log('[Supabase] Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY');
+    if (__DEV__) { console.log('[Supabase] Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY'); }
     return null;
   }
 
@@ -46,7 +29,6 @@ export function getSupabase(): SupabaseClient | null {
     },
   });
 
-  console.log('[Supabase] Client initialized with URL:', url);
   return supabaseInstance;
 }
 
@@ -55,28 +37,24 @@ const MIGRATION_KEY = 'gk_supabase_migrated_v3';
 export async function ensureTables(): Promise<boolean> {
   const sb = getSupabase();
   if (!sb) {
-    console.log('[Supabase] No client available - env vars may be missing');
     return false;
   }
 
   const migrated = await AsyncStorage.getItem(MIGRATION_KEY);
   if (migrated === 'true') {
-    console.log('[Supabase] Already migrated, skipping table check');
     return true;
   }
 
   try {
     const { error } = await sb.from('profiles').select('profile_id').limit(1);
     if (!error) {
-      console.log('[Supabase] Tables exist and are accessible');
       await AsyncStorage.setItem(MIGRATION_KEY, 'true');
       return true;
     }
 
-    console.log('[Supabase] Table check result:', error.code, error.message);
+    if (__DEV__) { console.log('[Supabase] Table check result:', error.code, error.message); }
 
     if (error.code === '42P01' || error.message?.includes('does not exist') || error.message?.includes('relation')) {
-      console.log('[Supabase] Tables do not exist, attempting creation...');
       const created = await tryCreateTables();
       if (created) {
         await AsyncStorage.setItem(MIGRATION_KEY, 'true');
@@ -85,7 +63,6 @@ export async function ensureTables(): Promise<boolean> {
     }
 
     if (error.code === 'PGRST302' || error.code === '42501') {
-      console.log('[Supabase] Permission issue, tables may exist but need RLS policies. Attempting creation...');
       const created = await tryCreateTables();
       if (created) {
         await AsyncStorage.setItem(MIGRATION_KEY, 'true');
@@ -93,10 +70,8 @@ export async function ensureTables(): Promise<boolean> {
       }
     }
 
-    console.log('[Supabase] Could not verify tables, marking as ready anyway for operation-level error handling');
     return true;
   } catch (e) {
-    console.log('[Supabase] ensureTables error:', e);
     Sentry.captureException(e);
     return true;
   }
@@ -193,14 +168,9 @@ async function executeSql(sql: string): Promise<boolean> {
       });
 
       if (res.ok) {
-        console.log('[Supabase] SQL executed successfully via', endpoint);
         return true;
       }
-
-      const text = await res.text().catch(() => '');
-      console.log('[Supabase] SQL endpoint', endpoint, 'returned', res.status, text.slice(0, 200));
     } catch (e) {
-      console.log('[Supabase] SQL endpoint', endpoint, 'failed:', e);
       Sentry.captureException(e);
     }
   }
@@ -210,12 +180,9 @@ async function executeSql(sql: string): Promise<boolean> {
     try {
       const { error } = await sb.rpc('exec_sql', { query: sql });
       if (!error) {
-        console.log('[Supabase] SQL executed via Supabase RPC');
         return true;
       }
-      console.log('[Supabase] RPC exec_sql failed:', error.message);
     } catch (e) {
-      console.log('[Supabase] RPC attempt failed:', e);
       Sentry.captureException(e);
     }
   }
@@ -224,8 +191,6 @@ async function executeSql(sql: string): Promise<boolean> {
 }
 
 async function tryCreateTables(): Promise<boolean> {
-  console.log('[Supabase] Attempting to create tables...');
-
   const fullSql = [
     CREATE_PROFILES_SQL,
     CREATE_PROFILE_DATA_SQL,
@@ -237,11 +202,8 @@ async function tryCreateTables(): Promise<boolean> {
 
   const fullSuccess = await executeSql(fullSql);
   if (fullSuccess) {
-    console.log('[Supabase] All tables created successfully');
     return true;
   }
-
-  console.log('[Supabase] Full SQL failed, trying individual statements...');
 
   const stepsInOrder = [
     { name: 'profiles table', sql: CREATE_PROFILES_SQL },
@@ -255,7 +217,6 @@ async function tryCreateTables(): Promise<boolean> {
   let anySuccess = false;
   for (const step of stepsInOrder) {
     const ok = await executeSql(step.sql);
-    console.log(`[Supabase] ${step.name}: ${ok ? 'OK' : 'FAILED'}`);
     if (ok) anySuccess = true;
   }
 
@@ -264,17 +225,14 @@ async function tryCreateTables(): Promise<boolean> {
     if (sb) {
       const { error } = await sb.from('profiles').select('profile_id').limit(1);
       if (!error) {
-        console.log('[Supabase] Tables verified after individual creation');
         return true;
       }
     }
   }
 
-  console.log('[Supabase] Table creation attempts completed. Some may have failed.');
   return false;
 }
 
 export async function resetMigrationCache(): Promise<void> {
   await AsyncStorage.removeItem(MIGRATION_KEY);
-  console.log('[Supabase] Migration cache cleared');
 }

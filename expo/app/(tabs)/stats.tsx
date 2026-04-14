@@ -658,7 +658,7 @@ export default function GoalkeeperStatsScreen() {
     if (Platform.OS === 'web') {
       router.replace('/');
     } else {
-      try { router.dismissAll(); } catch (e) { console.log('[Stats] dismissAll error:', e); }
+      try { router.dismissAll(); } catch (_e) { /* dismissAll may fail if no screens to dismiss */ }
       setTimeout(() => router.replace('/'), 100);
     }
   }, [clearSelection, clearTeamSelection, router]);
@@ -710,7 +710,7 @@ export default function GoalkeeperStatsScreen() {
   const profileId = activeProfile?.id;
 
   const groupedStats = useMemo((): GroupedStats[] => {
-    console.log('[GoalkeeperStats] Computing grouped stats, mode:', groupMode, 'games:', allGames.length);
+
     switch (groupMode) {
       case 'career':
         return groupByCareer(allGames, keeperName, teams);

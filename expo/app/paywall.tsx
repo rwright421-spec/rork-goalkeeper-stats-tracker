@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
+import * as Sentry from '@sentry/react-native';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, Linking } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { X, Shield, Check, Crown } from 'lucide-react-native';
@@ -22,7 +23,6 @@ const FEATURES = [
 const PRIVACY_URL = 'https://smiling-gorgonzola-c76.notion.site/Privacy-Policy-a70ef03840ca4301b83bb7a302c070fa?pvs=74';
 
 export default function PaywallScreen() {
-  console.log('[Paywall] Screen rendered');
   const router = useRouter();
   const colors = useColors();
   const { restorePurchases, isRestoring, currentOffering, purchasePackage, isPro } = usePurchases();
@@ -53,7 +53,7 @@ export default function PaywallScreen() {
     );
     if (!pkg) {
       Alert.alert('Unavailable', 'This plan is not available right now. Please try again later.');
-      console.log('[Paywall] Package not found for', targetId, 'in', currentOffering.availablePackages.map((p: any) => p.product.identifier));
+      Sentry.captureMessage('Paywall package not found', { level: 'warning', extra: { targetId, available: currentOffering.availablePackages.map((p: any) => p.product.identifier) } });
       return;
     }
     setIsPurchasing(true);

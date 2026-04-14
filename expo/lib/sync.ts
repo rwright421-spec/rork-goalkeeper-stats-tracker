@@ -22,7 +22,6 @@ export async function uploadProfileData(
 ): Promise<boolean> {
   const sb = getSupabase();
   if (!sb) {
-    console.log('[Sync] No Supabase client available');
     return false;
   }
 
@@ -39,17 +38,14 @@ export async function uploadProfileData(
       });
 
     if (error) {
-      console.log('[Sync] Upload error for', dataKey, ':', error.message, error.code);
       if (isGameLimitError(error)) {
         throw new Error(GAME_LIMIT_ERROR_KEY);
       }
       return false;
     }
 
-    console.log('[Sync] Uploaded', dataKey, ':', data.length, 'items for profile:', sharedProfileId);
     return true;
   } catch (e: any) {
-    console.log('[Sync] Upload exception:', e);
     if (e?.message === GAME_LIMIT_ERROR_KEY) {
       throw e;
     }
@@ -64,7 +60,6 @@ export async function downloadProfileData<T>(
 ): Promise<T[] | null> {
   const sb = getSupabase();
   if (!sb) {
-    console.log('[Sync] No Supabase client for download');
     return null;
   }
 
@@ -77,20 +72,16 @@ export async function downloadProfileData<T>(
       .maybeSingle();
 
     if (error) {
-      console.log('[Sync] Download error for', dataKey, ':', error.message);
       return null;
     }
 
     if (!data) {
-      console.log('[Sync] No cloud data found for', dataKey, 'profile:', sharedProfileId);
       return [];
     }
 
     const parsed = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
-    console.log('[Sync] Downloaded', dataKey, ':', Array.isArray(parsed) ? parsed.length : 0, 'items');
     return parsed as T[];
   } catch (e) {
-    console.log('[Sync] Download exception:', e);
     Sentry.captureException(e);
     return null;
   }
@@ -101,26 +92,22 @@ export async function uploadAllProfileData(
   teams: Team[],
   games: SavedGame[],
 ): Promise<boolean> {
-  console.log('[Sync] Uploading all data for profile:', sharedProfileId);
   const [teamsOk, gamesOk] = await Promise.all([
     uploadProfileData(sharedProfileId, 'teams', teams),
     uploadProfileData(sharedProfileId, 'games', games),
   ]);
-  console.log('[Sync] Upload results - teams:', teamsOk, 'games:', gamesOk);
   return teamsOk && gamesOk;
 }
 
 export async function downloadAllProfileData(
   sharedProfileId: string,
 ): Promise<SyncData | null> {
-  console.log('[Sync] Downloading all data for profile:', sharedProfileId);
   const [teams, games] = await Promise.all([
     downloadProfileData<Team>(sharedProfileId, 'teams'),
     downloadProfileData<SavedGame>(sharedProfileId, 'games'),
   ]);
 
   if (teams === null && games === null) {
-    console.log('[Sync] No cloud data available');
     return null;
   }
 
@@ -134,24 +121,19 @@ export async function downloadAllProfileData(
 export async function generateServerGameId(): Promise<string | null> {
   const sb = getSupabase();
   if (!sb) {
-    console.log('[Sync] No Supabase client — cannot generate server game ID');
     return null;
   }
 
   try {
     const { data, error } = await sb.rpc('generate_game_id');
     if (error) {
-      console.log('[Sync] generate_game_id RPC error:', error.message, error.code);
       return null;
     }
     if (data && typeof data === 'string') {
-      console.log('[Sync] Server-generated game ID:', data);
       return data;
     }
-    console.log('[Sync] Unexpected RPC response:', data);
     return null;
   } catch (e) {
-    console.log('[Sync] generateServerGameId network error (likely offline):', e);
     Sentry.captureException(e);
     return null;
   }
@@ -174,11 +156,9 @@ export async function syncPendingGame(
 
   const serverId = await generateServerGameId();
   if (!serverId) {
-    console.log('[Sync] Still offline — cannot sync pending game:', game.id);
     return { id: game.id, synced: false };
   }
 
-  console.log('[Sync] Synced pending game. Old ID:', game.id, '-> New ID:', serverId);
   return { id: serverId, synced: true };
 }
 

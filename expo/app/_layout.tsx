@@ -21,9 +21,7 @@ Sentry.init({
   debug: __DEV__,
 });
 
-SplashScreen.preventAutoHideAsync().catch(() => {
-  console.log("[RootLayout] SplashScreen.preventAutoHideAsync failed");
-});
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -50,8 +48,6 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryS
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.log("[ErrorBoundary] Caught error:", error.message);
-    console.log("[ErrorBoundary] Component stack:", info.componentStack);
     Sentry.captureException(error, {
       extra: { componentStack: info.componentStack },
     });
@@ -178,10 +174,7 @@ function RootLayoutNav() {
 
 function RootLayout() {
   useEffect(() => {
-    console.log("[RootLayout] App mounted, hiding splash screen");
-    SplashScreen.hideAsync().catch((e) => {
-      console.log("[RootLayout] SplashScreen.hideAsync error:", e);
-    });
+    SplashScreen.hideAsync().catch(() => {});
   }, []);
 
   return (

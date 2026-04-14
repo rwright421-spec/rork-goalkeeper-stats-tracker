@@ -12,12 +12,9 @@ let rcConfigured = false;
 function configureRC() {
   if (rcConfigured) return;
   try {
-    console.log('[PurchasesContext] Configuring RevenueCat');
     Purchases.configure({ apiKey: RC_API_KEY });
     rcConfigured = true;
-    console.log('[PurchasesContext] RevenueCat configured successfully');
   } catch (e) {
-    console.log('[PurchasesContext] Failed to configure RevenueCat:', e);
     Sentry.captureException(e);
   }
 }
@@ -35,14 +32,12 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
   const checkEntitlementFromInfo = useCallback((info: CustomerInfo) => {
     const entitlement = info.entitlements.active[ENTITLEMENT_ID];
     const hasPro = !!entitlement;
-    console.log('[PurchasesContext] Entitlement check:', hasPro ? 'PRO' : 'FREE');
     setIsPro(hasPro);
     return hasPro;
   }, []);
 
   const initAndFetchOfferings = useCallback(async () => {
     if (Platform.OS === 'web') {
-      console.log('[PurchasesContext] Web platform — skipping RC init');
       setIsLoading(false);
       return null;
     }
@@ -55,13 +50,11 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
       checkEntitlementFromInfo(customerInfo);
 
       const offerings = await Purchases.getOfferings();
-      console.log('[PurchasesContext] Offerings fetched:', offerings.current?.identifier ?? 'none');
       if (offerings.current) {
         setCurrentOffering(offerings.current);
       }
       return offerings.current ?? null;
     } catch (e) {
-      console.log('[PurchasesContext] Error fetching offerings:', e);
       Sentry.captureException(e);
       return null;
     } finally {
@@ -71,19 +64,16 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
 
   const purchasePackage = useCallback(async (pkg: any) => {
     try {
-      console.log('[PurchasesContext] Purchasing package:', pkg.identifier);
       const { customerInfo } = await Purchases.purchasePackage(pkg);
       const hasPro = checkEntitlementFromInfo(customerInfo);
       if (hasPro) {
-        console.log('[PurchasesContext] Purchase successful — user is now Pro');
         Alert.alert('Welcome to Pro!', 'You now have unlimited access to all features.');
       }
       return hasPro;
     } catch (e: any) {
       if (e.userCancelled) {
-        console.log('[PurchasesContext] Purchase cancelled by user');
+        // User cancelled — no action needed
       } else {
-        console.log('[PurchasesContext] Purchase error:', e);
         Sentry.captureException(e);
         Alert.alert('Purchase Error', 'Something went wrong. Please try again.');
       }
@@ -98,7 +88,6 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
     }
     setIsRestoring(true);
     try {
-      console.log('[PurchasesContext] Restoring purchases');
       const customerInfo = await Purchases.restorePurchases();
       const hasPro = checkEntitlementFromInfo(customerInfo);
       if (hasPro) {
@@ -107,7 +96,6 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
         Alert.alert('No Purchases Found', 'We could not find any previous purchases to restore.');
       }
     } catch (e) {
-      console.log('[PurchasesContext] Restore error:', e);
       Sentry.captureException(e);
       Alert.alert('Restore Error', 'Something went wrong while restoring. Please try again.');
     } finally {

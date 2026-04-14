@@ -11,7 +11,6 @@ import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { GoalkeeperProfile } from '@/types/game';
 
 export default function GoalkeeperSelectScreen() {
-  console.log("[GoalkeeperSelect] Screen rendered");
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();
@@ -25,10 +24,8 @@ export default function GoalkeeperSelectScreen() {
   useEffect(() => {
     if (isLoading) return;
     if (profiles.length === 0) {
-      console.log('[Index] No goalkeepers found, redirecting to onboarding');
       router.replace('/onboarding');
     } else {
-      console.log('[Index] Found', profiles.length, 'goalkeepers, skipping onboarding');
       setOnboardingChecked(true);
     }
   }, [isLoading, profiles.length, router]);

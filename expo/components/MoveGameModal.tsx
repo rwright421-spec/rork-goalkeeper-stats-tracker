@@ -81,7 +81,7 @@ export default function MoveGameModal({ visible, onClose, game, onMoveComplete }
       const destKey = `gk_tracker_teams_${destProfile.id}`;
       const updatedTeams = [newTeam, ...destTeams];
       await secureStorage.setItem(destKey, updatedTeams);
-      console.log('[MoveGame] Created new team for destination:', gameTeamName, gameYear);
+
     }
 
     const currentProfileName = profiles.find(p => p.id === activeProfileId)?.name ?? 'current goalkeeper';

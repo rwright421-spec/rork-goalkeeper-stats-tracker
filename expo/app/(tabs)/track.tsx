@@ -43,7 +43,7 @@ export default function TrackScreen() {
     if (Platform.OS === 'web') {
       router.replace('/');
     } else {
-      try { router.dismissAll(); } catch (e) { console.log('[Track] dismissAll error:', e); }
+      try { router.dismissAll(); } catch (_e) { /* dismissAll may fail if no screens to dismiss */ }
       setTimeout(() => router.replace('/'), 100);
     }
   }, [clearSelection, clearTeamSelection, router]);

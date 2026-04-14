@@ -30,7 +30,7 @@ export default function SettingsScreen() {
   const handleThemeSelect = useCallback((key: ThemeName) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setTheme(key);
-    console.log('[Settings] Theme changed to:', key);
+
   }, [setTheme]);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -56,7 +56,7 @@ export default function SettingsScreen() {
   const handleSyncNow = useCallback(async () => {
     setIsSyncingNow(true);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    console.log('[Settings] Sync Now triggered');
+
     try {
       await Promise.all([
         forceSyncGames(),
@@ -64,9 +64,9 @@ export default function SettingsScreen() {
       ]);
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       Alert.alert('Sync Complete', 'All data has been synced successfully.');
-      console.log('[Settings] Sync Now complete');
+
     } catch (e) {
-      console.log('[Settings] Sync Now error:', e);
+
       Sentry.captureException(e);
       Alert.alert('Sync Failed', 'Something went wrong during sync. Please try again.');
     } finally {
@@ -78,7 +78,7 @@ export default function SettingsScreen() {
     setIsExporting(true);
     try {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      console.log('[Settings] Starting data export...');
+
       const payload = await gatherExportData();
       const jsonString = JSON.stringify(payload, null, 2);
 
@@ -96,7 +96,6 @@ export default function SettingsScreen() {
         const fileName = `gk-stats-backup-${new Date().toISOString().slice(0, 10)}.json`;
         const file = new File(Paths.cache, fileName);
         file.write(jsonString);
-        console.log('[Settings] Export file written to:', file.uri);
 
         const canShare = await Sharing.isAvailableAsync();
         if (canShare) {
@@ -108,9 +107,9 @@ export default function SettingsScreen() {
           Alert.alert('Sharing Unavailable', 'Sharing is not available on this device.');
         }
       }
-      console.log('[Settings] Export complete');
+
     } catch (e) {
-      console.log('[Settings] Export error:', e);
+
       Sentry.captureException(e);
       Alert.alert('Export Failed', 'Something went wrong while exporting your data. Please try again.');
     } finally {
@@ -122,7 +121,7 @@ export default function SettingsScreen() {
     setIsImporting(true);
     try {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      console.log('[Settings] Starting data import...');
+
 
       const result = await DocumentPicker.getDocumentAsync({
         type: 'application/json',
@@ -130,13 +129,13 @@ export default function SettingsScreen() {
       });
 
       if (result.canceled || !result.assets || result.assets.length === 0) {
-        console.log('[Settings] Import cancelled by user');
+
         setIsImporting(false);
         return;
       }
 
       const asset = result.assets[0];
-      console.log('[Settings] Picked file:', asset.name, 'size:', asset.size);
+
 
       let jsonString: string;
 
@@ -186,9 +185,9 @@ export default function SettingsScreen() {
                   'Import Complete',
                   `Profiles: ${mergeResult.profilesAdded} added, ${mergeResult.profilesSkipped} unchanged\nGames: ${mergeResult.gamesAdded} added, ${mergeResult.gamesSkipped} unchanged\nTeams: ${mergeResult.teamsAdded} added, ${mergeResult.teamsSkipped} unchanged`
                 );
-                console.log('[Settings] Import merge complete:', mergeResult);
+
               } catch (e) {
-                console.log('[Settings] Import merge error:', e);
+
                 Sentry.captureException(e);
                 Alert.alert('Import Failed', 'Something went wrong while importing your data.');
               } finally {
@@ -199,7 +198,7 @@ export default function SettingsScreen() {
         ]
       );
     } catch (e) {
-      console.log('[Settings] Import error:', e);
+
       Sentry.captureException(e);
       Alert.alert('Import Failed', 'Something went wrong while reading the file.');
       setIsImporting(false);

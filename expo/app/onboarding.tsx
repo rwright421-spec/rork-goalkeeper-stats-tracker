@@ -25,7 +25,6 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const TOTAL_PAGES = 4;
 
 export default function OnboardingScreen() {
-  console.log("[Onboarding] Screen rendered");
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();
@@ -87,7 +86,6 @@ export default function OnboardingScreen() {
     const profile = createProfile(keeperName.trim(), birthYear.trim() || undefined);
     selectProfile(profile.id);
     setCreatedProfileId(profile.id);
-    console.log('[Onboarding] Created profile:', profile.id, profile.name);
     goToPage(2);
   }, [keeperName, birthYear, createProfile, selectProfile, goToPage]);
 
@@ -100,7 +98,6 @@ export default function OnboardingScreen() {
     if (!teamName.trim()) return;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     const team = createTeam(seasonYear.trim() || new Date().getFullYear().toString(), teamName.trim());
-    console.log('[Onboarding] Created team:', team.id, team.teamName);
     goToPage(3);
   }, [teamName, seasonYear, createTeam, goToPage]);
 
