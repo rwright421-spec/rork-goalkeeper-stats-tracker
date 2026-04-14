@@ -1,4 +1,4 @@
-import { SavedGame, KeeperData, DistributionStats, PenaltyStats, HalfStats, ShootoutStats, calculateSavePercentage, normalizeKeeper, getHalfLengthForAgeGroup } from '@/types/game';
+import { SavedGame, KeeperData, DistributionStats, PenaltyStats, HalfStats, ShootoutStats, calculateSavePercentage, normalizeKeeper, getHalfLengthForAgeGroup, defaultHalfStats } from '@/types/game';
 import { Team } from '@/types/game';
 
 export interface AggregatedStats {
@@ -100,22 +100,25 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
     let gameSaves = 0;
     let gameGA = 0;
 
+    const fh = keeper.firstHalf ?? defaultHalfStats;
+    const sh = keeper.secondHalf ?? defaultHalfStats;
+
     if (profilePlaysFirstHalf) {
-      gameSaves += keeper.firstHalf.saves + keeper.firstHalf.penalties.penaltiesSaved;
-      gameGA += keeper.firstHalf.goalsAgainst + keeper.firstHalf.penalties.penaltiesFaced;
-      addHalfDistribution(distribution, keeper.firstHalf);
-      addHalfPenalties(penalties, keeper.firstHalf);
-      oneVsOneFaced += keeper.firstHalf.oneVsOneFaced ?? 0;
-      oneVsOneSaved += keeper.firstHalf.oneVsOneSaved ?? 0;
+      gameSaves += fh.saves + fh.penalties.penaltiesSaved;
+      gameGA += fh.goalsAgainst + fh.penalties.penaltiesFaced;
+      addHalfDistribution(distribution, fh);
+      addHalfPenalties(penalties, fh);
+      oneVsOneFaced += fh.oneVsOneFaced ?? 0;
+      oneVsOneSaved += fh.oneVsOneSaved ?? 0;
     }
 
     if (profilePlaysSecondHalf) {
-      gameSaves += keeper.secondHalf.saves + keeper.secondHalf.penalties.penaltiesSaved;
-      gameGA += keeper.secondHalf.goalsAgainst + keeper.secondHalf.penalties.penaltiesFaced;
-      addHalfDistribution(distribution, keeper.secondHalf);
-      addHalfPenalties(penalties, keeper.secondHalf);
-      oneVsOneFaced += keeper.secondHalf.oneVsOneFaced ?? 0;
-      oneVsOneSaved += keeper.secondHalf.oneVsOneSaved ?? 0;
+      gameSaves += sh.saves + sh.penalties.penaltiesSaved;
+      gameGA += sh.goalsAgainst + sh.penalties.penaltiesFaced;
+      addHalfDistribution(distribution, sh);
+      addHalfPenalties(penalties, sh);
+      oneVsOneFaced += sh.oneVsOneFaced ?? 0;
+      oneVsOneSaved += sh.oneVsOneSaved ?? 0;
     }
 
     if (keeper.shootout) {

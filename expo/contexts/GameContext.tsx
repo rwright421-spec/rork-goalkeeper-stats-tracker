@@ -2,7 +2,7 @@ import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
-import { SavedGame, normalizeKeeper } from '@/types/game';
+import { SavedGame, normalizeKeeper, normalizeHalf } from '@/types/game';
 import { validateAndSanitizeArray } from '@/utils/validation';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
@@ -18,6 +18,36 @@ function migrateSavedGame(game: SavedGame): SavedGame {
   };
 }
 
+function needsHalfBackfill(game: SavedGame): boolean {
+  const keepers = [game.homeKeeper, game.awayKeeper].filter(Boolean);
+  for (const k of keepers) {
+    if (!k) continue;
+    if (!k.firstHalf || !k.secondHalf) return true;
+    if (k.firstHalf.distribution === undefined || k.firstHalf.penalties === undefined) return true;
+    if (k.secondHalf.distribution === undefined || k.secondHalf.penalties === undefined) return true;
+  }
+  return false;
+}
+
+function backfillHalfStats(game: SavedGame): SavedGame {
+  const patched = { ...game };
+  if (patched.homeKeeper) {
+    patched.homeKeeper = {
+      ...patched.homeKeeper,
+      firstHalf: normalizeHalf(patched.homeKeeper.firstHalf),
+      secondHalf: normalizeHalf(patched.homeKeeper.secondHalf),
+    };
+  }
+  if (patched.awayKeeper) {
+    patched.awayKeeper = {
+      ...patched.awayKeeper,
+      firstHalf: normalizeHalf(patched.awayKeeper.firstHalf),
+      secondHalf: normalizeHalf(patched.awayKeeper.secondHalf),
+    };
+  }
+  return patched;
+}
+
 function getStorageKey(profileId: string | null, isGuest: boolean): string {
   if (isGuest || !profileId) return 'gk_tracker_games_guest';
   return `gk_tracker_games_${profileId}`;
@@ -31,8 +61,23 @@ async function loadGamesFromStorage(storageKey: string): Promise<SavedGame[]> {
       const raw = JSON.parse(stored) as unknown[];
       const validated = validateAndSanitizeArray('SavedGame', raw);
       const migrated = validated.map(migrateSavedGame);
-      console.log('[GameContext] Loaded', migrated.length, 'games for key:', storageKey);
-      return migrated;
+
+      let didBackfill = false;
+      const backfilled = migrated.map(g => {
+        if (needsHalfBackfill(g)) {
+          didBackfill = true;
+          return backfillHalfStats(g);
+        }
+        return g;
+      });
+
+      if (didBackfill) {
+        console.log('[GameContext] Backfilled defaultHalfStats into games missing half data for key:', storageKey);
+        await AsyncStorage.setItem(storageKey, JSON.stringify(backfilled));
+      }
+
+      console.log('[GameContext] Loaded', backfilled.length, 'games for key:', storageKey);
+      return backfilled;
     }
     console.log('[GameContext] No games found for key:', storageKey);
     return [];

@@ -5,7 +5,7 @@ import StatCounter from '@/components/StatCounter';
 import SavePercentageBadge from '@/components/SavePercentageBadge';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
-import { KeeperData, DistributionStats, PenaltyStats, GoalkeeperProfile, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getShotsFaced, getTotalShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, getHalfLengthForAgeGroup } from '@/types/game';
+import { KeeperData, DistributionStats, PenaltyStats, GoalkeeperProfile, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getShotsFaced, getTotalShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, getHalfLengthForAgeGroup, defaultHalfStats } from '@/types/game';
 import KeeperSelectorSheet, { KeeperSelectorButton, KeeperSelectionState } from '@/components/KeeperSelectorSheet';
 
 interface KeeperStatsSectionProps {
@@ -104,28 +104,32 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
   }, [keeper, onUpdate]);
 
   const updateHalf = useCallback((half: 'firstHalf' | 'secondHalf', stat: 'saves' | 'goalsAgainst', delta: number) => {
-    const current = keeper[half][stat];
+    const h = keeper[half] ?? defaultHalfStats;
+    const current = h[stat];
     const newVal = Math.max(0, current + delta);
-    onUpdate({ ...keeper, [half]: { ...keeper[half], [stat]: newVal } });
+    onUpdate({ ...keeper, [half]: { ...h, [stat]: newVal } });
   }, [keeper, onUpdate]);
 
   const updateHalfDistribution = useCallback((half: 'firstHalf' | 'secondHalf', stat: keyof DistributionStats, delta: number) => {
-    const current = keeper[half].distribution[stat];
+    const h = keeper[half] ?? defaultHalfStats;
+    const current = h.distribution[stat];
     const newVal = Math.max(0, current + delta);
-    onUpdate({ ...keeper, [half]: { ...keeper[half], distribution: { ...keeper[half].distribution, [stat]: newVal } } });
+    onUpdate({ ...keeper, [half]: { ...h, distribution: { ...h.distribution, [stat]: newVal } } });
   }, [keeper, onUpdate]);
 
   const updateHalfPenalty = useCallback((half: 'firstHalf' | 'secondHalf', stat: keyof PenaltyStats, delta: number) => {
-    const current = keeper[half].penalties[stat];
+    const h = keeper[half] ?? defaultHalfStats;
+    const current = h.penalties[stat];
     const newVal = Math.max(0, current + delta);
-    onUpdate({ ...keeper, [half]: { ...keeper[half], penalties: { ...keeper[half].penalties, [stat]: newVal } } });
+    onUpdate({ ...keeper, [half]: { ...h, penalties: { ...h.penalties, [stat]: newVal } } });
   }, [keeper, onUpdate]);
 
   const updateHalfOneVsOne = useCallback((half: 'firstHalf' | 'secondHalf', stat: 'oneVsOneFaced' | 'oneVsOneSaved', delta: number) => {
-    const current = keeper[half][stat];
+    const h = keeper[half] ?? defaultHalfStats;
+    const current = h[stat];
     const newVal = Math.max(0, current + delta);
-    if (stat === 'oneVsOneSaved' && delta > 0 && newVal > keeper[half].oneVsOneFaced) return;
-    onUpdate({ ...keeper, [half]: { ...keeper[half], [stat]: newVal } });
+    if (stat === 'oneVsOneSaved' && delta > 0 && newVal > h.oneVsOneFaced) return;
+    onUpdate({ ...keeper, [half]: { ...h, [stat]: newVal } });
   }, [keeper, onUpdate]);
 
   const totalSaves = getTotalSaves(keeper);
@@ -139,7 +143,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
   const oneVsOneSaveRate = getOneVsOneSaveRate(totalOneVsOneFaced, totalOneVsOneSaved);
 
   const renderHalfSection = useCallback((halfKey: 'firstHalf' | 'secondHalf', title: string) => {
-    const half = keeper[halfKey];
+    const half = keeper[halfKey] ?? defaultHalfStats;
     const halfShotsFaced = getShotsFaced(half.saves, half.goalsAgainst);
     return (
       <View style={styles.halfSection}>

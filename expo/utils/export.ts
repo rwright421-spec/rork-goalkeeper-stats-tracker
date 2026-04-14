@@ -1,4 +1,4 @@
-import { SavedGame, KeeperData, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced } from '@/types/game';
+import { SavedGame, KeeperData, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, defaultHalfStats } from '@/types/game';
 import { AggregatedStats, GroupedStats } from '@/utils/statsAggregator';
 
 function formatKeeperText(keeper: KeeperData, label: string): string {
@@ -6,8 +6,10 @@ function formatKeeperText(keeper: KeeperData, label: string): string {
   const totalGA = getTotalGoalsAgainst(keeper);
   const totalSF = getTotalShotsFaced(keeper);
   const overallPct = getOverallSavePercentage(keeper);
-  const h1Pct = calculateSavePercentage(keeper.firstHalf.saves, keeper.firstHalf.goalsAgainst);
-  const h2Pct = calculateSavePercentage(keeper.secondHalf.saves, keeper.secondHalf.goalsAgainst);
+  const fh = keeper.firstHalf ?? defaultHalfStats;
+  const sh = keeper.secondHalf ?? defaultHalfStats;
+  const h1Pct = calculateSavePercentage(fh.saves, fh.goalsAgainst);
+  const h2Pct = calculateSavePercentage(sh.saves, sh.goalsAgainst);
   const has2ndHalfKeeper = keeper.secondHalfName !== keeper.name || keeper.secondHalfYear !== keeper.year || keeper.secondHalfTeamName !== keeper.teamName;
   const totalPen = getTotalPenalties(keeper);
 
@@ -29,15 +31,15 @@ Team: ${keeper.teamName}`;
   text += `
 
 1st Half:
-  Saves: ${keeper.firstHalf.saves}
-  Goals Against: ${keeper.firstHalf.goalsAgainst}
-  Shots on Target: ${getShotsFaced(keeper.firstHalf.saves, keeper.firstHalf.goalsAgainst)}
+  Saves: ${fh.saves}
+  Goals Against: ${fh.goalsAgainst}
+  Shots on Target: ${getShotsFaced(fh.saves, fh.goalsAgainst)}
   Save %: ${h1Pct}%
 
 2nd Half:
-  Saves: ${keeper.secondHalf.saves}
-  Goals Against: ${keeper.secondHalf.goalsAgainst}
-  Shots on Target: ${getShotsFaced(keeper.secondHalf.saves, keeper.secondHalf.goalsAgainst)}
+  Saves: ${sh.saves}
+  Goals Against: ${sh.goalsAgainst}
+  Shots on Target: ${getShotsFaced(sh.saves, sh.goalsAgainst)}
   Save %: ${h2Pct}%
 
 Totals:
@@ -47,10 +49,10 @@ Totals:
   Overall Save %: ${overallPct}%
 
 1st Half Distribution:
-  Crosses/Int: ${keeper.firstHalf.distribution.handledCrosses}  Punts: ${keeper.firstHalf.distribution.punts}  Throwouts / Rollouts: ${keeper.firstHalf.distribution.throwouts}  Drives: ${keeper.firstHalf.distribution.drives}  Drop Backs: ${keeper.firstHalf.distribution.dropBacks}
+  Crosses/Int: ${fh.distribution.handledCrosses}  Punts: ${fh.distribution.punts}  Throwouts / Rollouts: ${fh.distribution.throwouts}  Drives: ${fh.distribution.drives}  Drop Backs: ${fh.distribution.dropBacks}
 
 2nd Half Distribution:
-  Crosses/Int: ${keeper.secondHalf.distribution.handledCrosses}  Punts: ${keeper.secondHalf.distribution.punts}  Throwouts / Rollouts: ${keeper.secondHalf.distribution.throwouts}  Drives: ${keeper.secondHalf.distribution.drives}  Drop Backs: ${keeper.secondHalf.distribution.dropBacks}
+  Crosses/Int: ${sh.distribution.handledCrosses}  Punts: ${sh.distribution.punts}  Throwouts / Rollouts: ${sh.distribution.throwouts}  Drives: ${sh.distribution.drives}  Drop Backs: ${sh.distribution.dropBacks}
 
 Total Distribution:
   Handled Crosses / Interceptions: ${getTotalDistribution(keeper).handledCrosses}
@@ -108,8 +110,10 @@ Tracking: ${game.setup.keeperSelection === 'both' ? 'Home & Away' : game.setup.k
 }
 
 function formatKeeperCSVRows(keeper: KeeperData, label: string): string {
-  const h1Pct = calculateSavePercentage(keeper.firstHalf.saves, keeper.firstHalf.goalsAgainst);
-  const h2Pct = calculateSavePercentage(keeper.secondHalf.saves, keeper.secondHalf.goalsAgainst);
+  const fh = keeper.firstHalf ?? defaultHalfStats;
+  const sh = keeper.secondHalf ?? defaultHalfStats;
+  const h1Pct = calculateSavePercentage(fh.saves, fh.goalsAgainst);
+  const h2Pct = calculateSavePercentage(sh.saves, sh.goalsAgainst);
   const totalSaves = getTotalSaves(keeper);
   const totalGA = getTotalGoalsAgainst(keeper);
   const totalSF = getTotalShotsFaced(keeper);
@@ -119,7 +123,7 @@ function formatKeeperCSVRows(keeper: KeeperData, label: string): string {
   const pen = getTotalPenalties(keeper);
   const escapedNotes = (keeper.notes || '').replace(/"/g, '""');
   const so = keeper.shootout ?? { saves: 0, goalsAgainst: 0 };
-  return `${label},${keeper.name},${keeper.year},${keeper.teamName},${keeper.secondHalfName},${keeper.secondHalfYear},${keeper.secondHalfTeamName},${keeper.firstHalf.saves},${keeper.firstHalf.goalsAgainst},${h1Pct}%,${keeper.secondHalf.saves},${keeper.secondHalf.goalsAgainst},${h2Pct}%,${totalSaves},${totalGA},${totalSF},${overallPct}%,${dist.handledCrosses},${dist.punts},${dist.throwouts},${dist.drives},${dist.dropBacks},${pen.penaltiesFaced},${pen.penaltiesSaved},${pen.yellowCards},${pen.redCards},${so.saves},${so.goalsAgainst},${so.saves + so.goalsAgainst},"${escapedNotes}"`;
+  return `${label},${keeper.name},${keeper.year},${keeper.teamName},${keeper.secondHalfName},${keeper.secondHalfYear},${keeper.secondHalfTeamName},${fh.saves},${fh.goalsAgainst},${h1Pct}%,${sh.saves},${sh.goalsAgainst},${h2Pct}%,${totalSaves},${totalGA},${totalSF},${overallPct}%,${dist.handledCrosses},${dist.punts},${dist.throwouts},${dist.drives},${dist.dropBacks},${pen.penaltiesFaced},${pen.penaltiesSaved},${pen.yellowCards},${pen.redCards},${so.saves},${so.goalsAgainst},${so.saves + so.goalsAgainst},"${escapedNotes}"`;
 }
 
 export function formatStatsAsText(keeperName: string, groupMode: string, groups: GroupedStats[]): string {

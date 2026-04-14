@@ -4,7 +4,7 @@ import { ChevronDown, ChevronUp, Calendar, Trophy, Trash2, MoreVertical, ArrowRi
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
-import { SavedGame, KeeperData, getOverallSavePercentage, getTotalSaves, getTotalGoalsAgainst, getTotalDistribution } from '@/types/game';
+import { SavedGame, KeeperData, getOverallSavePercentage, getTotalSaves, getTotalGoalsAgainst, getTotalDistribution, defaultHalfStats } from '@/types/game';
 
 interface GameCardProps {
   game: SavedGame;
@@ -126,8 +126,8 @@ export default React.memo(function GameCard({ game, onPress, onDelete, onMove }:
             <View style={styles.keeperBlock}>
               <KeeperSummary keeper={game.homeKeeper} label="HOME" color={colors.cardHome} colors={colors} />
               <View style={styles.halfRow}>
-                <View style={styles.halfBlock}><Text style={styles.halfTitle}>1H</Text><Text style={styles.halfStat}>{game.homeKeeper.firstHalf.saves}sv / {game.homeKeeper.firstHalf.goalsAgainst}ga</Text></View>
-                <View style={styles.halfBlock}><Text style={styles.halfTitle}>2H</Text><Text style={styles.halfStat}>{game.homeKeeper.secondHalf.saves}sv / {game.homeKeeper.secondHalf.goalsAgainst}ga</Text></View>
+                <View style={styles.halfBlock}><Text style={styles.halfTitle}>1H</Text><Text style={styles.halfStat}>{(game.homeKeeper.firstHalf ?? defaultHalfStats).saves}sv / {(game.homeKeeper.firstHalf ?? defaultHalfStats).goalsAgainst}ga</Text></View>
+                <View style={styles.halfBlock}><Text style={styles.halfTitle}>2H</Text><Text style={styles.halfStat}>{(game.homeKeeper.secondHalf ?? defaultHalfStats).saves}sv / {(game.homeKeeper.secondHalf ?? defaultHalfStats).goalsAgainst}ga</Text></View>
               </View>
               <DistributionRow keeper={game.homeKeeper} colors={colors} />
             </View>
@@ -137,8 +137,8 @@ export default React.memo(function GameCard({ game, onPress, onDelete, onMove }:
             <View style={styles.keeperBlock}>
               <KeeperSummary keeper={game.awayKeeper} label="AWAY" color={colors.cardAway} colors={colors} />
               <View style={styles.halfRow}>
-                <View style={styles.halfBlock}><Text style={styles.halfTitle}>1H</Text><Text style={styles.halfStat}>{game.awayKeeper.firstHalf.saves}sv / {game.awayKeeper.firstHalf.goalsAgainst}ga</Text></View>
-                <View style={styles.halfBlock}><Text style={styles.halfTitle}>2H</Text><Text style={styles.halfStat}>{game.awayKeeper.secondHalf.saves}sv / {game.awayKeeper.secondHalf.goalsAgainst}ga</Text></View>
+                <View style={styles.halfBlock}><Text style={styles.halfTitle}>1H</Text><Text style={styles.halfStat}>{(game.awayKeeper.firstHalf ?? defaultHalfStats).saves}sv / {(game.awayKeeper.firstHalf ?? defaultHalfStats).goalsAgainst}ga</Text></View>
+                <View style={styles.halfBlock}><Text style={styles.halfTitle}>2H</Text><Text style={styles.halfStat}>{(game.awayKeeper.secondHalf ?? defaultHalfStats).saves}sv / {(game.awayKeeper.secondHalf ?? defaultHalfStats).goalsAgainst}ga</Text></View>
               </View>
               <DistributionRow keeper={game.awayKeeper} colors={colors} />
             </View>

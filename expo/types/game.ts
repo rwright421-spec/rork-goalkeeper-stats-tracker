@@ -119,6 +119,15 @@ function createEmptyHalf(): HalfStats {
   return { saves: 0, goalsAgainst: 0, distribution: createEmptyDistribution(), penalties: createEmptyPenalties(), oneVsOneFaced: 0, oneVsOneSaved: 0 };
 }
 
+export const defaultHalfStats: HalfStats = Object.freeze({
+  saves: 0,
+  goalsAgainst: 0,
+  distribution: Object.freeze({ handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 }),
+  penalties: Object.freeze({ penaltiesFaced: 0, penaltiesSaved: 0, redCards: 0, yellowCards: 0 }),
+  oneVsOneFaced: 0,
+  oneVsOneSaved: 0,
+}) as HalfStats;
+
 export function createEmptyKeeperData(): KeeperData {
   return {
     name: '',
@@ -202,11 +211,15 @@ export function getShotsFaced(saves: number, goalsAgainst: number): number {
 }
 
 export function getTotalSaves(keeper: KeeperData): number {
-  return keeper.firstHalf.saves + keeper.secondHalf.saves + keeper.firstHalf.penalties.penaltiesSaved + keeper.secondHalf.penalties.penaltiesSaved;
+  const fh = keeper.firstHalf ?? defaultHalfStats;
+  const sh = keeper.secondHalf ?? defaultHalfStats;
+  return fh.saves + sh.saves + fh.penalties.penaltiesSaved + sh.penalties.penaltiesSaved;
 }
 
 export function getTotalGoalsAgainst(keeper: KeeperData): number {
-  return keeper.firstHalf.goalsAgainst + keeper.secondHalf.goalsAgainst + keeper.firstHalf.penalties.penaltiesFaced + keeper.secondHalf.penalties.penaltiesFaced;
+  const fh = keeper.firstHalf ?? defaultHalfStats;
+  const sh = keeper.secondHalf ?? defaultHalfStats;
+  return fh.goalsAgainst + sh.goalsAgainst + fh.penalties.penaltiesFaced + sh.penalties.penaltiesFaced;
 }
 
 export function getTotalShotsFaced(keeper: KeeperData): number {
@@ -218,21 +231,25 @@ export function getOverallSavePercentage(keeper: KeeperData): number {
 }
 
 export function getTotalDistribution(keeper: KeeperData): DistributionStats {
+  const fh = keeper.firstHalf ?? defaultHalfStats;
+  const sh = keeper.secondHalf ?? defaultHalfStats;
   return {
-    handledCrosses: keeper.firstHalf.distribution.handledCrosses + keeper.secondHalf.distribution.handledCrosses,
-    punts: keeper.firstHalf.distribution.punts + keeper.secondHalf.distribution.punts,
-    throwouts: keeper.firstHalf.distribution.throwouts + keeper.secondHalf.distribution.throwouts,
-    drives: keeper.firstHalf.distribution.drives + keeper.secondHalf.distribution.drives,
-    dropBacks: keeper.firstHalf.distribution.dropBacks + keeper.secondHalf.distribution.dropBacks,
+    handledCrosses: fh.distribution.handledCrosses + sh.distribution.handledCrosses,
+    punts: fh.distribution.punts + sh.distribution.punts,
+    throwouts: fh.distribution.throwouts + sh.distribution.throwouts,
+    drives: fh.distribution.drives + sh.distribution.drives,
+    dropBacks: fh.distribution.dropBacks + sh.distribution.dropBacks,
   };
 }
 
 export function getTotalPenalties(keeper: KeeperData): PenaltyStats {
+  const fh = keeper.firstHalf ?? defaultHalfStats;
+  const sh = keeper.secondHalf ?? defaultHalfStats;
   return {
-    penaltiesFaced: keeper.firstHalf.penalties.penaltiesFaced + keeper.secondHalf.penalties.penaltiesFaced,
-    penaltiesSaved: keeper.firstHalf.penalties.penaltiesSaved + keeper.secondHalf.penalties.penaltiesSaved,
-    redCards: keeper.firstHalf.penalties.redCards + keeper.secondHalf.penalties.redCards,
-    yellowCards: keeper.firstHalf.penalties.yellowCards + keeper.secondHalf.penalties.yellowCards,
+    penaltiesFaced: fh.penalties.penaltiesFaced + sh.penalties.penaltiesFaced,
+    penaltiesSaved: fh.penalties.penaltiesSaved + sh.penalties.penaltiesSaved,
+    redCards: fh.penalties.redCards + sh.penalties.redCards,
+    yellowCards: fh.penalties.yellowCards + sh.penalties.yellowCards,
   };
 }
 
@@ -241,11 +258,15 @@ export function getShootoutShotsFaced(shootout: ShootoutStats): number {
 }
 
 export function getTotalOneVsOneFaced(keeper: KeeperData): number {
-  return keeper.firstHalf.oneVsOneFaced + keeper.secondHalf.oneVsOneFaced;
+  const fh = keeper.firstHalf ?? defaultHalfStats;
+  const sh = keeper.secondHalf ?? defaultHalfStats;
+  return fh.oneVsOneFaced + sh.oneVsOneFaced;
 }
 
 export function getTotalOneVsOneSaved(keeper: KeeperData): number {
-  return keeper.firstHalf.oneVsOneSaved + keeper.secondHalf.oneVsOneSaved;
+  const fh = keeper.firstHalf ?? defaultHalfStats;
+  const sh = keeper.secondHalf ?? defaultHalfStats;
+  return fh.oneVsOneSaved + sh.oneVsOneSaved;
 }
 
 export function getOneVsOneSaveRate(faced: number, saved: number): number | null {
