@@ -218,7 +218,7 @@ export default function DashboardScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 24 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 44 }]}
         showsVerticalScrollIndicator={false}
       >
         <SyncStatusBanner />
