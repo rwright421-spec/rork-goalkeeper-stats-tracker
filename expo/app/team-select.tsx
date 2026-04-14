@@ -14,6 +14,8 @@ const currentYear = new Date().getFullYear();
 const YEARS: string[] = [];
 for (let y = currentYear; y >= 1975; y--) { YEARS.push(String(y)); }
 
+const HALF_LENGTH_OPTIONS = [20, 25, 30, 35, 40, 45];
+
 export default function TeamSelectScreen() {
   console.log("[TeamSelect] Screen rendered");
   const router = useRouter();
@@ -28,16 +30,20 @@ export default function TeamSelectScreen() {
   const [editYear, setEditYear] = useState('');
   const [editTeamName, setEditTeamName] = useState('');
   const [editYearPickerOpen, setEditYearPickerOpen] = useState(false);
+  const [newHalfLength, setNewHalfLength] = useState<number | undefined>(undefined);
+  const [halfLengthPickerOpen, setHalfLengthPickerOpen] = useState(false);
+  const [editHalfLength, setEditHalfLength] = useState<number | undefined>(undefined);
+  const [editHalfLengthPickerOpen, setEditHalfLengthPickerOpen] = useState(false);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const handleCreate = useCallback(() => {
     if (!newTeamName.trim()) return;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    const team = createTeam(newYear, newTeamName);
-    setNewTeamName(''); setNewYear(String(currentYear)); setShowCreate(false);
+    const team = createTeam(newYear, newTeamName, newHalfLength);
+    setNewTeamName(''); setNewYear(String(currentYear)); setShowCreate(false); setNewHalfLength(undefined); setHalfLengthPickerOpen(false);
     selectTeam(team.id); router.push('/track');
-  }, [newYear, newTeamName, createTeam, selectTeam, router]);
+  }, [newYear, newTeamName, newHalfLength, createTeam, selectTeam, router]);
 
   const handleSelectTeam = useCallback((teamId: string) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -51,16 +57,16 @@ export default function TeamSelectScreen() {
 
   const handleEditTeam = useCallback((team: Team) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setEditingTeam(team); setEditYear(team.year); setEditTeamName(team.teamName);
+    setEditingTeam(team); setEditYear(team.year); setEditTeamName(team.teamName); setEditHalfLength(team.halfLengthMinutes); setEditHalfLengthPickerOpen(false);
   }, []);
 
   const handleSaveEdit = useCallback(() => {
     if (!editingTeam || !editTeamName.trim()) return;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    updateTeam(editingTeam.id, editYear, editTeamName); setEditingTeam(null);
-  }, [editingTeam, editYear, editTeamName, updateTeam]);
+    updateTeam(editingTeam.id, editYear, editTeamName, editHalfLength); setEditingTeam(null); setEditHalfLengthPickerOpen(false);
+  }, [editingTeam, editYear, editTeamName, editHalfLength, updateTeam]);
 
-  const handleCancelEdit = useCallback(() => { setEditingTeam(null); setEditYearPickerOpen(false); }, []);
+  const handleCancelEdit = useCallback(() => { setEditingTeam(null); setEditYearPickerOpen(false); setEditHalfLengthPickerOpen(false); }, []);
 
   const handleDeleteTeam = useCallback((team: Team) => {
     Alert.alert('Delete Team', `Are you sure you want to delete "${team.teamName} (${team.year})"? Games under this team will still exist but won't be linked to a team.`, [
@@ -90,7 +96,25 @@ export default function TeamSelectScreen() {
           )}
           <Text style={[styles.fieldLabel, { marginTop: 12 }]}>Team Name</Text>
           <TextInput style={styles.input} value={editTeamName} onChangeText={setEditTeamName} placeholder="Team name" placeholderTextColor={colors.textMuted} autoFocus returnKeyType="done" onSubmitEditing={handleSaveEdit} />
-          <View style={styles.formActions}>
+          <Text style={[styles.fieldLabel, { marginTop: 4 }]}>Half Length</Text>
+          <TouchableOpacity style={styles.yearSelector} onPress={() => setEditHalfLengthPickerOpen(!editHalfLengthPickerOpen)} activeOpacity={0.7}>
+            <Text style={styles.yearText}>{editHalfLength ? `${editHalfLength} min` : 'Default (40 min)'}</Text>
+          </TouchableOpacity>
+          {editHalfLengthPickerOpen && (
+            <View style={styles.yearDropdown}>
+              <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
+                <TouchableOpacity style={[styles.yearOption, !editHalfLength && styles.yearOptionActive]} onPress={() => { setEditHalfLength(undefined); setEditHalfLengthPickerOpen(false); }} activeOpacity={0.7}>
+                  <Text style={[styles.yearOptionText, !editHalfLength && styles.yearOptionTextActive]}>Default (40 min)</Text>
+                </TouchableOpacity>
+                {HALF_LENGTH_OPTIONS.map((hl) => (
+                  <TouchableOpacity key={hl} style={[styles.yearOption, editHalfLength === hl && styles.yearOptionActive]} onPress={() => { setEditHalfLength(hl); setEditHalfLengthPickerOpen(false); }} activeOpacity={0.7}>
+                    <Text style={[styles.yearOptionText, editHalfLength === hl && styles.yearOptionTextActive]}>{hl} min</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+          <View style={[styles.formActions, { marginTop: 8 }]}>
             <TouchableOpacity style={styles.cancelBtn} onPress={handleCancelEdit} activeOpacity={0.7}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
             <TouchableOpacity style={[styles.confirmBtn, !editTeamName.trim() && styles.confirmBtnDisabled]} onPress={handleSaveEdit} disabled={!editTeamName.trim()} activeOpacity={0.8}><Text style={styles.confirmText}>Save</Text></TouchableOpacity>
           </View>
@@ -136,8 +160,26 @@ export default function TeamSelectScreen() {
             )}
             <Text style={[styles.fieldLabel, { marginTop: 12 }]}>Team Name</Text>
             <TextInput testID="new-team-name" style={styles.input} value={newTeamName} onChangeText={setNewTeamName} placeholder="e.g. FC United" placeholderTextColor={colors.textMuted} autoFocus returnKeyType="done" onSubmitEditing={handleCreate} />
-            <View style={styles.formActions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => { setShowCreate(false); setNewTeamName(''); setYearPickerOpen(false); }} activeOpacity={0.7}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
+            <Text style={[styles.fieldLabel, { marginTop: 4 }]}>Half Length</Text>
+            <TouchableOpacity style={styles.yearSelector} onPress={() => setHalfLengthPickerOpen(!halfLengthPickerOpen)} activeOpacity={0.7}>
+              <Text style={styles.yearText}>{newHalfLength ? `${newHalfLength} min` : 'Default (40 min)'}</Text>
+            </TouchableOpacity>
+            {halfLengthPickerOpen && (
+              <View style={styles.yearDropdown}>
+                <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
+                  <TouchableOpacity style={[styles.yearOption, !newHalfLength && styles.yearOptionActive]} onPress={() => { setNewHalfLength(undefined); setHalfLengthPickerOpen(false); }} activeOpacity={0.7}>
+                    <Text style={[styles.yearOptionText, !newHalfLength && styles.yearOptionTextActive]}>Default (40 min)</Text>
+                  </TouchableOpacity>
+                  {HALF_LENGTH_OPTIONS.map((hl) => (
+                    <TouchableOpacity key={hl} style={[styles.yearOption, newHalfLength === hl && styles.yearOptionActive]} onPress={() => { setNewHalfLength(hl); setHalfLengthPickerOpen(false); }} activeOpacity={0.7}>
+                      <Text style={[styles.yearOptionText, newHalfLength === hl && styles.yearOptionTextActive]}>{hl} min</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+            <View style={[styles.formActions, { marginTop: 8 }]}>
+              <TouchableOpacity style={styles.cancelBtn} onPress={() => { setShowCreate(false); setNewTeamName(''); setYearPickerOpen(false); setHalfLengthPickerOpen(false); setNewHalfLength(undefined); }} activeOpacity={0.7}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
               <TouchableOpacity testID="confirm-create-team-btn" style={[styles.confirmBtn, !newTeamName.trim() && styles.confirmBtnDisabled]} onPress={handleCreate} disabled={!newTeamName.trim()} activeOpacity={0.8}><Text style={styles.confirmText}>Create</Text></TouchableOpacity>
             </View>
           </View>

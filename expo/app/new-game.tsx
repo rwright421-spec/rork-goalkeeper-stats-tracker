@@ -26,6 +26,8 @@ const SELECTION_OPTIONS: SelectionOption[] = [
 
 const AGE_GROUPS: AgeGroup[] = ['U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19'];
 
+const HALF_LENGTH_OPTIONS = [20, 25, 30, 35, 40, 45];
+
 export default function NewGameScreen() {
   console.log("[NewGame] Screen rendered");
   const router = useRouter();
@@ -47,6 +49,8 @@ export default function NewGameScreen() {
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamYear, setNewTeamYear] = useState('');
+  const [newTeamHalfLength, setNewTeamHalfLength] = useState<number | undefined>(undefined);
+  const [newTeamHalfLengthPickerOpen, setNewTeamHalfLengthPickerOpen] = useState(false);
   const selectedTeam = teams.find(t => t.id === activeTeamId) ?? null;
   const [opponentSuggestions, setOpponentSuggestions] = useState<string[]>([]);
   const [showOpponentSuggestions, setShowOpponentSuggestions] = useState(false);
@@ -268,6 +272,36 @@ export default function NewGameScreen() {
                 placeholderTextColor={colors.textMuted}
                 keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
               />
+              <TouchableOpacity
+                style={styles.createTeamInput}
+                onPress={() => setNewTeamHalfLengthPickerOpen(!newTeamHalfLengthPickerOpen)}
+                activeOpacity={0.7}
+              >
+                <Text style={{ fontSize: 15, color: newTeamHalfLength ? colors.text : colors.textMuted }}>
+                  {newTeamHalfLength ? `Half: ${newTeamHalfLength} min` : 'Half length (default 40 min)'}
+                </Text>
+              </TouchableOpacity>
+              {newTeamHalfLengthPickerOpen && (
+                <View style={styles.dropdownList}>
+                  <TouchableOpacity
+                    style={[styles.dropdownOption, !newTeamHalfLength && styles.dropdownOptionActive]}
+                    onPress={() => { setNewTeamHalfLength(undefined); setNewTeamHalfLengthPickerOpen(false); }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.dropdownOptionText, !newTeamHalfLength && styles.dropdownOptionTextActive]}>Default (40 min)</Text>
+                  </TouchableOpacity>
+                  {HALF_LENGTH_OPTIONS.map((hl) => (
+                    <TouchableOpacity
+                      key={hl}
+                      style={[styles.dropdownOption, newTeamHalfLength === hl && styles.dropdownOptionActive]}
+                      onPress={() => { setNewTeamHalfLength(hl); setNewTeamHalfLengthPickerOpen(false); }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.dropdownOptionText, newTeamHalfLength === hl && styles.dropdownOptionTextActive]}>{hl} min</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
               <View style={styles.createTeamActions}>
                 <TouchableOpacity
                   testID="cancel-create-team"
@@ -286,11 +320,13 @@ export default function NewGameScreen() {
                   ]}
                   onPress={() => {
                     if (!newTeamName.trim() || !newTeamYear.trim()) return;
-                    const newTeam = createTeam(newTeamYear.trim(), newTeamName.trim());
+                    const newTeam = createTeam(newTeamYear.trim(), newTeamName.trim(), newTeamHalfLength);
                     selectTeam(newTeam.id);
                     setShowCreateTeam(false);
                     setNewTeamName('');
                     setNewTeamYear('');
+                    setNewTeamHalfLength(undefined);
+                    setNewTeamHalfLengthPickerOpen(false);
                     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                     console.log('[NewGame] Created and selected new team:', newTeam.teamName);
                   }}

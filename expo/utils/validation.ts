@@ -118,6 +118,7 @@ export const TeamSchema = z.object({
   goalkeeperProfileId: z.string().default('guest'),
   year: z.string().default(''),
   teamName: z.string().max(50).default('Unknown Team'),
+  halfLengthMinutes: z.number().int().min(10).max(60).optional(),
   createdAt: z.string().default(() => new Date().toISOString()),
 });
 

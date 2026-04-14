@@ -39,6 +39,8 @@ for (let y = currentYear; y >= 1975; y--) {
   YEARS.push(String(y));
 }
 
+const HALF_LENGTH_OPTIONS = [20, 25, 30, 35, 40, 45];
+
 export default function DashboardScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -64,6 +66,10 @@ export default function DashboardScreen() {
   const [editYear, setEditYear] = useState('');
   const [editTeamName, setEditTeamName] = useState('');
   const [editYearPickerOpen, setEditYearPickerOpen] = useState(false);
+  const [newHalfLength, setNewHalfLength] = useState<number | undefined>(undefined);
+  const [halfLengthPickerOpen, setHalfLengthPickerOpen] = useState(false);
+  const [editHalfLength, setEditHalfLength] = useState<number | undefined>(undefined);
+  const [editHalfLengthPickerOpen, setEditHalfLengthPickerOpen] = useState(false);
   const [editingProfileMode, setEditingProfileMode] = useState(false);
   const [editProfileName, setEditProfileName] = useState('');
   const [editProfileBirthYear, setEditProfileBirthYear] = useState('');
@@ -132,27 +138,32 @@ export default function DashboardScreen() {
   const handleCreateTeam = useCallback(() => {
     if (!newTeamName.trim()) return;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    createTeam(newYear, newTeamName);
+    createTeam(newYear, newTeamName, newHalfLength);
     setNewTeamName('');
     setNewYear(String(currentYear));
+    setNewHalfLength(undefined);
     setShowCreateTeam(false);
     setYearPickerOpen(false);
-  }, [newYear, newTeamName, createTeam]);
+    setHalfLengthPickerOpen(false);
+  }, [newYear, newTeamName, newHalfLength, createTeam]);
 
   const handleEditTeam = useCallback((team: Team) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEditingTeam(team);
     setEditYear(team.year);
     setEditTeamName(team.teamName);
+    setEditHalfLength(team.halfLengthMinutes);
+    setEditHalfLengthPickerOpen(false);
   }, []);
 
   const handleSaveEditTeam = useCallback(() => {
     if (!editingTeam || !editTeamName.trim()) return;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    updateTeam(editingTeam.id, editYear, editTeamName);
+    updateTeam(editingTeam.id, editYear, editTeamName, editHalfLength);
     setEditingTeam(null);
     setEditYearPickerOpen(false);
-  }, [editingTeam, editYear, editTeamName, updateTeam]);
+    setEditHalfLengthPickerOpen(false);
+  }, [editingTeam, editYear, editTeamName, editHalfLength, updateTeam]);
 
   const handleDeleteTeam = useCallback(
     (team: Team) => {
@@ -410,13 +421,50 @@ export default function DashboardScreen() {
                     returnKeyType="done"
                     onSubmitEditing={handleCreateTeam}
                   />
-                  <View style={styles.formActions}>
+                  <Text style={[styles.fieldLabel, { marginTop: 10 }]}>Half Length</Text>
+                  <TouchableOpacity
+                    style={styles.yearSelector}
+                    onPress={() => setHalfLengthPickerOpen(!halfLengthPickerOpen)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.yearText}>
+                      {newHalfLength ? `${newHalfLength} min` : 'Default (40 min)'}
+                    </Text>
+                  </TouchableOpacity>
+                  {halfLengthPickerOpen && (
+                    <View style={styles.yearDropdown}>
+                      <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
+                        <TouchableOpacity
+                          style={[styles.yearOption, !newHalfLength && styles.yearOptionActive]}
+                          onPress={() => { setNewHalfLength(undefined); setHalfLengthPickerOpen(false); }}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={[styles.yearOptionText, !newHalfLength && styles.yearOptionTextActive]}>Default (40 min)</Text>
+                        </TouchableOpacity>
+                        {HALF_LENGTH_OPTIONS.map((hl) => (
+                          <TouchableOpacity
+                            key={hl}
+                            style={[styles.yearOption, newHalfLength === hl && styles.yearOptionActive]}
+                            onPress={() => { setNewHalfLength(hl); setHalfLengthPickerOpen(false); }}
+                            activeOpacity={0.7}
+                          >
+                            <Text style={[styles.yearOptionText, newHalfLength === hl && styles.yearOptionTextActive]}>
+                              {hl} min
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                  <View style={[styles.formActions, { marginTop: 10 }]}>
                     <TouchableOpacity
                       style={styles.cancelBtn}
                       onPress={() => {
                         setShowCreateTeam(false);
                         setNewTeamName('');
                         setYearPickerOpen(false);
+                        setHalfLengthPickerOpen(false);
+                        setNewHalfLength(undefined);
                       }}
                       activeOpacity={0.7}
                     >
@@ -488,12 +536,48 @@ export default function DashboardScreen() {
                           returnKeyType="done"
                           onSubmitEditing={handleSaveEditTeam}
                         />
-                        <View style={styles.formActions}>
+                        <Text style={[styles.fieldLabel, { marginTop: 10 }]}>Half Length</Text>
+                        <TouchableOpacity
+                          style={styles.yearSelector}
+                          onPress={() => setEditHalfLengthPickerOpen(!editHalfLengthPickerOpen)}
+                          activeOpacity={0.7}
+                        >
+                          <Text style={styles.yearText}>
+                            {editHalfLength ? `${editHalfLength} min` : 'Default (40 min)'}
+                          </Text>
+                        </TouchableOpacity>
+                        {editHalfLengthPickerOpen && (
+                          <View style={styles.yearDropdown}>
+                            <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
+                              <TouchableOpacity
+                                style={[styles.yearOption, !editHalfLength && styles.yearOptionActive]}
+                                onPress={() => { setEditHalfLength(undefined); setEditHalfLengthPickerOpen(false); }}
+                                activeOpacity={0.7}
+                              >
+                                <Text style={[styles.yearOptionText, !editHalfLength && styles.yearOptionTextActive]}>Default (40 min)</Text>
+                              </TouchableOpacity>
+                              {HALF_LENGTH_OPTIONS.map((hl) => (
+                                <TouchableOpacity
+                                  key={hl}
+                                  style={[styles.yearOption, editHalfLength === hl && styles.yearOptionActive]}
+                                  onPress={() => { setEditHalfLength(hl); setEditHalfLengthPickerOpen(false); }}
+                                  activeOpacity={0.7}
+                                >
+                                  <Text style={[styles.yearOptionText, editHalfLength === hl && styles.yearOptionTextActive]}>
+                                    {hl} min
+                                  </Text>
+                                </TouchableOpacity>
+                              ))}
+                            </ScrollView>
+                          </View>
+                        )}
+                        <View style={[styles.formActions, { marginTop: 10 }]}>
                           <TouchableOpacity
                             style={styles.cancelBtn}
                             onPress={() => {
                               setEditingTeam(null);
                               setEditYearPickerOpen(false);
+                              setEditHalfLengthPickerOpen(false);
                             }}
                             activeOpacity={0.7}
                           >

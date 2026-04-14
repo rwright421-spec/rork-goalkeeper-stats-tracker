@@ -713,15 +713,15 @@ export default function GoalkeeperStatsScreen() {
     console.log('[GoalkeeperStats] Computing grouped stats, mode:', groupMode, 'games:', allGames.length);
     switch (groupMode) {
       case 'career':
-        return groupByCareer(allGames, keeperName);
+        return groupByCareer(allGames, keeperName, teams);
       case 'team':
         return groupByTeam(allGames, teams, keeperName);
       case 'year':
-        return groupByYear(allGames, keeperName);
+        return groupByYear(allGames, keeperName, teams);
       case 'opponent':
-        return groupByOpponent(allGames, keeperName, profileId ?? undefined);
+        return groupByOpponent(allGames, keeperName, profileId ?? undefined, teams);
       case 'custom':
-        return groupByCustom(allGames, selectedGameIds, customLabel, keeperName);
+        return groupByCustom(allGames, selectedGameIds, customLabel, keeperName, teams);
       default:
         return [];
     }

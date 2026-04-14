@@ -1,4 +1,4 @@
-import { SavedGame, KeeperData, DistributionStats, PenaltyStats, HalfStats, ShootoutStats, calculateSavePercentage, normalizeKeeper, getHalfLengthForAgeGroup, defaultHalfStats } from '@/types/game';
+import { SavedGame, KeeperData, DistributionStats, PenaltyStats, HalfStats, ShootoutStats, calculateSavePercentage, normalizeKeeper, getHalfLengthForAgeGroup, defaultHalfStats, DEFAULT_HALF_LENGTH } from '@/types/game';
 import { Team } from '@/types/game';
 
 export interface AggregatedStats {
@@ -62,7 +62,7 @@ function halfMatchesProfile(profileId: string | undefined, profileName: string |
   return keeperName.toLowerCase().trim() === lowerProfile;
 }
 
-export function aggregateGames(games: SavedGame[], profileName?: string, profileId?: string): AggregatedStats {
+export function aggregateGames(games: SavedGame[], profileName?: string, profileId?: string, teams?: Team[]): AggregatedStats {
   let totalSaves = 0;
   let totalGoalsAgainst = 0;
   let cleanSheets = 0;
@@ -92,8 +92,8 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
       keeper.secondHalfName || keeper.name || '',
     );
 
-    const ageGroup = game.setup.ageGroup || '';
-    const halfLength = getHalfLengthForAgeGroup(ageGroup);
+    const team = game.teamId && teams ? teams.find(t => t.id === game.teamId) : undefined;
+    const halfLength = team?.halfLengthMinutes ?? getHalfLengthForAgeGroup(game.setup.ageGroup || '');
     const halvesPlayed = keeper.halvesPlayed ?? 2;
     totalEstimatedMinutes += halvesPlayed * halfLength;
 
@@ -161,16 +161,16 @@ export interface GroupedStats {
   gameIds: string[];
 }
 
-export function groupByCareer(games: SavedGame[], profileName?: string): GroupedStats[] {
+export function groupByCareer(games: SavedGame[], profileName?: string, teams?: Team[]): GroupedStats[] {
   return [{
     label: 'Career Totals',
     sublabel: `${games.length} game${games.length !== 1 ? 's' : ''}`,
-    stats: aggregateGames(games, profileName),
+    stats: aggregateGames(games, profileName, undefined, teams),
     gameIds: games.map(g => g.id),
   }];
 }
 
-export function groupByTeam(games: SavedGame[], teams: Team[], profileName?: string): GroupedStats[] {
+export function groupByTeam(games: SavedGame[], teams: Team[], profileName?: string, _unused?: unknown): GroupedStats[] {
   const teamMap = new Map<string, Team>();
   for (const t of teams) {
     teamMap.set(t.id, t);
@@ -196,7 +196,7 @@ export function groupByTeam(games: SavedGame[], teams: Team[], profileName?: str
     results.push({
       label: team.teamName,
       sublabel: `${team.year} · ${teamGames.length} game${teamGames.length !== 1 ? 's' : ''}`,
-      stats: aggregateGames(teamGames, profileName),
+      stats: aggregateGames(teamGames, profileName, undefined, teams),
       gameIds: teamGames.map(g => g.id),
     });
   }
@@ -205,7 +205,7 @@ export function groupByTeam(games: SavedGame[], teams: Team[], profileName?: str
     results.push({
       label: 'Unassigned',
       sublabel: `${noTeamGames.length} game${noTeamGames.length !== 1 ? 's' : ''}`,
-      stats: aggregateGames(noTeamGames, profileName),
+      stats: aggregateGames(noTeamGames, profileName, undefined, teams),
       gameIds: noTeamGames.map(g => g.id),
     });
   }
@@ -213,7 +213,7 @@ export function groupByTeam(games: SavedGame[], teams: Team[], profileName?: str
   return results;
 }
 
-export function groupByYear(games: SavedGame[], profileName?: string): GroupedStats[] {
+export function groupByYear(games: SavedGame[], profileName?: string, teams?: Team[]): GroupedStats[] {
   const grouped = new Map<string, SavedGame[]>();
 
   for (const game of games) {
@@ -241,7 +241,7 @@ export function groupByYear(games: SavedGame[], profileName?: string): GroupedSt
     results.push({
       label: year,
       sublabel: `${yearGames.length} game${yearGames.length !== 1 ? 's' : ''}`,
-      stats: aggregateGames(yearGames, profileName),
+      stats: aggregateGames(yearGames, profileName, undefined, teams),
       gameIds: yearGames.map(g => g.id),
     });
   }
@@ -249,12 +249,12 @@ export function groupByYear(games: SavedGame[], profileName?: string): GroupedSt
   return results;
 }
 
-export function groupByCustom(games: SavedGame[], selectedIds: Set<string>, label: string, profileName?: string): GroupedStats[] {
+export function groupByCustom(games: SavedGame[], selectedIds: Set<string>, label: string, profileName?: string, teams?: Team[]): GroupedStats[] {
   const selected = games.filter(g => selectedIds.has(g.id));
   return [{
     label,
     sublabel: `${selected.length} game${selected.length !== 1 ? 's' : ''} selected`,
-    stats: aggregateGames(selected, profileName),
+    stats: aggregateGames(selected, profileName, undefined, teams),
     gameIds: selected.map(g => g.id),
   }];
 }
@@ -268,7 +268,7 @@ function getGameResult(game: SavedGame): 'W' | 'D' | 'L' | null {
   return away > home ? 'W' : 'L';
 }
 
-export function groupByOpponent(games: SavedGame[], profileName?: string, profileId?: string): GroupedStats[] {
+export function groupByOpponent(games: SavedGame[], profileName?: string, profileId?: string, teams?: Team[]): GroupedStats[] {
   const grouped = new Map<string, SavedGame[]>();
 
   for (const game of games) {
@@ -308,7 +308,7 @@ export function groupByOpponent(games: SavedGame[], profileName?: string, profil
     results.push({
       label: displayName,
       sublabel: `${opponentGames.length} game${opponentGames.length !== 1 ? 's' : ''} — ${record}`,
-      stats: aggregateGames(opponentGames, profileName, profileId),
+      stats: aggregateGames(opponentGames, profileName, profileId, teams),
       gameIds: opponentGames.map(g => g.id),
       _sortKey: mostRecent,
     } as GroupedStats & { _sortKey: number });

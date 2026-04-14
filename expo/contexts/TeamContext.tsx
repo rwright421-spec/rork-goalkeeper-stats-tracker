@@ -129,26 +129,27 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
     },
   });
 
-  const createTeam = useCallback((year: string, teamName: string): Team => {
+  const createTeam = useCallback((year: string, teamName: string, halfLengthMinutes?: number): Team => {
     const team: Team = {
       id: Date.now().toString() + Math.random().toString(36).slice(2, 8),
       goalkeeperProfileId: activeProfileId ?? 'guest',
       year: year.trim(),
       teamName: teamName.trim(),
+      halfLengthMinutes,
       createdAt: new Date().toISOString(),
     };
     const currentTeams = queryClient.getQueryData<Team[]>(['teams', storageKey]) ?? [];
     const updated = [team, ...currentTeams];
     queryClient.setQueryData(['teams', storageKey], updated);
     saveMutation.mutate({ key: storageKey, updatedTeams: updated });
-    console.log('[TeamContext] Created team:', team.teamName, team.year);
+    console.log('[TeamContext] Created team:', team.teamName, team.year, 'halfLength:', halfLengthMinutes);
     return team;
   }, [activeProfileId, storageKey, saveMutation, queryClient]);
 
-  const updateTeam = useCallback((teamId: string, year: string, teamName: string) => {
+  const updateTeam = useCallback((teamId: string, year: string, teamName: string, halfLengthMinutes?: number) => {
     const currentTeams = queryClient.getQueryData<Team[]>(['teams', storageKey]) ?? [];
     const updated = currentTeams.map(t =>
-      t.id === teamId ? { ...t, year: year.trim(), teamName: teamName.trim() } : t
+      t.id === teamId ? { ...t, year: year.trim(), teamName: teamName.trim(), halfLengthMinutes } : t
     );
     queryClient.setQueryData(['teams', storageKey], updated);
     saveMutation.mutate({ key: storageKey, updatedTeams: updated });

@@ -34,6 +34,7 @@ export interface Team {
   goalkeeperProfileId: string;
   year: string;
   teamName: string;
+  halfLengthMinutes?: number;
   createdAt: string;
 }
 
