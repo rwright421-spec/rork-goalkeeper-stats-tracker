@@ -191,7 +191,7 @@ export default function NewGameScreen() {
           />
         </View>
 
-        <View style={styles.inputGroup}>
+        <View style={[styles.inputGroup, (teamPickerOpen || showCreateTeam) && { zIndex: 20, elevation: 20 }]}>
           <Text style={styles.inputLabel}>Team (optional)</Text>
           <TouchableOpacity
             testID="team-selector"
@@ -260,19 +260,22 @@ export default function NewGameScreen() {
                 testID="new-team-name-input"
                 style={styles.createTeamInput}
                 value={newTeamName}
-                onChangeText={setNewTeamName}
+                onChangeText={(text: string) => setNewTeamName(text)}
                 placeholder="Team name"
                 placeholderTextColor={colors.textMuted}
                 autoFocus
+                editable={true}
+                selectTextOnFocus={true}
               />
               <TextInput
                 testID="new-team-year-input"
                 style={styles.createTeamInput}
                 value={newTeamYear}
-                onChangeText={setNewTeamYear}
+                onChangeText={(text: string) => setNewTeamYear(text)}
                 placeholder="Year (e.g. 2026)"
                 placeholderTextColor={colors.textMuted}
                 keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
+                editable={true}
               />
               <TouchableOpacity
                 style={styles.createTeamInput}
@@ -449,7 +452,7 @@ function createStyles(c: ThemeColors) {
     suggestionText: { fontSize: fontSize.bodyLg, color: c.text, fontWeight: '500' as const },
     createTeamOption: { paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, borderTopColor: c.border, backgroundColor: c.primaryGlow },
     createTeamOptionText: { fontSize: fontSize.bodyLg, color: c.primary, fontWeight: '600' as const },
-    createTeamForm: { backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.primary, marginTop: 8, padding: 14, gap: 10 },
+    createTeamForm: { backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.primary, marginTop: 8, padding: 14, gap: 10, zIndex: 25, elevation: 25 },
     createTeamTitle: { fontSize: fontSize.body, fontWeight: '700' as const, color: c.primary, marginBottom: 2 },
     createTeamInput: { backgroundColor: c.background, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: c.text, fontSize: fontSize.bodyLg, borderWidth: 1, borderColor: c.border },
     createTeamActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
