@@ -12,11 +12,11 @@ interface SavePercentageBadgeProps {
 export default React.memo(function SavePercentageBadge({ saves, goalsAgainst, label }: SavePercentageBadgeProps) {
   const colors = useColors();
   const total = saves + goalsAgainst;
-  const pct = total === 0 ? 0 : Math.round((saves / total) * 100);
+  const pct = total === 0 ? null : Math.round((saves / total) * 100);
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const getColor = () => {
-    if (total === 0) return colors.textMuted;
+    if (pct === null) return colors.textMuted;
     if (pct >= 75) return colors.primary;
     if (pct >= 50) return colors.warning;
     return colors.danger;
@@ -26,7 +26,7 @@ export default React.memo(function SavePercentageBadge({ saves, goalsAgainst, la
     <View style={styles.container}>
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <View style={[styles.badge, { borderColor: getColor() }]}>
-        <Text style={[styles.value, { color: getColor() }]}>{pct}%</Text>
+        <Text style={[styles.value, { color: getColor() }]}>{pct !== null ? `${pct}%` : '—'}</Text>
       </View>
       <Text style={styles.sublabel}>Save %</Text>
     </View>

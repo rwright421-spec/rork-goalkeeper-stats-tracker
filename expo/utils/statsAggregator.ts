@@ -6,7 +6,7 @@ export interface AggregatedStats {
   totalSaves: number;
   totalGoalsAgainst: number;
   totalShotsFaced: number;
-  savePercentage: number;
+  savePercentage: number | null;
   cleanSheets: number;
   distribution: DistributionStats;
   penalties: PenaltyStats;

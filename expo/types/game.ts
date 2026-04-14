@@ -143,9 +143,9 @@ export function createEmptyKeeperData(): KeeperData {
   };
 }
 
-export function calculateSavePercentage(saves: number, goalsAgainst: number): number {
+export function calculateSavePercentage(saves: number, goalsAgainst: number): number | null {
   const total = saves + goalsAgainst;
-  if (total === 0) return 0;
+  if (total === 0) return null;
   return Math.round((saves / total) * 100);
 }
 
@@ -226,7 +226,7 @@ export function getTotalShotsFaced(keeper: KeeperData): number {
   return getTotalSaves(keeper) + getTotalGoalsAgainst(keeper);
 }
 
-export function getOverallSavePercentage(keeper: KeeperData): number {
+export function getOverallSavePercentage(keeper: KeeperData): number | null {
   return calculateSavePercentage(getTotalSaves(keeper), getTotalGoalsAgainst(keeper));
 }
 

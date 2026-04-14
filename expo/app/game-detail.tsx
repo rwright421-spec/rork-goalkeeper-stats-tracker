@@ -78,7 +78,7 @@ function KeeperDetailBlock({ keeper, label, color, colors, ageGroup }: { keeper:
           <Text style={styles.overallLabel}>Shots on Target</Text>
         </View>
         <View style={styles.overallStat}>
-          <Text style={[styles.overallValue, { color: overallPct >= 50 ? colors.primary : colors.warning }]}>{overallPct}%</Text>
+          <Text style={[styles.overallValue, { color: overallPct === null ? colors.textMuted : overallPct >= 50 ? colors.primary : colors.warning }]}>{overallPct !== null ? `${overallPct}%` : '—'}</Text>
           <Text style={styles.overallLabel}>Save %</Text>
         </View>
       </View>
@@ -89,7 +89,7 @@ function KeeperDetailBlock({ keeper, label, color, colors, ageGroup }: { keeper:
           <View style={styles.distGrid}>
             <View style={styles.distItem}><Text style={styles.distValue}>{getTotalOneVsOneFaced(keeper)}</Text><Text style={styles.distLabel}>1v1 Faced</Text></View>
             <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.primary }]}>{getTotalOneVsOneSaved(keeper)}</Text><Text style={styles.distLabel}>1v1 Saved</Text></View>
-            <View style={styles.distItem}><Text style={[styles.distValue, { color: '#F59E0B' }]}>{getOneVsOneSaveRate(getTotalOneVsOneFaced(keeper), getTotalOneVsOneSaved(keeper)) ?? '—'}%</Text><Text style={styles.distLabel}>1v1 Save Rate</Text></View>
+            <View style={styles.distItem}><Text style={[styles.distValue, { color: '#F59E0B' }]}>{(() => { const rate = getOneVsOneSaveRate(getTotalOneVsOneFaced(keeper), getTotalOneVsOneSaved(keeper)); return rate !== null ? `${rate}%` : '—'; })()}</Text><Text style={styles.distLabel}>1v1 Save Rate</Text></View>
           </View>
         </View>
       )}
@@ -105,7 +105,7 @@ function KeeperDetailBlock({ keeper, label, color, colors, ageGroup }: { keeper:
             <View style={[styles.distSection, { marginTop: 14 }]}>
               <Text style={styles.distTitle}>Goals Against Average</Text>
               <View style={styles.distGrid}>
-                <View style={styles.distItem}><Text style={[styles.distValue, { color: '#EC4899' }]}>{gaa.toFixed(2)}</Text><Text style={styles.distLabel}>GAA</Text></View>
+                <View style={styles.distItem}><Text style={[styles.distValue, { color: estMinutes === 0 ? colors.textMuted : '#EC4899' }]}>{estMinutes > 0 ? gaa.toFixed(2) : '—'}</Text><Text style={styles.distLabel}>GAA</Text></View>
                 <View style={styles.distItem}><Text style={styles.distValue}>{estMinutes}</Text><Text style={styles.distLabel}>Est. Minutes</Text></View>
                 <View style={styles.distItem}><Text style={styles.distValue}>{halvesPlayed}</Text><Text style={styles.distLabel}>Halves Played</Text></View>
               </View>
@@ -122,7 +122,7 @@ function KeeperDetailBlock({ keeper, label, color, colors, ageGroup }: { keeper:
           <Text style={styles.halfStat}>Saves: {keeper.firstHalf.saves}</Text>
           <Text style={styles.halfStat}>GA: {keeper.firstHalf.goalsAgainst}</Text>
           <Text style={styles.halfStat}>Shots on Target: {getShotsFaced(keeper.firstHalf.saves, keeper.firstHalf.goalsAgainst)}</Text>
-          <Text style={[styles.halfPct, { color: h1Pct >= 50 ? colors.primary : colors.warning }]}>SV%: {h1Pct}%</Text>
+          <Text style={[styles.halfPct, { color: h1Pct === null ? colors.textMuted : h1Pct >= 50 ? colors.primary : colors.warning }]}>SV%: {h1Pct !== null ? `${h1Pct}%` : '—'}</Text>
           <View style={styles.halfDistRow}>
             <Text style={styles.halfDistItem}>Cr: {keeper.firstHalf.distribution.handledCrosses}</Text>
             <Text style={styles.halfDistItem}>Pu: {keeper.firstHalf.distribution.punts}</Text>
@@ -136,7 +136,7 @@ function KeeperDetailBlock({ keeper, label, color, colors, ageGroup }: { keeper:
           <Text style={styles.halfStat}>Saves: {keeper.secondHalf.saves}</Text>
           <Text style={styles.halfStat}>GA: {keeper.secondHalf.goalsAgainst}</Text>
           <Text style={styles.halfStat}>Shots on Target: {getShotsFaced(keeper.secondHalf.saves, keeper.secondHalf.goalsAgainst)}</Text>
-          <Text style={[styles.halfPct, { color: h2Pct >= 50 ? colors.primary : colors.warning }]}>SV%: {h2Pct}%</Text>
+          <Text style={[styles.halfPct, { color: h2Pct === null ? colors.textMuted : h2Pct >= 50 ? colors.primary : colors.warning }]}>SV%: {h2Pct !== null ? `${h2Pct}%` : '—'}</Text>
           <View style={styles.halfDistRow}>
             <Text style={styles.halfDistItem}>Cr: {keeper.secondHalf.distribution.handledCrosses}</Text>
             <Text style={styles.halfDistItem}>Pu: {keeper.secondHalf.distribution.punts}</Text>

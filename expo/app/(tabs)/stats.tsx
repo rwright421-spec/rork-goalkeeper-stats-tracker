@@ -86,7 +86,7 @@ const statCardStyles = StyleSheet.create({
 });
 
 function StatsBlock({ stats, expanded }: { stats: AggregatedStats; expanded?: boolean }) {
-  const savePctColor = stats.savePercentage >= 75 ? Colors.primary : stats.savePercentage >= 50 ? Colors.accent : Colors.danger;
+  const savePctColor = stats.savePercentage === null ? Colors.textMuted : stats.savePercentage >= 75 ? Colors.primary : stats.savePercentage >= 50 ? Colors.accent : Colors.danger;
 
   return (
     <View style={blockStyles.container}>
@@ -99,7 +99,7 @@ function StatsBlock({ stats, expanded }: { stats: AggregatedStats; expanded?: bo
         />
         <StatCard
           label="Save %"
-          value={`${stats.savePercentage}%`}
+          value={stats.savePercentage !== null ? `${stats.savePercentage}%` : '—'}
           color={savePctColor}
           icon={<Target size={18} color={savePctColor} />}
         />
@@ -424,9 +424,9 @@ function GroupSection({ group, defaultExpanded, keeperName }: { group: GroupedSt
           {group.sublabel ? <Text style={groupStyles.sublabel}>{group.sublabel}</Text> : null}
         </View>
         <View style={groupStyles.headerRight}>
-          <View style={[groupStyles.pctBadge, { backgroundColor: group.stats.savePercentage >= 50 ? Colors.primaryGlow : Colors.dangerGlow }]}>
-            <Text style={[groupStyles.pctText, { color: group.stats.savePercentage >= 50 ? Colors.primary : Colors.danger }]}>
-              {group.stats.savePercentage}%
+          <View style={[groupStyles.pctBadge, { backgroundColor: group.stats.savePercentage === null ? Colors.surface : group.stats.savePercentage >= 50 ? Colors.primaryGlow : Colors.dangerGlow }]}>
+            <Text style={[groupStyles.pctText, { color: group.stats.savePercentage === null ? Colors.textMuted : group.stats.savePercentage >= 50 ? Colors.primary : Colors.danger }]}>
+              {group.stats.savePercentage !== null ? `${group.stats.savePercentage}%` : '—'}
             </Text>
           </View>
           {expanded ? <ChevronUp size={18} color={Colors.textMuted} /> : <ChevronDown size={18} color={Colors.textMuted} />}
@@ -967,7 +967,7 @@ export default function GoalkeeperStatsScreen() {
                       <Text style={styles.customResultsTitle}>Selected Stats</Text>
                       <Text style={styles.customResultsCount}>{selectedGameIds.size} game{selectedGameIds.size !== 1 ? 's' : ''}</Text>
                     </View>
-                    <StatsBlock stats={groupedStats[0]?.stats ?? { gamesPlayed: 0, totalSaves: 0, totalGoalsAgainst: 0, totalShotsFaced: 0, savePercentage: 0, cleanSheets: 0, distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 }, penalties: { penaltiesFaced: 0, penaltiesSaved: 0, redCards: 0, yellowCards: 0 }, shootout: { saves: 0, goalsAgainst: 0 }, avgSavesPerGame: 0, avgGoalsAgainstPerGame: 0, oneVsOneFaced: 0, oneVsOneSaved: 0, oneVsOneSaveRate: null, totalEstimatedMinutes: 0, gaa: null }} />
+                    <StatsBlock stats={groupedStats[0]?.stats ?? { gamesPlayed: 0, totalSaves: 0, totalGoalsAgainst: 0, totalShotsFaced: 0, savePercentage: null, cleanSheets: 0, distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 }, penalties: { penaltiesFaced: 0, penaltiesSaved: 0, redCards: 0, yellowCards: 0 }, shootout: { saves: 0, goalsAgainst: 0 }, avgSavesPerGame: 0, avgGoalsAgainstPerGame: 0, oneVsOneFaced: 0, oneVsOneSaved: 0, oneVsOneSaveRate: null, totalEstimatedMinutes: 0, gaa: null }} />
                   </View>
                 )}
               </View>
