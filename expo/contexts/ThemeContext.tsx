@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import * as Sentry from '@sentry/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
 import { ThemeColors, ThemeName, themes, DarkTheme } from '@/constants/themes';
@@ -18,6 +19,7 @@ export const [ThemeProvider, useTheme] = createContextHook(() => {
         }
       } catch (e) {
         console.log('[ThemeContext] Failed to load theme:', e);
+        Sentry.captureException(e);
       } finally {
         setIsLoaded(true);
       }
@@ -28,6 +30,7 @@ export const [ThemeProvider, useTheme] = createContextHook(() => {
     setThemeName(name);
     void AsyncStorage.setItem(THEME_STORAGE_KEY, name).catch((e) => {
       console.log('[ThemeContext] Failed to save theme:', e);
+      Sentry.captureException(e);
     });
   }, []);
 

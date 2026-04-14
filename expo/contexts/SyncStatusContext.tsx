@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import * as Sentry from '@sentry/react-native';
 import createContextHook from '@nkzw/create-context-hook';
 
 export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline';
@@ -68,6 +69,7 @@ export const [SyncStatusProvider, useSyncStatus] = createContextHook(() => {
         setTimeout(() => setShowSuccess(false), 2500);
       } catch (e) {
         console.log('[SyncStatus] Retry failed:', e);
+        Sentry.captureException(e);
         scheduleRetry(retryFn);
       }
     }, delay);
@@ -100,6 +102,7 @@ export const [SyncStatusProvider, useSyncStatus] = createContextHook(() => {
       setTimeout(() => setShowSuccess(false), 2500);
     } catch (e) {
       console.log('[SyncStatus] Manual retry failed:', e);
+      Sentry.captureException(e);
       scheduleRetry(fn);
     }
   }, [clearRetryTimer, scheduleRetry]);

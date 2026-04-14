@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -12,6 +13,13 @@ import { OpponentProvider } from "@/contexts/OpponentContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { PurchasesProvider } from "@/contexts/PurchasesContext";
 import { SyncStatusProvider } from "@/contexts/SyncStatusContext";
+
+Sentry.init({
+  dsn: "https://bb8da1f4f555208dc9abdb9ce84776ca@o4511219865157632.ingest.us.sentry.io/4511219867648000",
+  environment: __DEV__ ? "development" : "production",
+  tracesSampleRate: __DEV__ ? 1.0 : 0.2,
+  debug: __DEV__,
+});
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   console.log("[RootLayout] SplashScreen.preventAutoHideAsync failed");
@@ -44,9 +52,12 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryS
   componentDidCatch(error: Error, info: React.ErrorInfo) {
     console.log("[ErrorBoundary] Caught error:", error.message);
     console.log("[ErrorBoundary] Component stack:", info.componentStack);
+    Sentry.captureException(error, {
+      extra: { componentStack: info.componentStack },
+    });
   }
 
-  handleReset = () => {
+  handleRestart = () => {
     this.setState({ hasError: false, error: null });
   };
 
@@ -54,12 +65,18 @@ class AppErrorBoundary extends Component<{ children: ReactNode }, ErrorBoundaryS
     if (this.state.hasError) {
       return (
         <View style={errorStyles.container}>
+          <View style={errorStyles.iconCircle}>
+            <Text style={errorStyles.iconText}>!</Text>
+          </View>
           <Text style={errorStyles.title}>Something went wrong</Text>
           <Text style={errorStyles.message}>
             {this.state.error?.message ?? "An unexpected error occurred."}
           </Text>
-          <TouchableOpacity style={errorStyles.button} onPress={this.handleReset}>
-            <Text style={errorStyles.buttonText}>Try Again</Text>
+          <Text style={errorStyles.subMessage}>
+            The error has been reported automatically.
+          </Text>
+          <TouchableOpacity style={errorStyles.button} onPress={this.handleRestart}>
+            <Text style={errorStyles.buttonText}>Restart</Text>
           </TouchableOpacity>
         </View>
       );
@@ -76,6 +93,22 @@ const errorStyles = StyleSheet.create({
     justifyContent: "center",
     padding: 32,
   },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: "rgba(248, 81, 73, 0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 20,
+    borderWidth: 2,
+    borderColor: "rgba(248, 81, 73, 0.3)",
+  },
+  iconText: {
+    fontSize: 32,
+    fontWeight: "800" as const,
+    color: "#F85149",
+  },
   title: {
     fontSize: 22,
     fontWeight: "700" as const,
@@ -86,8 +119,14 @@ const errorStyles = StyleSheet.create({
     fontSize: 14,
     color: "#8B949E",
     textAlign: "center",
-    marginBottom: 24,
+    marginBottom: 8,
     lineHeight: 20,
+  },
+  subMessage: {
+    fontSize: 12,
+    color: "#484F58",
+    textAlign: "center",
+    marginBottom: 24,
   },
   button: {
     backgroundColor: "#10B981",
@@ -137,7 +176,7 @@ function RootLayoutNav() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   useEffect(() => {
     console.log("[RootLayout] App mounted, hiding splash screen");
     SplashScreen.hideAsync().catch((e) => {
@@ -171,3 +210,5 @@ export default function RootLayout() {
     </AppErrorBoundary>
   );
 }
+
+export default Sentry.wrap(RootLayout);

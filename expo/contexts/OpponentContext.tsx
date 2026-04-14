@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react';
+import * as Sentry from '@sentry/react-native';
 import * as secureStorage from '@/utils/secureStorage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
@@ -14,6 +15,7 @@ async function loadOpponents(): Promise<string[]> {
     return [];
   } catch (e) {
     console.log('[OpponentContext] Error loading opponents:', e);
+    Sentry.captureException(e);
     return [];
   }
 }

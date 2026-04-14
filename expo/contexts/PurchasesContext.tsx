@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import * as Sentry from '@sentry/react-native';
 import { Alert, Platform } from 'react-native';
 import createContextHook from '@nkzw/create-context-hook';
 import Purchases, { PurchasesOffering, CustomerInfo } from 'react-native-purchases';
@@ -17,6 +18,7 @@ function configureRC() {
     console.log('[PurchasesContext] RevenueCat configured successfully');
   } catch (e) {
     console.log('[PurchasesContext] Failed to configure RevenueCat:', e);
+    Sentry.captureException(e);
   }
 }
 
@@ -60,6 +62,7 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
       return offerings.current ?? null;
     } catch (e) {
       console.log('[PurchasesContext] Error fetching offerings:', e);
+      Sentry.captureException(e);
       return null;
     } finally {
       setIsLoading(false);
@@ -81,6 +84,7 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
         console.log('[PurchasesContext] Purchase cancelled by user');
       } else {
         console.log('[PurchasesContext] Purchase error:', e);
+        Sentry.captureException(e);
         Alert.alert('Purchase Error', 'Something went wrong. Please try again.');
       }
       return false;
@@ -104,6 +108,7 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
       }
     } catch (e) {
       console.log('[PurchasesContext] Restore error:', e);
+      Sentry.captureException(e);
       Alert.alert('Restore Error', 'Something went wrong while restoring. Please try again.');
     } finally {
       setIsRestoring(false);

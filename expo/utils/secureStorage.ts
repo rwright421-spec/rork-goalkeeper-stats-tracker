@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import * as SecureStore from 'expo-secure-store';
 
 export async function setItem<T>(key: string, value: T): Promise<void> {
@@ -7,6 +8,7 @@ export async function setItem<T>(key: string, value: T): Promise<void> {
     console.log('[secureStorage] Saved key:', key, '- size:', serialized.length);
   } catch (e) {
     console.log('[secureStorage] Error saving key:', key, e);
+    Sentry.captureException(e);
     throw e;
   }
 }
@@ -18,6 +20,7 @@ export async function getItem<T>(key: string): Promise<T | null> {
     return JSON.parse(raw) as T;
   } catch (e) {
     console.log('[secureStorage] Error reading key:', key, e);
+    Sentry.captureException(e);
     return null;
   }
 }
@@ -28,6 +31,7 @@ export async function removeItem(key: string): Promise<void> {
     console.log('[secureStorage] Removed key:', key);
   } catch (e) {
     console.log('[secureStorage] Error removing key:', key, e);
+    Sentry.captureException(e);
   }
 }
 
@@ -36,6 +40,7 @@ export async function getRawString(key: string): Promise<string | null> {
     return await SecureStore.getItemAsync(key);
   } catch (e) {
     console.log('[secureStorage] Error reading raw key:', key, e);
+    Sentry.captureException(e);
     return null;
   }
 }
@@ -45,6 +50,7 @@ export async function setRawString(key: string, value: string): Promise<void> {
     await SecureStore.setItemAsync(key, value);
   } catch (e) {
     console.log('[secureStorage] Error saving raw key:', key, e);
+    Sentry.captureException(e);
     throw e;
   }
 }

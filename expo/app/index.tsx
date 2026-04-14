@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import * as Sentry from '@sentry/react-native';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -31,6 +32,7 @@ export default function GoalkeeperSelectScreen() {
         }
       } catch (e) {
         console.log('[Index] Error checking onboarding:', e);
+        Sentry.captureException(e);
       }
       if (mounted) setOnboardingChecked(true);
     })();

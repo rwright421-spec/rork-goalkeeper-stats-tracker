@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
+import * as Sentry from '@sentry/react-native';
 import * as secureStorage from '@/utils/secureStorage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
@@ -83,6 +84,7 @@ async function loadGamesFromStorage(storageKey: string): Promise<SavedGame[]> {
     return [];
   } catch (e) {
     console.log('[GameContext] Error loading games:', e);
+    Sentry.captureException(e);
     return [];
   }
 }
@@ -151,6 +153,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
         markSuccess();
       } catch (e) {
         console.log('[GameContext] Cloud sync error:', e);
+        Sentry.captureException(e);
         markFailed(async () => {
           const retryCloudGames = await downloadProfileData<SavedGame>(sharedProfileId!, 'games');
           if (retryCloudGames && retryCloudGames.length > 0 && activeProfileId) {
@@ -192,6 +195,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
               console.log('[GameContext] Server rejected sync: game limit exceeded');
               setGameLimitExceeded(true);
             } else {
+              Sentry.captureException(e);
               markFailed(async () => {
                 await uploadProfileData(sharedProfileId!, 'games', data);
               });
@@ -253,6 +257,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
               if (e?.message === GAME_LIMIT_ERROR_KEY) {
                 setGameLimitExceeded(true);
               } else {
+                Sentry.captureException(e);
                 markFailed(async () => {
                   await uploadProfileData(sharedProfileId!, 'games', updatedGames);
                 });
@@ -262,6 +267,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
         }
       } catch (e) {
         console.log('[GameContext] Pending sync error:', e);
+        Sentry.captureException(e);
       } finally {
         pendingSyncInProgress.current = false;
       }
@@ -327,6 +333,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
       return true;
     } catch (e) {
       console.log('[GameContext] Error moving game:', e);
+      Sentry.captureException(e);
       return false;
     }
   }, [storageKey, queryClient]);
@@ -372,6 +379,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
         }
       } catch (e) {
         console.log('[GameContext] Error counting global games:', e);
+        Sentry.captureException(e);
       }
     }
     void countAllGames();

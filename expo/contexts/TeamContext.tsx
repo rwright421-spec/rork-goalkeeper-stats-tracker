@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import * as Sentry from '@sentry/react-native';
 import * as secureStorage from '@/utils/secureStorage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
@@ -27,6 +28,7 @@ async function loadTeams(key: string): Promise<Team[]> {
     return [];
   } catch (e) {
     console.log('[TeamContext] Error loading teams:', e);
+    Sentry.captureException(e);
     return [];
   }
 }
@@ -76,6 +78,7 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
         markSuccess();
       } catch (e) {
         console.log('[TeamContext] Cloud sync error:', e);
+        Sentry.captureException(e);
         markFailed(async () => {
           const retryCloud = await downloadProfileData<Team>(sharedProfileId!, 'teams');
           if (retryCloud && retryCloud.length > 0 && activeProfileId) {
@@ -116,6 +119,7 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
             markSuccess();
           } catch (e) {
             console.log('[TeamContext] Upload error:', e);
+            Sentry.captureException(e);
             markFailed(async () => {
               await uploadProfileData(sharedProfileId!, 'teams', data);
             });

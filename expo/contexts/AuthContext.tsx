@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import * as Sentry from '@sentry/react-native';
 import * as secureStorage from '@/utils/secureStorage';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
@@ -23,6 +24,7 @@ async function loadUserIdentity(): Promise<{ userId: string; displayName: string
     return { userId, displayName };
   } catch (e) {
     console.log('[Auth] Error loading identity:', e);
+    Sentry.captureException(e);
     const fallback = generateUserId();
     return { userId: fallback, displayName: '' };
   }

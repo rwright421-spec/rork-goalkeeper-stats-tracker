@@ -1,5 +1,6 @@
 // Game Tracking - Live stat entry screen for game tracking
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import * as Sentry from '@sentry/react-native';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, InputAccessoryView, TouchableWithoutFeedback } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react-native';
@@ -230,7 +231,8 @@ export default function GameTrackingScreen() {
           pendingSync = true;
           console.log('[GameTracking] Offline — using local ID:', gameId);
         }
-      } catch {
+      } catch (e) {
+        Sentry.captureException(e);
         gameId = createLocalGameId();
         pendingSync = true;
         console.log('[GameTracking] Error generating server ID — using local ID:', gameId);
