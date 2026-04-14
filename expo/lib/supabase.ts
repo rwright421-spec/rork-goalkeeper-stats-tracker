@@ -3,11 +3,35 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 let supabaseInstance: SupabaseClient | null = null;
 
+// ---------------------------------------------------------------------------
+// Supabase key usage:
+//
+// ANON KEY (EXPO_PUBLIC_SUPABASE_ANON_KEY)
+//   - Used by createClient() below for the initial connection.
+//   - Safe for client-side use; limited by Row Level Security (RLS) policies.
+//   - Suitable for: table creation checks, public reads, unauthenticated RPCs.
+//
+// USER JWT (authenticated session token)
+//   - Required for any query that touches user-specific data:
+//       • games, goalkeeper profiles, teams, profile_members, profile_data
+//   - After the user authenticates, call supabase.auth.setSession() so that
+//     subsequent requests automatically include the user's JWT in the
+//     Authorization header instead of the anon key.
+//   - RLS policies on those tables should restrict access based on auth.uid().
+// ---------------------------------------------------------------------------
+
 export function getSupabase(): SupabaseClient | null {
   if (supabaseInstance) return supabaseInstance;
 
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
   const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (__DEV__ && !url) {
+    throw new Error(
+      '[Supabase] EXPO_PUBLIC_SUPABASE_URL is undefined. ' +
+      'Check your .env / environment variables configuration.'
+    );
+  }
 
   if (!url || !key) {
     console.log('[Supabase] Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY');
