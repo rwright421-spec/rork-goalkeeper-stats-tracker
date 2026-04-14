@@ -4,6 +4,7 @@ import { User, UserPlus, PenTool, Check, X, Link, Sparkles } from 'lucide-react-
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
+import { fontSize } from '@/constants/typography';
 import { GoalkeeperProfile } from '@/types/game';
 
 export type KeeperSelectionMode = 'profile' | 'new' | 'manual';
@@ -318,7 +319,7 @@ export function KeeperSelectorButton({
 function createButtonStyles(c: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1 },
-    label: { fontSize: 12, color: c.textSecondary, fontWeight: '600' as const, marginBottom: 6 },
+    label: { fontSize: fontSize.caption, color: c.textSecondary, fontWeight: '600' as const, marginBottom: 6 },
     button: {
       backgroundColor: c.surface,
       borderRadius: 10,
@@ -331,10 +332,10 @@ function createButtonStyles(c: ThemeColors) {
       justifyContent: 'space-between',
     },
     buttonContent: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 },
-    buttonText: { fontSize: 15, color: c.text, flex: 1 },
+    buttonText: { fontSize: fontSize.bodyLg, color: c.text, flex: 1 },
     buttonPlaceholder: { color: c.textMuted },
     indicatorBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, marginLeft: 8 },
-    indicatorText: { fontSize: 11, fontWeight: '700' as const },
+    indicatorText: { fontSize: fontSize.sm, fontWeight: '700' as const },
   });
 }
 
@@ -371,7 +372,7 @@ function createStyles(c: ThemeColors) {
       borderBottomColor: c.border,
     },
     title: {
-      fontSize: 17,
+      fontSize: fontSize.h4,
       fontWeight: '700' as const,
       color: c.text,
     },
@@ -407,8 +408,8 @@ function createStyles(c: ThemeColors) {
       justifyContent: 'center',
     },
     optionTextWrap: { flex: 1 },
-    optionTitle: { fontSize: 15, fontWeight: '700' as const, color: c.text },
-    optionDesc: { fontSize: 12, color: c.textMuted, marginTop: 2 },
+    optionTitle: { fontSize: fontSize.bodyLg, fontWeight: '700' as const, color: c.text },
+    optionDesc: { fontSize: fontSize.caption, color: c.textMuted, marginTop: 2 },
     optionBody: {
       backgroundColor: c.surface,
       borderRadius: 12,
@@ -431,23 +432,23 @@ function createStyles(c: ThemeColors) {
       backgroundColor: c.primaryGlow,
     },
     profileInfo: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1 },
-    profileName: { fontSize: 15, fontWeight: '600' as const, color: c.text },
+    profileName: { fontSize: fontSize.bodyLg, fontWeight: '600' as const, color: c.text },
     badge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
     badgeLocal: { backgroundColor: 'rgba(16, 185, 129, 0.12)' },
     badgeShared: { backgroundColor: 'rgba(59, 130, 246, 0.12)' },
-    badgeText: { fontSize: 10, fontWeight: '700' as const },
+    badgeText: { fontSize: fontSize.xs, fontWeight: '700' as const },
     badgeTextLocal: { color: '#10B981' },
     badgeTextShared: { color: '#3B82F6' },
-    emptyText: { fontSize: 14, color: c.textMuted, textAlign: 'center', paddingVertical: 16 },
+    emptyText: { fontSize: fontSize.body, color: c.textMuted, textAlign: 'center', paddingVertical: 16 },
     formField: { gap: 6 },
-    formLabel: { fontSize: 12, color: c.textSecondary, fontWeight: '600' as const },
+    formLabel: { fontSize: fontSize.caption, color: c.textSecondary, fontWeight: '600' as const },
     formInput: {
       backgroundColor: c.background,
       borderRadius: 10,
       paddingHorizontal: 14,
       paddingVertical: 12,
       color: c.text,
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       borderWidth: 1,
       borderColor: c.border,
     },
@@ -469,7 +470,7 @@ function createStyles(c: ThemeColors) {
     },
     confirmButtonText: {
       color: c.white,
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       fontWeight: '700' as const,
     },
   });

@@ -10,6 +10,7 @@ import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
+import { fontSize } from '@/constants/typography';
 
 const currentYear = new Date().getFullYear();
 const YEARS: string[] = [];
@@ -257,36 +258,36 @@ function createStyles(c: ThemeColors) {
     scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
     profileCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.surface, borderRadius: 16, padding: 18, marginBottom: 28, borderWidth: 1, borderColor: c.border, gap: 14 },
     profileAvatar: { width: 56, height: 56, borderRadius: 16, backgroundColor: c.primaryGlow, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: 'rgba(16, 185, 129, 0.3)' },
-    profileInitial: { fontSize: 24, fontWeight: '800' as const, color: c.primary },
+    profileInitial: { fontSize: fontSize.h1, fontWeight: '800' as const, color: c.primary },
     profileInfo: { flex: 1 },
     profileNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    profileName: { fontSize: 20, fontWeight: '800' as const, color: c.text, flexShrink: 1 },
-    profileMeta: { fontSize: 14, color: c.textSecondary, fontWeight: '500' as const, marginTop: 3 },
-    profileBirthYear: { fontSize: 12, color: c.textMuted, fontWeight: '500' as const, marginTop: 2 },
+    profileName: { fontSize: fontSize.h2, fontWeight: '800' as const, color: c.text, flexShrink: 1 },
+    profileMeta: { fontSize: fontSize.body, color: c.textSecondary, fontWeight: '500' as const, marginTop: 3 },
+    profileBirthYear: { fontSize: fontSize.caption, color: c.textMuted, fontWeight: '500' as const, marginTop: 2 },
     editProfileCard: { backgroundColor: c.surface, borderRadius: 16, padding: 18, marginBottom: 28, borderWidth: 1, borderColor: c.primary },
-    fieldLabel: { fontSize: 12, fontWeight: '600' as const, color: c.textSecondary, marginBottom: 6 },
-    editInput: { backgroundColor: c.surfaceLight, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, color: c.text, fontSize: 15, borderWidth: 1, borderColor: c.border },
+    fieldLabel: { fontSize: fontSize.caption, fontWeight: '600' as const, color: c.textSecondary, marginBottom: 6 },
+    editInput: { backgroundColor: c.surfaceLight, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, color: c.text, fontSize: fontSize.bodyLg, borderWidth: 1, borderColor: c.border },
     yearSelector: { backgroundColor: c.surfaceLight, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: c.border },
-    yearText: { fontSize: 15, color: c.text, fontWeight: '500' as const },
+    yearText: { fontSize: fontSize.bodyLg, color: c.text, fontWeight: '500' as const },
     yearDropdown: { backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border, marginTop: 4, overflow: 'hidden' },
     yearScroll: { maxHeight: 180 },
     yearOption: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
     yearOptionActive: { backgroundColor: c.primaryGlow },
-    yearOptionText: { fontSize: 14, color: c.text, fontWeight: '500' as const },
+    yearOptionText: { fontSize: fontSize.body, color: c.text, fontWeight: '500' as const },
     yearOptionTextActive: { color: c.primary, fontWeight: '700' as const },
     formActions: { flexDirection: 'row', gap: 8, marginTop: 14 },
     cancelBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: c.surfaceLight, alignItems: 'center', borderWidth: 1, borderColor: c.border },
-    cancelText: { fontSize: 14, fontWeight: '600' as const, color: c.textSecondary },
+    cancelText: { fontSize: fontSize.body, fontWeight: '600' as const, color: c.textSecondary },
     confirmBtn: { flex: 1, paddingVertical: 10, borderRadius: 10, backgroundColor: c.primaryDark, alignItems: 'center' },
     confirmBtnDisabled: { opacity: 0.4 },
-    confirmText: { fontSize: 14, fontWeight: '700' as const, color: c.white },
+    confirmText: { fontSize: fontSize.body, fontWeight: '700' as const, color: c.white },
     sectionHeader: { marginBottom: 12 },
-    sectionHeaderText: { fontSize: 13, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
+    sectionHeaderText: { fontSize: fontSize.body2, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
     actionsSection: { backgroundColor: c.surface, borderRadius: 14, borderWidth: 1, borderColor: c.border, overflow: 'hidden', marginBottom: 24 },
     actionRow: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: c.border },
     actionIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
     actionTextContainer: { flex: 1 },
-    actionTitle: { fontSize: 16, fontWeight: '600' as const, color: c.text },
-    actionSubtitle: { fontSize: 12, color: c.textMuted, fontWeight: '500' as const, marginTop: 1 },
+    actionTitle: { fontSize: fontSize.subtitle, fontWeight: '600' as const, color: c.text },
+    actionSubtitle: { fontSize: fontSize.caption, color: c.textMuted, fontWeight: '500' as const, marginTop: 1 },
   });
 }

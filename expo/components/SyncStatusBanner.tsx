@@ -4,6 +4,7 @@ import { RefreshCw, Check, WifiOff } from 'lucide-react-native';
 import { useColors } from '@/contexts/ThemeContext';
 import { useSyncStatus } from '@/contexts/SyncStatusContext';
 import { ThemeColors } from '@/constants/themes';
+import { fontSize } from '@/constants/typography';
 
 export default React.memo(function SyncStatusBanner() {
   const colors = useColors();
@@ -150,7 +151,7 @@ const bannerStyles = StyleSheet.create({
     borderWidth: 1,
   },
   text: {
-    fontSize: 13,
+    fontSize: fontSize.body2,
     fontWeight: '600' as const,
   },
   retryBtn: {
@@ -159,7 +160,7 @@ const bannerStyles = StyleSheet.create({
     borderRadius: 6,
   },
   retryText: {
-    fontSize: 12,
+    fontSize: fontSize.caption,
     fontWeight: '700' as const,
   },
 });

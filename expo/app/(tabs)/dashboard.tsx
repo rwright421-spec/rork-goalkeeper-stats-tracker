@@ -32,6 +32,7 @@ import { useGames } from '@/contexts/GameContext';
 import { Team } from '@/types/game';
 import SyncStatusBanner from '@/components/SyncStatusBanner';
 import { DashboardSkeleton, TeamListSkeleton } from '@/components/LoadingSkeleton';
+import { fontSize } from '@/constants/typography';
 
 
 const currentYear = new Date().getFullYear();
@@ -797,7 +798,7 @@ function createStyles(c: ThemeColors) {
       borderColor: 'rgba(16, 185, 129, 0.3)',
     },
     profileInitial: {
-      fontSize: 22,
+      fontSize: fontSize.h1sm,
       fontWeight: '800' as const,
       color: c.primary,
     },
@@ -810,19 +811,19 @@ function createStyles(c: ThemeColors) {
       gap: 8,
     },
     profileName: {
-      fontSize: 20,
+      fontSize: fontSize.h2,
       fontWeight: '800' as const,
       color: c.text,
       flexShrink: 1,
     },
     profileMeta: {
-      fontSize: 13,
+      fontSize: fontSize.body2,
       color: c.textSecondary,
       fontWeight: '500' as const,
       marginTop: 2,
     },
     profileBirthYear: {
-      fontSize: 12,
+      fontSize: fontSize.caption,
       color: c.textMuted,
       fontWeight: '500' as const,
       marginTop: 1,
@@ -847,7 +848,7 @@ function createStyles(c: ThemeColors) {
       borderColor: 'rgba(16, 185, 129, 0.2)',
     },
     switchBtnText: {
-      fontSize: 11,
+      fontSize: fontSize.sm,
       fontWeight: '600' as const,
       color: c.primary,
     },
@@ -866,12 +867,12 @@ function createStyles(c: ThemeColors) {
       borderColor: c.border,
     },
     quickStatValue: {
-      fontSize: 22,
+      fontSize: fontSize.h1sm,
       fontWeight: '800' as const,
       color: c.text,
     },
     quickStatLabel: {
-      fontSize: 10,
+      fontSize: fontSize.xs,
       fontWeight: '600' as const,
       color: c.textMuted,
       textTransform: 'uppercase',
@@ -893,7 +894,7 @@ function createStyles(c: ThemeColors) {
     },
     newGameText: {
       color: c.white,
-      fontSize: 17,
+      fontSize: fontSize.h4,
       fontWeight: '700' as const,
     },
     sectionHeader: {
@@ -904,14 +905,14 @@ function createStyles(c: ThemeColors) {
     },
     sectionHeaderText: {
       flex: 1,
-      fontSize: 13,
+      fontSize: fontSize.body2,
       fontWeight: '700' as const,
       color: c.textMuted,
       textTransform: 'uppercase',
       letterSpacing: 1,
     },
     sectionCount: {
-      fontSize: 12,
+      fontSize: fontSize.caption,
       fontWeight: '600' as const,
       color: c.textMuted,
       backgroundColor: c.surface,
@@ -947,7 +948,7 @@ function createStyles(c: ThemeColors) {
       borderColor: 'rgba(16, 185, 129, 0.2)',
     },
     createTeamText: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       fontWeight: '600' as const,
       color: c.primary,
     },
@@ -957,7 +958,7 @@ function createStyles(c: ThemeColors) {
       borderBottomColor: c.border,
     },
     fieldLabel: {
-      fontSize: 12,
+      fontSize: fontSize.caption,
       fontWeight: '600' as const,
       color: c.textSecondary,
       marginBottom: 6,
@@ -971,7 +972,7 @@ function createStyles(c: ThemeColors) {
       borderColor: c.border,
     },
     yearText: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       color: c.text,
       fontWeight: '500' as const,
     },
@@ -996,7 +997,7 @@ function createStyles(c: ThemeColors) {
       backgroundColor: c.primaryGlow,
     },
     yearOptionText: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       color: c.text,
       fontWeight: '500' as const,
     },
@@ -1010,7 +1011,7 @@ function createStyles(c: ThemeColors) {
       paddingHorizontal: 14,
       paddingVertical: 10,
       color: c.text,
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       borderWidth: 1,
       borderColor: c.border,
       marginBottom: 10,
@@ -1029,7 +1030,7 @@ function createStyles(c: ThemeColors) {
       borderColor: c.border,
     },
     cancelText: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       fontWeight: '600' as const,
       color: c.textSecondary,
     },
@@ -1044,7 +1045,7 @@ function createStyles(c: ThemeColors) {
       opacity: 0.4,
     },
     confirmText: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       fontWeight: '700' as const,
       color: c.white,
     },
@@ -1053,7 +1054,7 @@ function createStyles(c: ThemeColors) {
       alignItems: 'center',
     },
     emptyTeamsText: {
-      fontSize: 13,
+      fontSize: fontSize.body2,
       color: c.textMuted,
     },
     teamRow: {
@@ -1080,7 +1081,7 @@ function createStyles(c: ThemeColors) {
       borderColor: 'rgba(16, 185, 129, 0.3)',
     },
     teamBadgeText: {
-      fontSize: 12,
+      fontSize: fontSize.caption,
       fontWeight: '800' as const,
       color: c.primary,
     },
@@ -1088,12 +1089,12 @@ function createStyles(c: ThemeColors) {
       flex: 1,
     },
     teamName: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       fontWeight: '600' as const,
       color: c.text,
     },
     teamMeta: {
-      fontSize: 11,
+      fontSize: fontSize.sm,
       color: c.textMuted,
       marginTop: 1,
     },
@@ -1132,7 +1133,7 @@ function createStyles(c: ThemeColors) {
     },
     viewAllText: {
       flex: 1,
-      fontSize: 14,
+      fontSize: fontSize.body,
       fontWeight: '600' as const,
       color: c.accent,
     },
@@ -1158,12 +1159,12 @@ function createStyles(c: ThemeColors) {
       flex: 1,
     },
     recentGameName: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       fontWeight: '600' as const,
       color: c.text,
     },
     recentGameDate: {
-      fontSize: 11,
+      fontSize: fontSize.sm,
       color: c.textMuted,
       marginTop: 2,
     },
@@ -1173,7 +1174,7 @@ function createStyles(c: ThemeColors) {
       borderRadius: 8,
     },
     recentGamePctText: {
-      fontSize: 13,
+      fontSize: fontSize.body2,
       fontWeight: '700' as const,
     },
     seeAllGamesRow: {
@@ -1186,7 +1187,7 @@ function createStyles(c: ThemeColors) {
       borderTopColor: c.border,
     },
     seeAllGamesText: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       fontWeight: '600' as const,
       color: c.primary,
     },
@@ -1217,12 +1218,12 @@ function createStyles(c: ThemeColors) {
       flex: 1,
     },
     actionTitle: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       fontWeight: '600' as const,
       color: c.text,
     },
     actionSubtitle: {
-      fontSize: 11,
+      fontSize: fontSize.sm,
       color: c.textMuted,
       fontWeight: '500' as const,
       marginTop: 1,

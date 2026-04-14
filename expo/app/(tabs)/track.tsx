@@ -17,6 +17,7 @@ import { useOpponents } from '@/contexts/OpponentContext';
 import { SavedGame } from '@/types/game';
 import SyncStatusBanner from '@/components/SyncStatusBanner';
 import { GameListSkeleton } from '@/components/LoadingSkeleton';
+import { fontSize } from '@/constants/typography';
 
 export default function TrackScreen() {
   const router = useRouter();
@@ -511,13 +512,13 @@ function createStyles(c: ThemeColors) {
       borderColor: 'rgba(16, 185, 129, 0.25)',
     },
     title: {
-      fontSize: 24,
+      fontSize: fontSize.h1,
       fontWeight: '800' as const,
       color: c.text,
       letterSpacing: -0.5,
     },
     subtitle: {
-      fontSize: 13,
+      fontSize: fontSize.body2,
       color: c.textSecondary,
       fontWeight: '500' as const,
       marginTop: 1,
@@ -536,7 +537,7 @@ function createStyles(c: ThemeColors) {
       borderColor: 'rgba(16, 185, 129, 0.2)',
     },
     teamPickerText: {
-      fontSize: 12,
+      fontSize: fontSize.caption,
       fontWeight: '600' as const,
       color: c.primary,
     },
@@ -572,7 +573,7 @@ function createStyles(c: ThemeColors) {
       borderRadius: 4,
     },
     teamPickerOptionText: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       fontWeight: '500' as const,
       color: c.text,
     },
@@ -581,7 +582,7 @@ function createStyles(c: ThemeColors) {
       fontWeight: '700' as const,
     },
     teamPickerOptionMeta: {
-      fontSize: 11,
+      fontSize: fontSize.sm,
       color: c.textMuted,
       fontWeight: '500' as const,
       marginTop: 1,
@@ -602,7 +603,7 @@ function createStyles(c: ThemeColors) {
     },
     newGameText: {
       color: c.white,
-      fontSize: 17,
+      fontSize: fontSize.h4,
       fontWeight: '700' as const,
     },
     priorHeader: {
@@ -613,13 +614,13 @@ function createStyles(c: ThemeColors) {
       gap: 8,
     },
     priorTitle: {
-      fontSize: 18,
+      fontSize: fontSize.h3,
       fontWeight: '700' as const,
       color: c.text,
       flex: 1,
     },
     priorCount: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       fontWeight: '600' as const,
       color: c.textMuted,
       backgroundColor: c.surface,
@@ -640,7 +641,7 @@ function createStyles(c: ThemeColors) {
       borderColor: c.border,
     },
     filterBtnText: {
-      fontSize: 12,
+      fontSize: fontSize.caption,
       fontWeight: '600' as const,
       color: c.textMuted,
     },
@@ -663,7 +664,7 @@ function createStyles(c: ThemeColors) {
       backgroundColor: c.primaryGlow,
     },
     filterOptionText: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       fontWeight: '500' as const,
       color: c.text,
     },
@@ -688,13 +689,13 @@ function createStyles(c: ThemeColors) {
       gap: 8,
     },
     emptyTitle: {
-      fontSize: 18,
+      fontSize: fontSize.h3,
       fontWeight: '600' as const,
       color: c.textSecondary,
       marginTop: 8,
     },
     emptySubtitle: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       color: c.textMuted,
     },
     switchKeeperBtn: {
@@ -709,7 +710,7 @@ function createStyles(c: ThemeColors) {
       borderColor: 'rgba(16, 185, 129, 0.2)',
     },
     switchKeeperText: {
-      fontSize: 12,
+      fontSize: fontSize.caption,
       fontWeight: '600' as const,
       color: c.primary,
     },
@@ -742,7 +743,7 @@ function createStyles(c: ThemeColors) {
       paddingBottom: 8,
     },
     sheetTitle: {
-      fontSize: 20,
+      fontSize: fontSize.h2,
       fontWeight: '800' as const,
       color: c.text,
       marginBottom: 16,
@@ -769,13 +770,13 @@ function createStyles(c: ThemeColors) {
       flex: 1,
     },
     sheetOptionTitle: {
-      fontSize: 16,
+      fontSize: fontSize.subtitle,
       fontWeight: '700' as const,
       color: c.text,
       marginBottom: 2,
     },
     sheetOptionDesc: {
-      fontSize: 13,
+      fontSize: fontSize.body2,
       color: c.textSecondary,
       fontWeight: '500' as const,
     },
@@ -786,7 +787,7 @@ function createStyles(c: ThemeColors) {
       marginBottom: 4,
     },
     quickStartHint: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       color: c.textSecondary,
       fontWeight: '500' as const,
       marginBottom: 16,
@@ -800,7 +801,7 @@ function createStyles(c: ThemeColors) {
       paddingHorizontal: 16,
       paddingVertical: 14,
       color: c.text,
-      fontSize: 16,
+      fontSize: fontSize.subtitle,
       borderWidth: 1.5,
       borderColor: 'rgba(250, 204, 21, 0.3)',
     },
@@ -819,7 +820,7 @@ function createStyles(c: ThemeColors) {
       borderBottomColor: c.border,
     },
     quickSuggestionText: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       color: c.text,
       fontWeight: '500' as const,
     },
@@ -837,7 +838,7 @@ function createStyles(c: ThemeColors) {
     },
     quickStartBtnText: {
       color: c.white,
-      fontSize: 17,
+      fontSize: fontSize.h4,
       fontWeight: '700' as const,
     },
   });

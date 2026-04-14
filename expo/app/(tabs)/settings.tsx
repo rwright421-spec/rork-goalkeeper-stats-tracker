@@ -15,6 +15,7 @@ import { gatherExportData, validateImportPayload, mergeImportData } from '@/util
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useGames } from '@/contexts/GameContext';
 import { useTeams } from '@/contexts/TeamContext';
+import { fontSize } from '@/constants/typography';
 
 export default function SettingsScreen() {
   const { themeName, setTheme } = useTheme();
@@ -408,9 +409,9 @@ function createStyles(c: ThemeColors) {
     scroll: { flex: 1 },
     scrollContent: { padding: 20, paddingBottom: 60 },
     sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-    sectionHeaderText: { fontSize: 13, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, flex: 1 },
-    opponentCount: { fontSize: 12, fontWeight: '600' as const, color: c.textMuted, backgroundColor: c.surface, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, overflow: 'hidden' },
-    sectionSubtitle: { fontSize: 13, color: c.textMuted, lineHeight: 18, marginTop: -8, marginBottom: 14 },
+    sectionHeaderText: { fontSize: fontSize.body2, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, flex: 1 },
+    opponentCount: { fontSize: fontSize.caption, fontWeight: '600' as const, color: c.textMuted, backgroundColor: c.surface, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, overflow: 'hidden' },
+    sectionSubtitle: { fontSize: fontSize.body2, color: c.textMuted, lineHeight: 18, marginTop: -8, marginBottom: 14 },
     themeGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
     themeCard: { width: '47%' as unknown as number, flexGrow: 1, backgroundColor: c.surface, borderRadius: 14, borderWidth: 2, borderColor: c.border, overflow: 'hidden' },
     themeCardActive: { borderColor: c.primary, borderWidth: 2 },
@@ -421,7 +422,7 @@ function createStyles(c: ThemeColors) {
     previewTextLine: { height: 5, borderRadius: 2.5, width: '70%' },
     previewTextLineShort: { height: 4, borderRadius: 2, width: '45%' },
     themeInfo: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: c.border },
-    themeLabel: { fontSize: 15, fontWeight: '600' as const, color: c.textSecondary },
+    themeLabel: { fontSize: fontSize.bodyLg, fontWeight: '600' as const, color: c.textSecondary },
     themeLabelActive: { color: c.primary, fontWeight: '700' as const },
     checkBadge: { width: 26, height: 26, borderRadius: 13, backgroundColor: c.primaryGlow, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: c.primary },
     syncButton: { backgroundColor: c.primaryGlow, borderColor: c.primary, marginBottom: 10 },
@@ -429,18 +430,18 @@ function createStyles(c: ThemeColors) {
     dataButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 10, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 20, borderWidth: 1 },
     exportButton: { backgroundColor: c.primaryGlow, borderColor: c.primary },
     importButton: { backgroundColor: c.surface, borderColor: c.border },
-    dataButtonText: { fontSize: 15, fontWeight: '600' as const },
+    dataButtonText: { fontSize: fontSize.bodyLg, fontWeight: '600' as const },
     opponentEmptyState: { backgroundColor: c.surface, borderRadius: 12, padding: 20, borderWidth: 1, borderColor: c.border },
-    opponentEmptyText: { fontSize: 14, color: c.textMuted, textAlign: 'center', lineHeight: 20 },
+    opponentEmptyText: { fontSize: fontSize.body, color: c.textMuted, textAlign: 'center', lineHeight: 20 },
     opponentList: { backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.border, overflow: 'hidden' as const },
     opponentRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: c.border },
-    opponentName: { fontSize: 15, fontWeight: '500' as const, color: c.text, flex: 1, marginRight: 12 },
+    opponentName: { fontSize: fontSize.bodyLg, fontWeight: '500' as const, color: c.text, flex: 1, marginRight: 12 },
     opponentDeleteBtn: { padding: 6 },
     feedbackButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 10, backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.border, paddingVertical: 14, paddingHorizontal: 20 },
-    feedbackButtonText: { fontSize: 15, fontWeight: '600' as const, color: c.text },
+    feedbackButtonText: { fontSize: fontSize.bodyLg, fontWeight: '600' as const, color: c.text },
     privacyLink: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, marginTop: 16 },
-    privacyLinkText: { fontSize: 13, color: c.textMuted, textDecorationLine: 'underline' as const },
+    privacyLinkText: { fontSize: fontSize.body2, color: c.textMuted, textDecorationLine: 'underline' as const },
     themePreviewButton: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, backgroundColor: c.primaryGlow, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, marginTop: 12, alignSelf: 'flex-start' as const, borderWidth: 1, borderColor: c.primary },
-    themePreviewButtonText: { fontSize: 13, fontWeight: '600' as const, color: c.primary },
+    themePreviewButtonText: { fontSize: fontSize.body2, fontWeight: '600' as const, color: c.primary },
   });
 }

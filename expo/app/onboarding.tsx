@@ -1,5 +1,5 @@
 // Onboarding - First-time user welcome and setup flow
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,6 +22,7 @@ import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
+import { fontSize } from '@/constants/typography';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const TOTAL_PAGES = 4;
@@ -426,7 +427,7 @@ function createStyles(c: ThemeColors, insets: { top: number; bottom: number }) {
       alignItems: 'flex-end',
     },
     skipText: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       fontWeight: '600' as const,
       color: c.textMuted,
     },
@@ -498,7 +499,7 @@ function createStyles(c: ThemeColors, insets: { top: number; bottom: number }) {
       top: -15,
     },
     welcomeHeadline: {
-      fontSize: 32,
+      fontSize: fontSize.display1,
       fontWeight: '800' as const,
       color: c.text,
       textAlign: 'center',
@@ -506,7 +507,7 @@ function createStyles(c: ThemeColors, insets: { top: number; bottom: number }) {
       marginBottom: 12,
     },
     welcomeSubheadline: {
-      fontSize: 16,
+      fontSize: fontSize.subtitle,
       fontWeight: '500' as const,
       color: c.textSecondary,
       textAlign: 'center',
@@ -529,10 +530,10 @@ function createStyles(c: ThemeColors, insets: { top: number; bottom: number }) {
       borderColor: c.border,
     },
     formIconEmoji: {
-      fontSize: 36,
+      fontSize: fontSize.display,
     },
     formHeadline: {
-      fontSize: 26,
+      fontSize: fontSize.display3,
       fontWeight: '800' as const,
       color: c.text,
       letterSpacing: -0.3,
@@ -542,7 +543,7 @@ function createStyles(c: ThemeColors, insets: { top: number; bottom: number }) {
       marginBottom: 18,
     },
     inputLabel: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       color: c.textSecondary,
       fontWeight: '600' as const,
       marginBottom: 8,
@@ -553,7 +554,7 @@ function createStyles(c: ThemeColors, insets: { top: number; bottom: number }) {
       paddingHorizontal: 16,
       paddingVertical: 14,
       color: c.text,
-      fontSize: 16,
+      fontSize: fontSize.subtitle,
       borderWidth: 1,
       borderColor: c.border,
     },
@@ -574,7 +575,7 @@ function createStyles(c: ThemeColors, insets: { top: number; bottom: number }) {
     },
     primaryButtonText: {
       color: c.white,
-      fontSize: 17,
+      fontSize: fontSize.h4,
       fontWeight: '700' as const,
     },
     secondaryButton: {
@@ -583,12 +584,12 @@ function createStyles(c: ThemeColors, insets: { top: number; bottom: number }) {
       marginTop: 4,
     },
     secondaryButtonText: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       fontWeight: '600' as const,
       color: c.textMuted,
     },
     readyBody: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       fontWeight: '500' as const,
       color: c.textSecondary,
       textAlign: 'center',
@@ -607,7 +608,7 @@ function createStyles(c: ThemeColors, insets: { top: number; bottom: number }) {
       borderColor: c.border,
     },
     readyEmoji: {
-      fontSize: 44,
+      fontSize: fontSize.hero,
     },
     tabHintContainer: {
       flexDirection: 'row',
@@ -639,7 +640,7 @@ function createStyles(c: ThemeColors, insets: { top: number; bottom: number }) {
       borderColor: c.border,
     },
     tabHintLabel: {
-      fontSize: 11,
+      fontSize: fontSize.sm,
       fontWeight: '600' as const,
       color: c.textMuted,
     },

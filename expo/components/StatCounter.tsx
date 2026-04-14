@@ -4,6 +4,7 @@ import { Minus, Plus } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
+import { fontSize } from '@/constants/typography';
 
 interface StatCounterProps {
   label: string;
@@ -81,13 +82,13 @@ export default React.memo(function StatCounter({
 function createStyles(c: ThemeColors) {
   return StyleSheet.create({
     container: { alignItems: 'center', flex: 1 },
-    label: { fontSize: 11, fontWeight: '600' as const, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8, textAlign: 'center' },
+    label: { fontSize: fontSize.sm, fontWeight: '600' as const, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8, textAlign: 'center' },
     counterRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     button: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
     decrementButton: { backgroundColor: c.dangerGlow, borderWidth: 1, borderColor: 'rgba(248, 81, 73, 0.3)' },
     incrementButton: { backgroundColor: c.primaryGlow, borderWidth: 1, borderColor: 'rgba(16, 185, 129, 0.3)' },
     buttonDisabled: { opacity: 0.4 },
     valueContainer: { minWidth: 40, alignItems: 'center' },
-    value: { fontSize: 28, fontWeight: '700' as const },
+    value: { fontSize: fontSize.display2, fontWeight: '700' as const },
   });
 }

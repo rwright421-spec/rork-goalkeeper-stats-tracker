@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
+import { fontSize } from '@/constants/typography';
 
 interface SavePercentageBadgeProps {
   saves: number;
@@ -36,9 +37,9 @@ export default React.memo(function SavePercentageBadge({ saves, goalsAgainst, la
 function createStyles(c: ThemeColors) {
   return StyleSheet.create({
     container: { alignItems: 'center' },
-    label: { fontSize: 11, fontWeight: '600' as const, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 },
+    label: { fontSize: fontSize.sm, fontWeight: '600' as const, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 6 },
     badge: { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 12, borderWidth: 1.5, backgroundColor: 'rgba(16, 185, 129, 0.08)' },
-    value: { fontSize: 22, fontWeight: '800' as const },
-    sublabel: { fontSize: 10, color: c.textMuted, marginTop: 4, fontWeight: '500' as const },
+    value: { fontSize: fontSize.h1sm, fontWeight: '800' as const },
+    sublabel: { fontSize: fontSize.xs, color: c.textMuted, marginTop: 4, fontWeight: '500' as const },
   });
 }

@@ -11,6 +11,7 @@ import { useGames } from '@/contexts/GameContext';
 import { KeeperData, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, getHalfLengthForAgeGroup } from '@/types/game';
 import { formatGameAsText, formatGameAsCSV } from '@/utils/export';
 import MoveGameModal from '@/components/MoveGameModal';
+import { fontSize } from '@/constants/typography';
 
 function KeeperDetailBlock({ keeper, label, color, colors, ageGroup }: { keeper: KeeperData; label: string; color: string; colors: ThemeColors; ageGroup?: string }) {
   const totalSaves = getTotalSaves(keeper);
@@ -109,7 +110,7 @@ function KeeperDetailBlock({ keeper, label, color, colors, ageGroup }: { keeper:
                 <View style={styles.distItem}><Text style={styles.distValue}>{estMinutes}</Text><Text style={styles.distLabel}>Est. Minutes</Text></View>
                 <View style={styles.distItem}><Text style={styles.distValue}>{halvesPlayed}</Text><Text style={styles.distLabel}>Halves Played</Text></View>
               </View>
-              <Text style={{ fontSize: 10, color: colors.textMuted, fontStyle: 'italic' as const, textAlign: 'center' as const, marginTop: 10 }}>Estimated from age group and halves played</Text>
+              <Text style={{ fontSize: fontSize.xs, color: colors.textMuted, fontStyle: 'italic' as const, textAlign: 'center' as const, marginTop: 10 }}>Estimated from age group and halves played</Text>
             </View>
           );
         }
@@ -328,59 +329,59 @@ function createDetailStyles(c: ThemeColors) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: c.background },
     centered: { alignItems: 'center', justifyContent: 'center' },
-    emptyText: { color: c.textSecondary, fontSize: 16 },
+    emptyText: { color: c.textSecondary, fontSize: fontSize.subtitle },
     scrollContent: { padding: 20, paddingBottom: 60 },
     gameInfoCard: { backgroundColor: c.surface, borderRadius: 14, padding: 18, marginBottom: 20, borderWidth: 1, borderColor: c.border },
     gameInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    gameInfoText: { fontSize: 13, color: c.textMuted, fontWeight: '500' as const },
-    gameInfoEvent: { fontSize: 20, fontWeight: '800' as const, color: c.text, marginVertical: 6 },
-    gameInfoGame: { fontSize: 14, color: c.textSecondary, fontWeight: '600' as const },
+    gameInfoText: { fontSize: fontSize.body2, color: c.textMuted, fontWeight: '500' as const },
+    gameInfoEvent: { fontSize: fontSize.h2, fontWeight: '800' as const, color: c.text, marginVertical: 6 },
+    gameInfoGame: { fontSize: fontSize.body, color: c.textSecondary, fontWeight: '600' as const },
     keeperBlock: { marginBottom: 20 },
     keeperHeader: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8, marginBottom: 14 },
-    keeperHeaderText: { color: c.white, fontSize: 13, fontWeight: '800' as const, letterSpacing: 1.5, textAlign: 'center' },
+    keeperHeaderText: { color: c.white, fontSize: fontSize.body2, fontWeight: '800' as const, letterSpacing: 1.5, textAlign: 'center' },
     keeperInfoRow: { flexDirection: 'row', gap: 12, marginBottom: 14 },
     keeperInfoItem: { flex: 1, backgroundColor: c.surface, borderRadius: 10, padding: 12, borderWidth: 1, borderColor: c.border },
-    infoLabel: { fontSize: 10, fontWeight: '600' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
-    infoValue: { fontSize: 15, fontWeight: '600' as const, color: c.text },
+    infoLabel: { fontSize: fontSize.xs, fontWeight: '600' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 },
+    infoValue: { fontSize: fontSize.bodyLg, fontWeight: '600' as const, color: c.text },
     overallRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
     overallStat: { flex: 1, backgroundColor: c.surface, borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: c.border },
-    overallValue: { fontSize: 24, fontWeight: '800' as const },
-    overallLabel: { fontSize: 10, fontWeight: '600' as const, color: c.textMuted, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+    overallValue: { fontSize: fontSize.h1, fontWeight: '800' as const },
+    overallLabel: { fontSize: fontSize.xs, fontWeight: '600' as const, color: c.textMuted, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
     halvesRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
     halfCard: { flex: 1, backgroundColor: c.surface, borderRadius: 12, padding: 14, borderWidth: 1, borderColor: c.border },
-    halfCardTitle: { fontSize: 12, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, textAlign: 'center' },
-    halfStat: { fontSize: 14, color: c.text, fontWeight: '500' as const, marginBottom: 3 },
-    halfPct: { fontSize: 15, fontWeight: '700' as const, marginTop: 4 },
+    halfCardTitle: { fontSize: fontSize.caption, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, textAlign: 'center' },
+    halfStat: { fontSize: fontSize.body, color: c.text, fontWeight: '500' as const, marginBottom: 3 },
+    halfPct: { fontSize: fontSize.bodyLg, fontWeight: '700' as const, marginTop: 4 },
     distSection: { backgroundColor: c.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border },
-    distTitle: { fontSize: 12, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14, textAlign: 'center' },
+    distTitle: { fontSize: fontSize.caption, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14, textAlign: 'center' },
     distGrid: { flexDirection: 'row', justifyContent: 'space-around' },
     distItem: { alignItems: 'center' },
-    distValue: { fontSize: 20, fontWeight: '700' as const, color: c.text },
-    distLabel: { fontSize: 10, color: c.textMuted, fontWeight: '500' as const, marginTop: 2 },
+    distValue: { fontSize: fontSize.h2, fontWeight: '700' as const, color: c.text },
+    distLabel: { fontSize: fontSize.xs, color: c.textMuted, fontWeight: '500' as const, marginTop: 2 },
     halfDistRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, paddingTop: 6, borderTopWidth: 1, borderTopColor: c.border },
-    halfDistItem: { fontSize: 11, color: c.textMuted, fontWeight: '500' as const },
+    halfDistItem: { fontSize: fontSize.sm, color: c.textMuted, fontWeight: '500' as const },
     secondHalfKeeperBlock: { marginBottom: 14 },
-    secondHalfKeeperTitle: { fontSize: 11, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
+    secondHalfKeeperTitle: { fontSize: fontSize.sm, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 },
     notesBlock: { backgroundColor: c.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border, marginTop: 14 },
-    notesBlockTitle: { fontSize: 12, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
-    notesBlockText: { fontSize: 14, color: c.text, fontWeight: '500' as const, lineHeight: 20 },
+    notesBlockTitle: { fontSize: fontSize.caption, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
+    notesBlockText: { fontSize: fontSize.body, color: c.text, fontWeight: '500' as const, lineHeight: 20 },
     finalScoreCard: { backgroundColor: c.surfaceLight, borderRadius: 14, padding: 20, marginBottom: 20, borderWidth: 1.5, borderColor: c.border },
-    finalScoreTitle: { fontSize: 14, fontWeight: '700' as const, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14, textAlign: 'center' },
+    finalScoreTitle: { fontSize: fontSize.body, fontWeight: '700' as const, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14, textAlign: 'center' },
     finalScoreRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 20 },
     finalScoreTeam: { alignItems: 'center', flex: 1 },
-    finalScoreLabel: { fontSize: 11, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
-    finalScoreValue: { fontSize: 36, fontWeight: '800' as const },
-    finalScoreDash: { fontSize: 28, fontWeight: '300' as const, color: c.textMuted },
+    finalScoreLabel: { fontSize: fontSize.sm, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
+    finalScoreValue: { fontSize: fontSize.display, fontWeight: '800' as const },
+    finalScoreDash: { fontSize: fontSize.display2, fontWeight: '300' as const, color: c.textMuted },
     exportSection: { marginTop: 8 },
-    exportTitle: { fontSize: 14, fontWeight: '700' as const, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
+    exportTitle: { fontSize: fontSize.body, fontWeight: '700' as const, color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
     exportButtons: { gap: 10 },
     exportButton: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: c.surface, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.border },
-    exportButtonText: { flex: 1, fontSize: 15, fontWeight: '600' as const, color: c.text },
+    exportButtonText: { flex: 1, fontSize: fontSize.bodyLg, fontWeight: '600' as const, color: c.text },
     editButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: c.primaryDark, borderRadius: 14, paddingVertical: 16, marginBottom: 20 },
-    editButtonText: { color: c.white, fontSize: 17, fontWeight: '700' as const },
+    editButtonText: { color: c.white, fontSize: fontSize.h4, fontWeight: '700' as const },
     headerMenu: { position: 'absolute' as const, top: 0, right: 12, zIndex: 100, backgroundColor: c.surfaceLight, borderRadius: 10, borderWidth: 1, borderColor: c.border, overflow: 'hidden', minWidth: 240 },
     headerMenuItem: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10, paddingHorizontal: 14, paddingVertical: 12 },
-    headerMenuText: { fontSize: 14, fontWeight: '600' as const, color: c.text },
+    headerMenuText: { fontSize: fontSize.body, fontWeight: '600' as const, color: c.text },
     offscreenContainer: { position: 'absolute' as const, left: -9999, top: -9999, opacity: 0 },
   });
 }

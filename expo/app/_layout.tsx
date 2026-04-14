@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect, Component, ReactNode } from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import { MAX_FONT_SIZE_MULTIPLIER } from "@/constants/typography";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { GoalkeeperProvider } from "@/contexts/GoalkeeperContext";
@@ -13,6 +14,14 @@ import { OpponentProvider } from "@/contexts/OpponentContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { PurchasesProvider } from "@/contexts/PurchasesContext";
 import { SyncStatusProvider } from "@/contexts/SyncStatusContext";
+
+if ((Text as any).defaultProps == null) (Text as any).defaultProps = {};
+(Text as any).defaultProps.allowFontScaling = true;
+(Text as any).defaultProps.maxFontSizeMultiplier = MAX_FONT_SIZE_MULTIPLIER;
+
+if ((TextInput as any).defaultProps == null) (TextInput as any).defaultProps = {};
+(TextInput as any).defaultProps.allowFontScaling = true;
+(TextInput as any).defaultProps.maxFontSizeMultiplier = MAX_FONT_SIZE_MULTIPLIER;
 
 Sentry.init({
   dsn: "https://bb8da1f4f555208dc9abdb9ce84776ca@o4511219865157632.ingest.us.sentry.io/4511219867648000",
@@ -101,25 +110,25 @@ const errorStyles = StyleSheet.create({
     borderColor: "rgba(248, 81, 73, 0.3)",
   },
   iconText: {
-    fontSize: 32,
+    fontSize: 32 as const,
     fontWeight: "800" as const,
     color: "#F85149",
   },
   title: {
-    fontSize: 22,
+    fontSize: 22 as const,
     fontWeight: "700" as const,
     color: "#F0F6FC",
     marginBottom: 12,
   },
   message: {
-    fontSize: 14,
+    fontSize: 14 as const,
     color: "#8B949E",
     textAlign: "center",
     marginBottom: 8,
     lineHeight: 20,
   },
   subMessage: {
-    fontSize: 12,
+    fontSize: 12 as const,
     color: "#484F58",
     textAlign: "center",
     marginBottom: 24,
@@ -132,7 +141,7 @@ const errorStyles = StyleSheet.create({
   },
   buttonText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 16 as const,
     fontWeight: "700" as const,
   },
 });

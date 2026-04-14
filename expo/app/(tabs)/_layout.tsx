@@ -3,6 +3,7 @@ import { LayoutDashboard, ClipboardList, BarChart3, Settings } from "lucide-reac
 import React from "react";
 import { Platform } from "react-native";
 import { useColors } from "@/contexts/ThemeContext";
+import { fontSize } from "@/constants/typography";
 
 export default function TabLayout() {
   const colors = useColors();
@@ -20,7 +21,7 @@ export default function TabLayout() {
         },
         headerShown: false,
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: fontSize.sm,
           fontWeight: "600" as const,
           letterSpacing: 0.2,
         },

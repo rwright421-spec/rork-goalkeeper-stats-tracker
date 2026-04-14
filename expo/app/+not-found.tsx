@@ -4,6 +4,7 @@ import { useColors } from "@/contexts/ThemeContext";
 import { useMemo } from "react";
 import { ThemeColors } from "@/constants/themes";
 import { AlertCircle } from "lucide-react-native";
+import { fontSize } from "@/constants/typography";
 
 export default function NotFoundScreen() {
   const colors = useColors();
@@ -34,7 +35,7 @@ function createStyles(c: ThemeColors) {
       gap: 12,
     },
     title: {
-      fontSize: 18,
+      fontSize: fontSize.h3,
       fontWeight: "600" as const,
       color: c.text,
       marginTop: 8,
@@ -47,7 +48,7 @@ function createStyles(c: ThemeColors) {
       backgroundColor: c.primaryDark,
     },
     linkText: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       fontWeight: "600" as const,
       color: c.white,
     },

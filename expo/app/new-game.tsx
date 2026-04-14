@@ -11,6 +11,7 @@ import { useTeams } from '@/contexts/TeamContext';
 import { useOpponents } from '@/contexts/OpponentContext';
 import { useGames } from '@/contexts/GameContext';
 import { usePurchases } from '@/contexts/PurchasesContext';
+import { fontSize } from '@/constants/typography';
 
 type SelectionOption = {
   key: KeeperSelection;
@@ -278,7 +279,7 @@ export default function NewGameScreen() {
                 onPress={() => setNewTeamHalfLengthPickerOpen(!newTeamHalfLengthPickerOpen)}
                 activeOpacity={0.7}
               >
-                <Text style={{ fontSize: 15, color: newTeamHalfLength ? colors.text : colors.textMuted }}>
+                <Text style={{ fontSize: fontSize.bodyLg, color: newTeamHalfLength ? colors.text : colors.textMuted }}>
                   {newTeamHalfLength ? `Half: ${newTeamHalfLength} min` : 'Half length (default 40 min)'}
                 </Text>
               </TouchableOpacity>
@@ -418,24 +419,24 @@ function createStyles(c: ThemeColors) {
     container: { flex: 1, backgroundColor: c.background },
     scrollView: { flex: 1 },
     scrollContent: { padding: 20, paddingBottom: 60 },
-    sectionLabel: { fontSize: 13, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 },
+    sectionLabel: { fontSize: fontSize.body2, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 },
     inputGroup: { marginBottom: 16 },
-    inputLabel: { fontSize: 14, color: c.textSecondary, fontWeight: '600' as const, marginBottom: 8 },
-    input: { backgroundColor: c.surface, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, color: c.text, fontSize: 16, borderWidth: 1, borderColor: c.border },
+    inputLabel: { fontSize: fontSize.body, color: c.textSecondary, fontWeight: '600' as const, marginBottom: 8 },
+    input: { backgroundColor: c.surface, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, color: c.text, fontSize: fontSize.subtitle, borderWidth: 1, borderColor: c.border },
     dropdownSelector: { backgroundColor: c.surface, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1, borderColor: c.border, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    dropdownText: { fontSize: 16, color: c.text },
+    dropdownText: { fontSize: fontSize.subtitle, color: c.text },
     dropdownPlaceholder: { color: c.textMuted },
     dropdownList: { backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.border, marginTop: 4, overflow: 'hidden' },
     dropdownOption: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: c.border },
     dropdownOptionActive: { backgroundColor: c.primaryGlow },
-    dropdownOptionText: { fontSize: 15, color: c.text, fontWeight: '500' as const },
+    dropdownOptionText: { fontSize: fontSize.bodyLg, color: c.text, fontWeight: '500' as const },
     dropdownOptionTextActive: { color: c.primary, fontWeight: '700' as const },
     selectionContainer: { gap: 10, marginBottom: 32 },
     selectionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.surface, borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: c.border },
     selectionCardActive: { borderColor: c.primary, backgroundColor: c.primaryGlow },
     selectionIcon: { width: 42, height: 42, borderRadius: 12, backgroundColor: c.surfaceLight, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
     selectionIconActive: { backgroundColor: 'rgba(16, 185, 129, 0.2)' },
-    selectionLabel: { fontSize: 16, fontWeight: '700' as const, color: c.text, flex: 1 },
+    selectionLabel: { fontSize: fontSize.subtitle, fontWeight: '700' as const, color: c.text, flex: 1 },
     selectionLabelActive: { color: c.primaryLight },
     selectionDesc: { display: 'none' },
     radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: c.borderLight, alignItems: 'center', justifyContent: 'center' },
@@ -443,20 +444,20 @@ function createStyles(c: ThemeColors) {
     radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: c.primary },
     continueButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: c.primaryDark, borderRadius: 14, paddingVertical: 16 },
     continueButtonDisabled: { opacity: 0.4 },
-    continueText: { color: c.white, fontSize: 17, fontWeight: '700' as const },
+    continueText: { color: c.white, fontSize: fontSize.h4, fontWeight: '700' as const },
     suggestionsDropdown: { backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.border, marginTop: 4, overflow: 'hidden', maxHeight: 180 },
     suggestionItem: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: c.border },
-    suggestionText: { fontSize: 15, color: c.text, fontWeight: '500' as const },
+    suggestionText: { fontSize: fontSize.bodyLg, color: c.text, fontWeight: '500' as const },
     createTeamOption: { paddingHorizontal: 16, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 8, borderTopWidth: 1, borderTopColor: c.border, backgroundColor: c.primaryGlow },
-    createTeamOptionText: { fontSize: 15, color: c.primary, fontWeight: '600' as const },
+    createTeamOptionText: { fontSize: fontSize.bodyLg, color: c.primary, fontWeight: '600' as const },
     createTeamForm: { backgroundColor: c.surface, borderRadius: 12, borderWidth: 1, borderColor: c.primary, marginTop: 8, padding: 14, gap: 10 },
-    createTeamTitle: { fontSize: 14, fontWeight: '700' as const, color: c.primary, marginBottom: 2 },
-    createTeamInput: { backgroundColor: c.background, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: c.text, fontSize: 15, borderWidth: 1, borderColor: c.border },
+    createTeamTitle: { fontSize: fontSize.body, fontWeight: '700' as const, color: c.primary, marginBottom: 2 },
+    createTeamInput: { backgroundColor: c.background, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, color: c.text, fontSize: fontSize.bodyLg, borderWidth: 1, borderColor: c.border },
     createTeamActions: { flexDirection: 'row', gap: 10, marginTop: 4 },
     createTeamCancel: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: c.border },
-    createTeamCancelText: { fontSize: 14, color: c.textMuted, fontWeight: '600' as const },
+    createTeamCancelText: { fontSize: fontSize.body, color: c.textMuted, fontWeight: '600' as const },
     createTeamConfirm: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: c.primaryDark },
     createTeamConfirmDisabled: { opacity: 0.4 },
-    createTeamConfirmText: { fontSize: 14, color: c.white, fontWeight: '600' as const },
+    createTeamConfirmText: { fontSize: fontSize.body, color: c.white, fontWeight: '600' as const },
   });
 }

@@ -22,6 +22,7 @@ import {
 import * as Haptics from 'expo-haptics';
 import { themes, ThemeColors, ThemeName, themeOptions } from '@/constants/themes';
 import { useTheme } from '@/contexts/ThemeContext';
+import { fontSize } from '@/constants/typography';
 
 const THEME_NAMES: ThemeName[] = ['dark', 'light', 'ocean', 'sunset'];
 const THEME_LABELS: Record<ThemeName, string> = {
@@ -451,13 +452,13 @@ function createScreenStyles(c: ThemeColors) {
       paddingBottom: 40,
     },
     heading: {
-      fontSize: 22,
+      fontSize: fontSize.h1sm,
       fontWeight: '800' as const,
       color: c.text,
       marginBottom: 4,
     },
     subtitle: {
-      fontSize: 13,
+      fontSize: fontSize.body2,
       color: c.textMuted,
       lineHeight: 18,
       marginBottom: 20,
@@ -475,13 +476,13 @@ function createScreenStyles(c: ThemeColors) {
       padding: 20,
     },
     cycleTitle: {
-      fontSize: 17,
+      fontSize: fontSize.h4,
       fontWeight: '700' as const,
       color: c.text,
       marginBottom: 4,
     },
     cycleSubtitle: {
-      fontSize: 13,
+      fontSize: fontSize.body2,
       color: c.textMuted,
       lineHeight: 18,
       marginBottom: 16,
@@ -503,7 +504,7 @@ function createScreenStyles(c: ThemeColors) {
       borderColor: c.danger,
     },
     cycleButtonText: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       fontWeight: '700' as const,
       color: c.primary,
     },

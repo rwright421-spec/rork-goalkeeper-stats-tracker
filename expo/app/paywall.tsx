@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { usePurchases } from '@/contexts/PurchasesContext';
+import { fontSize } from '@/constants/typography';
 
 type PlanType = 'annual' | 'monthly';
 
@@ -232,14 +233,14 @@ function createStyles(c: ThemeColors) {
       marginBottom: 20,
     },
     headline: {
-      fontSize: 26,
+      fontSize: fontSize.display3,
       fontWeight: '800' as const,
       color: c.text,
       textAlign: 'center' as const,
       marginBottom: 8,
     },
     subheadline: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       color: c.textSecondary,
       textAlign: 'center' as const,
       lineHeight: 22,
@@ -262,7 +263,7 @@ function createStyles(c: ThemeColors) {
       justifyContent: 'center' as const,
     },
     featureText: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       color: c.text,
       fontWeight: '500' as const,
       flex: 1,
@@ -277,7 +278,7 @@ function createStyles(c: ThemeColors) {
     },
     trialBadgeText: {
       color: c.white,
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       fontWeight: '700' as const,
       textAlign: 'center' as const,
     },
@@ -300,7 +301,7 @@ function createStyles(c: ThemeColors) {
       backgroundColor: c.primaryGlow,
     },
     planLabel: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       fontWeight: '600' as const,
       color: c.textMuted,
       marginBottom: 6,
@@ -309,7 +310,7 @@ function createStyles(c: ThemeColors) {
       color: c.text,
     },
     planPrice: {
-      fontSize: 24,
+      fontSize: fontSize.h1,
       fontWeight: '800' as const,
       color: c.textSecondary,
     },
@@ -317,7 +318,7 @@ function createStyles(c: ThemeColors) {
       color: c.text,
     },
     planPeriod: {
-      fontSize: 13,
+      fontSize: fontSize.body2,
       color: c.textMuted,
       fontWeight: '500' as const,
       marginTop: 2,
@@ -336,7 +337,7 @@ function createStyles(c: ThemeColors) {
       marginBottom: 8,
     },
     bestValueText: {
-      fontSize: 10,
+      fontSize: fontSize.xs,
       fontWeight: '700' as const,
       color: c.white,
       textTransform: 'uppercase' as const,
@@ -350,7 +351,7 @@ function createStyles(c: ThemeColors) {
       marginTop: 8,
     },
     savingsText: {
-      fontSize: 12,
+      fontSize: fontSize.caption,
       fontWeight: '700' as const,
       color: c.primary,
     },
@@ -367,11 +368,11 @@ function createStyles(c: ThemeColors) {
     },
     subscribeButtonText: {
       color: c.white,
-      fontSize: 17,
+      fontSize: fontSize.h4,
       fontWeight: '700' as const,
     },
     captionText: {
-      fontSize: 12,
+      fontSize: fontSize.caption,
       color: c.textMuted,
       textAlign: 'center' as const,
       marginBottom: 16,
@@ -382,7 +383,7 @@ function createStyles(c: ThemeColors) {
       marginBottom: 24,
     },
     restoreText: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       color: c.textSecondary,
       fontWeight: '500' as const,
       textDecorationLine: 'underline' as const,
@@ -395,16 +396,16 @@ function createStyles(c: ThemeColors) {
       gap: 4,
     },
     footerLink: {
-      fontSize: 11,
+      fontSize: fontSize.sm,
       color: c.textSecondary,
       textDecorationLine: 'underline' as const,
     },
     footerSeparator: {
-      fontSize: 11,
+      fontSize: fontSize.sm,
       color: c.textMuted,
     },
     footerNote: {
-      fontSize: 11,
+      fontSize: fontSize.sm,
       color: c.textMuted,
       textAlign: 'center' as const,
     },

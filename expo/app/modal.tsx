@@ -13,6 +13,7 @@ import { useMemo } from "react";
 import { useColors } from "@/contexts/ThemeContext";
 import { ThemeColors } from "@/constants/themes";
 import { X } from "lucide-react-native";
+import { fontSize } from "@/constants/typography";
 
 export default function ModalScreen() {
   const colors = useColors();
@@ -81,7 +82,7 @@ function createStyles(c: ThemeColors) {
       marginBottom: 16,
     },
     title: {
-      fontSize: 20,
+      fontSize: fontSize.h2,
       fontWeight: "700" as const,
       color: c.text,
     },
@@ -98,7 +99,7 @@ function createStyles(c: ThemeColors) {
       marginBottom: 24,
       color: c.textSecondary,
       lineHeight: 22,
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
     },
     closeButton: {
       backgroundColor: c.primaryDark,
@@ -110,7 +111,7 @@ function createStyles(c: ThemeColors) {
     closeButtonText: {
       color: c.white,
       fontWeight: "700" as const,
-      fontSize: 16,
+      fontSize: fontSize.subtitle,
     },
   });
 }

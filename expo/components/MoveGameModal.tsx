@@ -5,6 +5,7 @@ import * as Haptics from 'expo-haptics';
 import * as secureStorage from '@/utils/secureStorage';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
+import { fontSize } from '@/constants/typography';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useGames } from '@/contexts/GameContext';
 import { GoalkeeperProfile, Team, SavedGame } from '@/types/game';
@@ -230,7 +231,7 @@ function createStyles(c: ThemeColors) {
       paddingVertical: 12,
     },
     headerTitle: {
-      fontSize: 18,
+      fontSize: fontSize.h3,
       fontWeight: '700' as const,
       color: c.text,
     },
@@ -253,12 +254,12 @@ function createStyles(c: ThemeColors) {
       marginBottom: 12,
     },
     gameSummaryText: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       fontWeight: '600' as const,
       color: c.text,
     },
     gameSummaryDate: {
-      fontSize: 12,
+      fontSize: fontSize.caption,
       color: c.textMuted,
       marginTop: 2,
     },
@@ -292,12 +293,12 @@ function createStyles(c: ThemeColors) {
       flex: 1,
     },
     profileName: {
-      fontSize: 15,
+      fontSize: fontSize.bodyLg,
       fontWeight: '600' as const,
       color: c.text,
     },
     profileMeta: {
-      fontSize: 12,
+      fontSize: fontSize.caption,
       color: c.textMuted,
       marginTop: 2,
     },
@@ -308,7 +309,7 @@ function createStyles(c: ThemeColors) {
       gap: 12,
     },
     loadingText: {
-      fontSize: 14,
+      fontSize: fontSize.body,
       color: c.textSecondary,
     },
     emptyContainer: {
@@ -318,13 +319,13 @@ function createStyles(c: ThemeColors) {
       gap: 8,
     },
     emptyTitle: {
-      fontSize: 16,
+      fontSize: fontSize.subtitle,
       fontWeight: '600' as const,
       color: c.textSecondary,
       marginTop: 4,
     },
     emptySubtitle: {
-      fontSize: 13,
+      fontSize: fontSize.body2,
       color: c.textMuted,
     },
   });

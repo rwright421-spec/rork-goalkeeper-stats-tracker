@@ -14,6 +14,7 @@ import { usePurchases } from '@/contexts/PurchasesContext';
 import { SavedGame } from '@/types/game';
 import SyncStatusBanner from '@/components/SyncStatusBanner';
 import { StatsScreenSkeleton } from '@/components/LoadingSkeleton';
+import { fontSize } from '@/constants/typography';
 import {
   GroupMode,
   GroupedStats,
@@ -74,11 +75,11 @@ const statCardStyles = StyleSheet.create({
     justifyContent: 'center' as const,
   },
   value: {
-    fontSize: 24,
+    fontSize: fontSize.h1,
     fontWeight: '800' as const,
   },
   label: {
-    fontSize: 10,
+    fontSize: fontSize.xs,
     fontWeight: '600' as const,
     color: Colors.textMuted,
     textTransform: 'uppercase' as const,
@@ -282,12 +283,12 @@ const blockStyles = StyleSheet.create({
   },
   statLabel: {
     flex: 1,
-    fontSize: 14,
+    fontSize: fontSize.body,
     fontWeight: '500' as const,
     color: Colors.textSecondary,
   },
   statValue: {
-    fontSize: 18,
+    fontSize: fontSize.h3,
     fontWeight: '800' as const,
   },
   avgRow: {
@@ -308,12 +309,12 @@ const blockStyles = StyleSheet.create({
     backgroundColor: Colors.border,
   },
   avgValue: {
-    fontSize: 20,
+    fontSize: fontSize.h2,
     fontWeight: '700' as const,
     color: Colors.text,
   },
   avgLabel: {
-    fontSize: 10,
+    fontSize: fontSize.xs,
     fontWeight: '600' as const,
     color: Colors.textMuted,
     textTransform: 'uppercase' as const,
@@ -328,7 +329,7 @@ const blockStyles = StyleSheet.create({
     borderColor: Colors.border,
   },
   distTitle: {
-    fontSize: 11,
+    fontSize: fontSize.sm,
     fontWeight: '700' as const,
     color: Colors.textMuted,
     textTransform: 'uppercase' as const,
@@ -348,12 +349,12 @@ const blockStyles = StyleSheet.create({
     alignItems: 'center' as const,
   },
   distValue: {
-    fontSize: 20,
+    fontSize: fontSize.h2,
     fontWeight: '700' as const,
     color: Colors.text,
   },
   distLabel: {
-    fontSize: 9,
+    fontSize: fontSize.xs2,
     color: Colors.textMuted,
     fontWeight: '500' as const,
     marginTop: 3,
@@ -480,12 +481,12 @@ const groupStyles = StyleSheet.create({
     marginRight: 12,
   },
   label: {
-    fontSize: 16,
+    fontSize: fontSize.subtitle,
     fontWeight: '700' as const,
     color: Colors.text,
   },
   sublabel: {
-    fontSize: 12,
+    fontSize: fontSize.caption,
     fontWeight: '500' as const,
     color: Colors.textMuted,
     marginTop: 2,
@@ -501,7 +502,7 @@ const groupStyles = StyleSheet.create({
     borderRadius: 8,
   },
   pctText: {
-    fontSize: 13,
+    fontSize: fontSize.body2,
     fontWeight: '700' as const,
   },
   content: {
@@ -515,7 +516,7 @@ const groupStyles = StyleSheet.create({
     paddingTop: 14,
   },
   exportTitle: {
-    fontSize: 11,
+    fontSize: fontSize.sm,
     fontWeight: '700' as const,
     color: Colors.textMuted,
     textTransform: 'uppercase' as const,
@@ -540,7 +541,7 @@ const groupStyles = StyleSheet.create({
     borderColor: Colors.border,
   },
   exportButtonText: {
-    fontSize: 12,
+    fontSize: fontSize.caption,
     fontWeight: '600' as const,
     color: Colors.text,
   },
@@ -594,7 +595,7 @@ const selectorStyles = StyleSheet.create({
     borderColor: Colors.border,
   },
   title: {
-    fontSize: 12,
+    fontSize: fontSize.caption,
     fontWeight: '700' as const,
     color: Colors.textMuted,
     textTransform: 'uppercase' as const,
@@ -630,12 +631,12 @@ const selectorStyles = StyleSheet.create({
     flex: 1,
   },
   itemName: {
-    fontSize: 14,
+    fontSize: fontSize.body,
     fontWeight: '600' as const,
     color: Colors.text,
   },
   itemMeta: {
-    fontSize: 11,
+    fontSize: fontSize.sm,
     color: Colors.textMuted,
     fontWeight: '500' as const,
     marginTop: 2,
@@ -890,14 +891,14 @@ export default function GoalkeeperStatsScreen() {
             activeOpacity={0.7}
           >
             <View style={{ flex: 1 }}>
-              <Text style={{ fontSize: 13, fontWeight: '600' as const, color: colors.text }}>
+              <Text style={{ fontSize: fontSize.body2, fontWeight: '600' as const, color: colors.text }}>
                 You've reached the {FREE_GAME_LIMIT}-game limit.
               </Text>
-              <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+              <Text style={{ fontSize: fontSize.caption, color: colors.textSecondary, marginTop: 2 }}>
                 Upgrade to Pro to keep tracking.
               </Text>
             </View>
-            <Text style={{ fontSize: 13, fontWeight: '700' as const, color: colors.accent }}>Upgrade</Text>
+            <Text style={{ fontSize: fontSize.body2, fontWeight: '700' as const, color: colors.accent }}>Upgrade</Text>
           </TouchableOpacity>
         )}
 
@@ -1063,17 +1064,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(16, 185, 129, 0.2)',
   },
   switchKeeperText: {
-    fontSize: 12,
+    fontSize: fontSize.caption,
     fontWeight: '600' as const,
     color: Colors.primary,
   },
   profileName: {
-    fontSize: 20,
+    fontSize: fontSize.h2,
     fontWeight: '800' as const,
     color: Colors.text,
   },
   profileSub: {
-    fontSize: 13,
+    fontSize: fontSize.body2,
     fontWeight: '500' as const,
     color: Colors.textMuted,
     marginTop: 2,
@@ -1100,7 +1101,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryDark,
   },
   groupOptionText: {
-    fontSize: 13,
+    fontSize: fontSize.body2,
     fontWeight: '600' as const,
     color: Colors.textMuted,
   },
@@ -1132,7 +1133,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primaryDark,
   },
   moreViewsItemText: {
-    fontSize: 13,
+    fontSize: fontSize.body2,
     fontWeight: '600' as const,
     color: Colors.textMuted,
   },
@@ -1150,17 +1151,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: fontSize.h3,
     fontWeight: '600' as const,
     color: Colors.textSecondary,
     marginTop: 8,
   },
   emptySubtitle: {
-    fontSize: 14,
+    fontSize: fontSize.body,
     color: Colors.textMuted,
   },
   noDataText: {
-    fontSize: 14,
+    fontSize: fontSize.body,
     color: Colors.textMuted,
     textAlign: 'center',
     paddingVertical: 30,
@@ -1178,7 +1179,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.border,
   },
   selectAllText: {
-    fontSize: 13,
+    fontSize: fontSize.body2,
     fontWeight: '600' as const,
     color: Colors.primary,
   },
@@ -1192,12 +1193,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   customResultsTitle: {
-    fontSize: 15,
+    fontSize: fontSize.bodyLg,
     fontWeight: '700' as const,
     color: Colors.text,
   },
   customResultsCount: {
-    fontSize: 12,
+    fontSize: fontSize.caption,
     fontWeight: '600' as const,
     color: Colors.textMuted,
     backgroundColor: Colors.surface,
@@ -1210,7 +1211,7 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   exportTitle: {
-    fontSize: 14,
+    fontSize: fontSize.body,
     fontWeight: '700' as const,
     color: Colors.textSecondary,
     textTransform: 'uppercase' as const,
@@ -1232,7 +1233,7 @@ const styles = StyleSheet.create({
   },
   exportButtonText: {
     flex: 1,
-    fontSize: 15,
+    fontSize: fontSize.bodyLg,
     fontWeight: '600' as const,
     color: Colors.text,
   },
