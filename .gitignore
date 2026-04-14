@@ -1,3 +1,13 @@
 node_modules
 .env
-.expo
+.env.local
+.env.development
+.env.production
+.env.*.local
+*.keystore
+*.jks
+ios/Pods/
+android/.gradle/
+android/app/build/
+.expo/
+dist/
