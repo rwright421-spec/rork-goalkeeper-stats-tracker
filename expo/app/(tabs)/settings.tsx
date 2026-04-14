@@ -1,12 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking, Platform, ActivityIndicator } from 'react-native';
-import { Check, Palette, Users, Trash2, MessageSquare, ExternalLink, Upload, Download, Database, RefreshCw, Eye } from 'lucide-react-native';
+import { Check, Palette, Users, Trash2, MessageSquare, ExternalLink, Upload, Download, Database, RefreshCw, Eye, AlertTriangle } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import * as Sentry from '@sentry/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { useTheme, useColors } from '@/contexts/ThemeContext';
 import { ThemeName, themeOptions, ThemeColors } from '@/constants/themes';
@@ -23,12 +24,14 @@ export default function SettingsScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { opponents, removeOpponent } = useOpponents();
-  const { refreshProfiles } = useGoalkeepers();
-  const { forceSync: forceSyncGames } = useGames();
-  const { forceSync: forceSyncTeams } = useTeams();
+  const { refreshProfiles, profiles, resetAll: resetGoalkeepers } = useGoalkeepers();
+  const { forceSync: forceSyncGames, allGames } = useGames();
+  const { forceSync: forceSyncTeams, teams } = useTeams();
+  const { resetAll: resetOpponents } = useOpponents();
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isSyncingNow, setIsSyncingNow] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
 
   const handleThemeSelect = useCallback((key: ThemeName) => {
@@ -38,6 +41,79 @@ export default function SettingsScreen() {
   }, [setTheme]);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
+
+  const handleDeleteAllData = useCallback(() => {
+    Alert.alert(
+      'Delete All My Data',
+      'This will permanently delete all your goalkeeper profiles, games, and statistics. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Everything',
+          style: 'destructive',
+          onPress: async () => {
+            setIsDeleting(true);
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+            try {
+              const sb = (await import('@/lib/supabase')).getSupabase();
+              if (sb) {
+                const profileIds = profiles
+                  .filter(p => p.sharedProfileId)
+                  .map(p => p.sharedProfileId as string);
+
+                if (profileIds.length > 0) {
+                  await sb.from('profile_data').delete().in('profile_id', profileIds);
+                  await sb.from('profiles').delete().in('profile_id', profileIds);
+                }
+              }
+
+              const allSecureKeys: string[] = [
+                'gk_tracker_profiles',
+                'gk_tracker_opponents',
+                'gk_tracker_games_guest',
+                'gk_tracker_teams_guest',
+                'gk_device_user_id',
+                'gk_device_display_name',
+              ];
+              for (const p of profiles) {
+                allSecureKeys.push(`gk_tracker_games_${p.id}`);
+                allSecureKeys.push(`gk_tracker_teams_${p.id}`);
+              }
+              const secureStore = await import('@/utils/secureStorage');
+              for (const key of allSecureKeys) {
+                await secureStore.removeItem(key);
+              }
+
+              await AsyncStorage.clear();
+
+              resetGoalkeepers();
+              resetOpponents();
+
+              Sentry.addBreadcrumb({
+                category: 'user_action',
+                message: 'User deleted all data',
+                level: 'info',
+                data: {
+                  profileCount: profiles.length,
+                  timestamp: new Date().toISOString(),
+                },
+              });
+              Sentry.captureMessage('User initiated full data deletion', 'info');
+
+              void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              router.replace('/onboarding');
+            } catch (e) {
+              Sentry.captureException(e);
+              Alert.alert('Deletion Failed', 'Something went wrong while deleting your data. Please try again.');
+            } finally {
+              setIsDeleting(false);
+            }
+          },
+        },
+      ]
+    );
+  }, [profiles, resetGoalkeepers, resetOpponents, router]);
 
   const handleRemoveOpponent = useCallback((name: string) => {
     Alert.alert(
@@ -399,6 +475,28 @@ export default function SettingsScreen() {
           <Text style={styles.privacyLinkText}>Privacy Policy</Text>
         </TouchableOpacity>
 
+        <View style={[styles.sectionHeader, { marginTop: 36 }]}>
+          <AlertTriangle size={16} color={colors.danger} />
+          <Text style={[styles.sectionHeaderText, { color: colors.danger }]}>Danger Zone</Text>
+        </View>
+
+        <TouchableOpacity
+          testID="delete-all-data-btn"
+          style={styles.deleteAllButton}
+          activeOpacity={0.7}
+          onPress={handleDeleteAllData}
+          disabled={isDeleting}
+        >
+          {isDeleting ? (
+            <ActivityIndicator size="small" color="#fff" />
+          ) : (
+            <Trash2 size={18} color="#fff" />
+          )}
+          <Text style={styles.deleteAllButtonText}>
+            {isDeleting ? 'Deleting...' : 'Delete All My Data'}
+          </Text>
+        </TouchableOpacity>
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -445,5 +543,7 @@ function createStyles(c: ThemeColors) {
     privacyLinkText: { fontSize: fontSize.body2, color: c.textMuted, textDecorationLine: 'underline' as const },
     themePreviewButton: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, backgroundColor: c.primaryGlow, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, marginTop: 12, alignSelf: 'flex-start' as const, borderWidth: 1, borderColor: c.primary },
     themePreviewButtonText: { fontSize: fontSize.body2, fontWeight: '600' as const, color: c.primary },
+    deleteAllButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 10, backgroundColor: c.danger, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 20 },
+    deleteAllButtonText: { fontSize: fontSize.bodyLg, fontWeight: '700' as const, color: '#fff' },
   });
 }

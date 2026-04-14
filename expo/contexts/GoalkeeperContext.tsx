@@ -111,6 +111,13 @@ export const [GoalkeeperProvider, useGoalkeepers] = createContextHook(() => {
     void queryClient.invalidateQueries({ queryKey: ['goalkeeper-profiles-local'] });
   }, [queryClient]);
 
+  const resetAll = useCallback(() => {
+    setProfiles([]);
+    setActiveProfileId(null);
+    setIsGuest(false);
+    queryClient.setQueryData(['goalkeeper-profiles-local'], []);
+  }, [queryClient]);
+
   const supabaseReady = false;
 
   return useMemo(() => ({
@@ -129,11 +136,12 @@ export const [GoalkeeperProvider, useGoalkeepers] = createContextHook(() => {
     selectGuest,
     clearSelection,
     refreshProfiles,
+    resetAll,
   }), [
     profiles, localQuery.isLoading,
     activeProfile, activeProfileId, isGuest, userId, supabaseReady,
     createProfile, renameProfile, updateProfile, deleteProfile,
     selectProfile, selectGuest, clearSelection,
-    refreshProfiles,
+    refreshProfiles, resetAll,
   ]);
 });

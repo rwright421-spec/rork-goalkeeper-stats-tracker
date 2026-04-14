@@ -85,6 +85,10 @@ export const [OpponentProvider, useOpponents] = createContextHook(() => {
     [opponents]
   );
 
+  const resetAll = useCallback(() => {
+    queryClient.setQueryData(['opponents'], []);
+  }, [queryClient]);
+
   return useMemo(
     () => ({
       opponents,
@@ -92,7 +96,8 @@ export const [OpponentProvider, useOpponents] = createContextHook(() => {
       addOpponent,
       removeOpponent,
       getSuggestions,
+      resetAll,
     }),
-    [opponents, opponentsQuery.isLoading, addOpponent, removeOpponent, getSuggestions]
+    [opponents, opponentsQuery.isLoading, addOpponent, removeOpponent, getSuggestions, resetAll]
   );
 });
