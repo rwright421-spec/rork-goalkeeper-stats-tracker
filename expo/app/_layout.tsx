@@ -168,6 +168,10 @@ function RootLayoutNav() {
         name="paywall"
         options={{ headerShown: false, presentation: "modal", gestureEnabled: true }}
       />
+      <Stack.Screen
+        name="theme-preview"
+        options={{ title: "Theme Preview" }}
+      />
     </Stack>
   );
 }

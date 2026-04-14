@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking, Platform, ActivityIndicator } from 'react-native';
-import { Check, Palette, Users, Trash2, MessageSquare, ExternalLink, Upload, Download, Database, RefreshCw } from 'lucide-react-native';
+import { Check, Palette, Users, Trash2, MessageSquare, ExternalLink, Upload, Download, Database, RefreshCw, Eye } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
@@ -26,6 +27,7 @@ export default function SettingsScreen() {
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [isSyncingNow, setIsSyncingNow] = useState(false);
+  const router = useRouter();
 
   const handleThemeSelect = useCallback((key: ThemeName) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -257,6 +259,19 @@ export default function SettingsScreen() {
           })}
         </View>
 
+        <TouchableOpacity
+          testID="theme-preview-btn"
+          style={styles.themePreviewButton}
+          activeOpacity={0.7}
+          onPress={() => {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            router.push('/theme-preview');
+          }}
+        >
+          <Eye size={16} color={colors.primary} />
+          <Text style={styles.themePreviewButtonText}>Theme Preview</Text>
+        </TouchableOpacity>
+
         <View style={[styles.sectionHeader, { marginTop: 28 }]}>
           <Database size={16} color={colors.textMuted} />
           <Text style={styles.sectionHeaderText}>Data Management</Text>
@@ -425,5 +440,7 @@ function createStyles(c: ThemeColors) {
     feedbackButtonText: { fontSize: 15, fontWeight: '600' as const, color: c.text },
     privacyLink: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, marginTop: 16 },
     privacyLinkText: { fontSize: 13, color: c.textMuted, textDecorationLine: 'underline' as const },
+    themePreviewButton: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, backgroundColor: c.primaryGlow, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, marginTop: 12, alignSelf: 'flex-start' as const, borderWidth: 1, borderColor: c.primary },
+    themePreviewButtonText: { fontSize: 13, fontWeight: '600' as const, color: c.primary },
   });
 }
