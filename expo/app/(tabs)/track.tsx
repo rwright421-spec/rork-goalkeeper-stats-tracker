@@ -15,6 +15,7 @@ import GameCard from '@/components/GameCard';
 import MoveGameModal from '@/components/MoveGameModal';
 import { useOpponents } from '@/contexts/OpponentContext';
 import { SavedGame } from '@/types/game';
+import SyncStatusBanner from '@/components/SyncStatusBanner';
 
 export default function TrackScreen() {
   const router = useRouter();
@@ -260,6 +261,8 @@ export default function TrackScreen() {
           ))}
         </View>
       )}
+
+      <SyncStatusBanner />
 
       <TouchableOpacity
         testID="new-game-button"

@@ -11,6 +11,7 @@ import { GameProvider } from "@/contexts/GameContext";
 import { OpponentProvider } from "@/contexts/OpponentContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { PurchasesProvider } from "@/contexts/PurchasesContext";
+import { SyncStatusProvider } from "@/contexts/SyncStatusContext";
 
 SplashScreen.preventAutoHideAsync().catch(() => {
   console.log("[RootLayout] SplashScreen.preventAutoHideAsync failed");
@@ -150,17 +151,19 @@ export default function RootLayout() {
         <GestureHandlerRootView style={{ flex: 1 }}>
           <AuthProvider>
             <ThemeProvider>
-              <GoalkeeperProvider>
-                <TeamProvider>
-                  <GameProvider>
+              <SyncStatusProvider>
+                <GoalkeeperProvider>
+                  <TeamProvider>
+                    <GameProvider>
                     <OpponentProvider>
                       <PurchasesProvider>
                         <RootLayoutNav />
                       </PurchasesProvider>
                     </OpponentProvider>
-                  </GameProvider>
-                </TeamProvider>
-              </GoalkeeperProvider>
+                    </GameProvider>
+                  </TeamProvider>
+                </GoalkeeperProvider>
+              </SyncStatusProvider>
             </ThemeProvider>
           </AuthProvider>
         </GestureHandlerRootView>

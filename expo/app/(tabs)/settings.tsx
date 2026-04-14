@@ -7,6 +7,7 @@ import * as Haptics from 'expo-haptics';
 import { useTheme, useColors } from '@/contexts/ThemeContext';
 import { ThemeName, themeOptions, ThemeColors } from '@/constants/themes';
 import { useOpponents } from '@/contexts/OpponentContext';
+import SyncStatusBanner from '@/components/SyncStatusBanner';
 
 export default function SettingsScreen() {
   const { themeName, setTheme } = useTheme();
@@ -47,6 +48,8 @@ export default function SettingsScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20 }]}
         showsVerticalScrollIndicator={false}
       >
+        <SyncStatusBanner />
+
         <View style={styles.sectionHeader}>
           <Palette size={16} color={colors.textMuted} />
           <Text style={styles.sectionHeaderText}>Appearance</Text>

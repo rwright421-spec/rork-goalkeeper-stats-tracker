@@ -7,6 +7,7 @@ import { validateAndSanitizeArray } from '@/utils/validation';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
 import { uploadProfileData, downloadProfileData, GAME_LIMIT_ERROR_KEY, syncPendingGame, isLocalGameId } from '@/lib/sync';
+import { useSyncStatus } from '@/contexts/SyncStatusContext';
 
 export const FREE_GAME_LIMIT = 5;
 
@@ -100,6 +101,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
   const isShared = !!activeProfile?.isShared && !!sharedProfileId;
   const [gameLimitExceeded, setGameLimitExceeded] = useState<boolean>(false);
   const pendingSyncInProgress = useRef(false);
+  const { markSyncing, markSuccess, markFailed } = useSyncStatus();
 
   const gamesQuery = useQuery({
     queryKey: ['games', storageKey],
@@ -132,6 +134,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
     lastSyncTime.current = now;
 
     void (async () => {
+      markSyncing();
       try {
         const cloudGames = await downloadProfileData<SavedGame>(sharedProfileId, 'games');
         if (cloudGames && cloudGames.length > 0 && activeProfileId) {
@@ -145,8 +148,19 @@ export const [GameProvider, useGames] = createContextHook(() => {
             console.log('[GameContext] Merged cloud games, total:', merged.length);
           }
         }
+        markSuccess();
       } catch (e) {
         console.log('[GameContext] Cloud sync error:', e);
+        markFailed(async () => {
+          const retryCloudGames = await downloadProfileData<SavedGame>(sharedProfileId!, 'games');
+          if (retryCloudGames && retryCloudGames.length > 0 && activeProfileId) {
+            const retryLocalRaw = await secureStorage.getItem<SavedGame[]>(storageKey);
+            const retryLocal: SavedGame[] = retryLocalRaw ? retryLocalRaw.map(migrateSavedGame) : [];
+            const retryMerged = mergeGames(retryLocal, retryCloudGames);
+            await secureStorage.setItem(storageKey, retryMerged);
+            queryClient.setQueryData(['games', storageKey], retryMerged);
+          }
+        });
       } finally {
         syncInProgress.current = false;
       }
@@ -169,12 +183,18 @@ export const [GameProvider, useGames] = createContextHook(() => {
       if (isShared && sharedProfileId && supabaseReady) {
         console.log('[GameContext] Uploading games to cloud for shared profile');
         void (async () => {
+          markSyncing();
           try {
             await uploadProfileData(sharedProfileId, 'games', data);
+            markSuccess();
           } catch (e: any) {
             if (e?.message === GAME_LIMIT_ERROR_KEY) {
               console.log('[GameContext] Server rejected sync: game limit exceeded');
               setGameLimitExceeded(true);
+            } else {
+              markFailed(async () => {
+                await uploadProfileData(sharedProfileId!, 'games', data);
+              });
             }
           }
         })();
@@ -224,12 +244,18 @@ export const [GameProvider, useGames] = createContextHook(() => {
           }
 
           if (isShared && sharedProfileId && supabaseReady) {
+            markSyncing();
             try {
               await uploadProfileData(sharedProfileId, 'games', updatedGames);
               console.log('[GameContext] Uploaded synced games to cloud');
+              markSuccess();
             } catch (e: any) {
               if (e?.message === GAME_LIMIT_ERROR_KEY) {
                 setGameLimitExceeded(true);
+              } else {
+                markFailed(async () => {
+                  await uploadProfileData(sharedProfileId!, 'games', updatedGames);
+                });
               }
             }
           }

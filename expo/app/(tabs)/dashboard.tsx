@@ -30,6 +30,7 @@ import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
 import { useGames } from '@/contexts/GameContext';
 import { Team } from '@/types/game';
+import SyncStatusBanner from '@/components/SyncStatusBanner';
 
 
 const currentYear = new Date().getFullYear();
@@ -205,6 +206,7 @@ export default function DashboardScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 12 }]}
         showsVerticalScrollIndicator={false}
       >
+        <SyncStatusBanner />
         {editingProfileMode ? (
           <View style={styles.editProfileCard}>
             <Text style={styles.fieldLabel}>Goalkeeper Name</Text>

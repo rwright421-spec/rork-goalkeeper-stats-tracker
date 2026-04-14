@@ -6,6 +6,7 @@ import { Team } from '@/types/game';
 import { validateAndSanitizeArray } from '@/utils/validation';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { uploadProfileData, downloadProfileData } from '@/lib/sync';
+import { useSyncStatus } from '@/contexts/SyncStatusContext';
 
 const TEAMS_KEY_PREFIX = 'gk_tracker_teams_';
 
@@ -42,6 +43,7 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
 
   const sharedProfileId = activeProfile?.sharedProfileId;
   const isShared = !!activeProfile?.isShared && !!sharedProfileId;
+  const { markSyncing, markSuccess, markFailed } = useSyncStatus();
 
   const teamsQuery = useQuery({
     queryKey: ['teams', storageKey],
@@ -58,6 +60,7 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
     lastSyncTime.current = now;
 
     void (async () => {
+      markSyncing();
       try {
         const cloudTeams = await downloadProfileData<Team>(sharedProfileId, 'teams');
         if (cloudTeams && cloudTeams.length > 0 && activeProfileId) {
@@ -70,8 +73,18 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
             console.log('[TeamContext] Merged cloud teams, total:', merged.length);
           }
         }
+        markSuccess();
       } catch (e) {
         console.log('[TeamContext] Cloud sync error:', e);
+        markFailed(async () => {
+          const retryCloud = await downloadProfileData<Team>(sharedProfileId!, 'teams');
+          if (retryCloud && retryCloud.length > 0 && activeProfileId) {
+            const retryLocal: Team[] = await secureStorage.getItem<Team[]>(storageKey) ?? [];
+            const retryMerged = mergeTeams(retryLocal, retryCloud);
+            await secureStorage.setItem(storageKey, retryMerged);
+            queryClient.setQueryData(['teams', storageKey], retryMerged);
+          }
+        });
       } finally {
         syncInProgress.current = false;
       }
@@ -96,7 +109,18 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
 
       if (isShared && sharedProfileId && supabaseReady) {
         console.log('[TeamContext] Uploading teams to cloud for shared profile');
-        void uploadProfileData(sharedProfileId, 'teams', data);
+        void (async () => {
+          markSyncing();
+          try {
+            await uploadProfileData(sharedProfileId, 'teams', data);
+            markSuccess();
+          } catch (e) {
+            console.log('[TeamContext] Upload error:', e);
+            markFailed(async () => {
+              await uploadProfileData(sharedProfileId!, 'teams', data);
+            });
+          }
+        })();
       }
     },
   });

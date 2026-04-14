@@ -12,6 +12,7 @@ import { useGames, FREE_GAME_LIMIT } from '@/contexts/GameContext';
 import { useTeams } from '@/contexts/TeamContext';
 import { usePurchases } from '@/contexts/PurchasesContext';
 import { SavedGame } from '@/types/game';
+import SyncStatusBanner from '@/components/SyncStatusBanner';
 import {
   GroupMode,
   GroupedStats,
@@ -789,6 +790,8 @@ export default function GoalkeeperStatsScreen() {
         showsVerticalScrollIndicator={false}
         testID="stats-scroll-view"
       >
+        <SyncStatusBanner />
+
         <View style={styles.profileHeader}>
           <View style={styles.profileIconBg}>
             <TrendingUp size={22} color={colors.primary} />
