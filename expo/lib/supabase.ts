@@ -13,7 +13,7 @@ let supabaseInstance: SupabaseClient | null = null;
 //
 // USER JWT (authenticated session token)
 //   - Required for any query that touches user-specific data:
-//       • games, goalkeeper profiles, teams, profile_members, profile_data
+//       • games, goalkeeper profiles, teams, profile_data
 //   - After the user authenticates, call supabase.auth.setSession() so that
 //     subsequent requests automatically include the user's JWT in the
 //     Authorization header instead of the anon key.
@@ -108,19 +108,7 @@ CREATE TABLE IF NOT EXISTS profiles (
   birth_year TEXT DEFAULT '',
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now(),
-  last_edited_by TEXT,
-  invite_code TEXT UNIQUE
-);
-`;
-
-const CREATE_MEMBERS_SQL = `
-CREATE TABLE IF NOT EXISTS profile_members (
-  profile_id UUID REFERENCES profiles(profile_id) ON DELETE CASCADE,
-  user_id TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'editor' CHECK (role IN ('owner', 'editor')),
-  display_name TEXT DEFAULT '',
-  joined_at TIMESTAMPTZ DEFAULT now(),
-  PRIMARY KEY (profile_id, user_id)
+  last_edited_by TEXT
 );
 `;
 
@@ -134,14 +122,10 @@ CREATE TABLE IF NOT EXISTS profile_data (
 );
 `;
 
-const CREATE_INDEXES_SQL = `
-CREATE INDEX IF NOT EXISTS idx_profiles_invite_code ON profiles(invite_code);
-CREATE INDEX IF NOT EXISTS idx_profile_members_user ON profile_members(user_id);
-`;
+const CREATE_INDEXES_SQL = ``;
 
 const ENABLE_RLS_SQL = `
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE profile_members ENABLE ROW LEVEL SECURITY;
 `;
 
 const ENABLE_RLS_DATA_SQL = `
@@ -161,21 +145,6 @@ DO $ BEGIN
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'profiles_delete') THEN
     CREATE POLICY profiles_delete ON profiles FOR DELETE USING (true);
-  END IF;
-END $;
-
-DO $ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'members_select') THEN
-    CREATE POLICY members_select ON profile_members FOR SELECT USING (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'members_insert') THEN
-    CREATE POLICY members_insert ON profile_members FOR INSERT WITH CHECK (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'members_update') THEN
-    CREATE POLICY members_update ON profile_members FOR UPDATE USING (true);
-  END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'members_delete') THEN
-    CREATE POLICY members_delete ON profile_members FOR DELETE USING (true);
   END IF;
 END $;
 
@@ -255,7 +224,6 @@ async function tryCreateTables(): Promise<boolean> {
 
   const fullSql = [
     CREATE_PROFILES_SQL,
-    CREATE_MEMBERS_SQL,
     CREATE_PROFILE_DATA_SQL,
     CREATE_INDEXES_SQL,
     ENABLE_RLS_SQL,
@@ -273,7 +241,6 @@ async function tryCreateTables(): Promise<boolean> {
 
   const stepsInOrder = [
     { name: 'profiles table', sql: CREATE_PROFILES_SQL },
-    { name: 'members table', sql: CREATE_MEMBERS_SQL },
     { name: 'profile_data table', sql: CREATE_PROFILE_DATA_SQL },
     { name: 'indexes', sql: CREATE_INDEXES_SQL },
     { name: 'RLS', sql: ENABLE_RLS_SQL },
