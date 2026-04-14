@@ -1,6 +1,6 @@
 // New Game - Game setup and configuration screen
 import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform, Keyboard } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { ArrowRight, Home, Plane, Users, ChevronDown, Plus, Check, X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -111,7 +111,6 @@ export default function NewGameScreen() {
   }, [canProceed, router, eventName, date, opponent, keeperSelection, ageGroup, addOpponent, isPro, isAtFreeLimit]);
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
     <View style={styles.container}>
       <Stack.Screen
         options={{
@@ -126,6 +125,7 @@ export default function NewGameScreen() {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         showsVerticalScrollIndicator={false}
       >
         <Text style={styles.sectionLabel}>Game Info</Text>
@@ -410,7 +410,6 @@ export default function NewGameScreen() {
         </TouchableOpacity>
       </ScrollView>
     </View>
-    </TouchableWithoutFeedback>
   );
 }
 
