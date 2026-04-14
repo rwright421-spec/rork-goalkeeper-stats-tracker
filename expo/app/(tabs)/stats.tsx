@@ -13,6 +13,7 @@ import { useTeams } from '@/contexts/TeamContext';
 import { usePurchases } from '@/contexts/PurchasesContext';
 import { SavedGame } from '@/types/game';
 import SyncStatusBanner from '@/components/SyncStatusBanner';
+import { StatsScreenSkeleton } from '@/components/LoadingSkeleton';
 import {
   GroupMode,
   GroupedStats,
@@ -646,7 +647,7 @@ export default function GoalkeeperStatsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { activeProfile, clearSelection } = useGoalkeepers();
-  const { allGames, isAtFreeLimit } = useGames();
+  const { allGames, isLoading: gamesLoading, isAtFreeLimit } = useGames();
   const { teams, clearTeamSelection } = useTeams();
   const { isPro } = usePurchases();
   const showUpgradeBanner = !isPro && isAtFreeLimit;
@@ -900,7 +901,9 @@ export default function GoalkeeperStatsScreen() {
           </TouchableOpacity>
         )}
 
-        {allGames.length === 0 ? (
+        {gamesLoading ? (
+          <StatsScreenSkeleton />
+        ) : allGames.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Shield size={48} color={colors.border} strokeWidth={1.5} />
             <Text style={styles.emptyTitle}>No Games Yet</Text>

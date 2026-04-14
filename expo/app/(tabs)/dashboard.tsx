@@ -31,6 +31,7 @@ import { useTeams } from '@/contexts/TeamContext';
 import { useGames } from '@/contexts/GameContext';
 import { Team } from '@/types/game';
 import SyncStatusBanner from '@/components/SyncStatusBanner';
+import { DashboardSkeleton, TeamListSkeleton } from '@/components/LoadingSkeleton';
 
 
 const currentYear = new Date().getFullYear();
@@ -56,7 +57,7 @@ export default function DashboardScreen() {
     showAllGames,
     clearTeamSelection,
   } = useTeams();
-  const { allGames } = useGames();
+  const { allGames, isLoading: gamesLoading } = useGames();
 
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [newYear, setNewYear] = useState(String(currentYear));
@@ -218,7 +219,9 @@ export default function DashboardScreen() {
         showsVerticalScrollIndicator={false}
       >
         <SyncStatusBanner />
-        {editingProfileMode ? (
+        {(teamsLoading || gamesLoading) && !editingProfileMode ? (
+          <DashboardSkeleton />
+        ) : editingProfileMode ? (
           <View style={styles.editProfileCard}>
             <Text style={styles.fieldLabel}>Goalkeeper Name</Text>
             <TextInput
@@ -484,7 +487,7 @@ export default function DashboardScreen() {
               )}
 
               {teamsLoading ? (
-                <ActivityIndicator size="small" color={colors.primary} style={{ paddingVertical: 20 }} />
+                <TeamListSkeleton count={2} />
               ) : teams.length === 0 ? (
                 <View style={styles.emptyTeams}>
                   <Text style={styles.emptyTeamsText}>No teams yet</Text>

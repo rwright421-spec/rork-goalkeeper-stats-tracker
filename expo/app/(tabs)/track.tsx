@@ -16,6 +16,7 @@ import MoveGameModal from '@/components/MoveGameModal';
 import { useOpponents } from '@/contexts/OpponentContext';
 import { SavedGame } from '@/types/game';
 import SyncStatusBanner from '@/components/SyncStatusBanner';
+import { GameListSkeleton } from '@/components/LoadingSkeleton';
 
 export default function TrackScreen() {
   const router = useRouter();
@@ -326,8 +327,8 @@ export default function TrackScreen() {
       )}
 
       {isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
+        <View style={styles.listContent}>
+          <GameListSkeleton count={4} />
         </View>
       ) : games.length === 0 ? (
         <View style={styles.emptyContainer}>
