@@ -2,7 +2,6 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import * as Sentry from '@sentry/react-native';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, TextInput, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Shield, UserPlus, Users, UserX, Trash2, ChevronRight, Pencil } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -11,38 +10,28 @@ import { ThemeColors } from '@/constants/themes';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { GoalkeeperProfile } from '@/types/game';
 
-const ONBOARDING_KEY = 'onboarding_complete';
-
 export default function GoalkeeperSelectScreen() {
   console.log("[GoalkeeperSelect] Screen rendered");
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const [onboardingChecked, setOnboardingChecked] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    void (async () => {
-      try {
-        const value = await AsyncStorage.getItem(ONBOARDING_KEY);
-        if (mounted && value !== 'true') {
-          console.log('[Index] Onboarding not complete, redirecting');
-          router.replace('/onboarding');
-          return;
-        }
-      } catch (e) {
-        console.log('[Index] Error checking onboarding:', e);
-        Sentry.captureException(e);
-      }
-      if (mounted) setOnboardingChecked(true);
-    })();
-    return () => { mounted = false; };
-  }, [router]);
-
   const {
     profiles, isLoading, createProfile, updateProfile, deleteProfile,
     selectProfile, selectGuest, userId,
   } = useGoalkeepers();
+
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (profiles.length === 0) {
+      console.log('[Index] No goalkeepers found, redirecting to onboarding');
+      router.replace('/onboarding');
+    } else {
+      console.log('[Index] Found', profiles.length, 'goalkeepers, skipping onboarding');
+      setOnboardingChecked(true);
+    }
+  }, [isLoading, profiles.length, router]);
 
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState('');

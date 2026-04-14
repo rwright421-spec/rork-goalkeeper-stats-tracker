@@ -16,14 +16,12 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Shield, LayoutDashboard, ClipboardList, BarChart3, Settings, ChevronRight } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const ONBOARDING_KEY = 'onboarding_complete';
 const TOTAL_PAGES = 4;
 
 export default function OnboardingScreen() {
@@ -31,11 +29,26 @@ export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const colors = useColors();
-  const { createProfile, selectProfile } = useGoalkeepers();
-  const { createTeam } = useTeams();
+  const { profiles, createProfile, selectProfile } = useGoalkeepers();
+  const { teams, createTeam } = useTeams();
+
+  const hasProfiles = profiles.length > 0;
+  const hasTeams = teams.length > 0;
+
+  const initialPage = hasProfiles ? (hasTeams ? 3 : 2) : 0;
 
   const scrollRef = useRef<ScrollView>(null);
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(initialPage);
+  const initialScrollDone = useRef(false);
+
+  useEffect(() => {
+    if (!initialScrollDone.current && initialPage > 0) {
+      initialScrollDone.current = true;
+      setTimeout(() => {
+        scrollRef.current?.scrollTo({ x: initialPage * SCREEN_WIDTH, animated: false });
+      }, 50);
+    }
+  }, [initialPage]);
 
   const [keeperName, setKeeperName] = useState('');
   const [birthYear, setBirthYear] = useState('');
@@ -58,9 +71,8 @@ export default function OnboardingScreen() {
     }).start();
   }, [dotAnim]);
 
-  const handleSkipAll = useCallback(async () => {
+  const handleSkipAll = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
     router.replace('/');
   }, [router]);
 
@@ -97,9 +109,8 @@ export default function OnboardingScreen() {
     goToPage(3);
   }, [goToPage]);
 
-  const handleFinish = useCallback(async () => {
+  const handleFinish = useCallback(() => {
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
     if (createdProfileId) {
       router.replace('/(tabs)/dashboard');
     } else {
