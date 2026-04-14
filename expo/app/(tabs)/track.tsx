@@ -183,7 +183,7 @@ export default function TrackScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+      <View style={[styles.header, { paddingTop: insets.top + 64 }]}>
         <View style={styles.logoRow}>
           <View style={styles.logoIcon}>
             <Shield size={22} color={colors.primary} strokeWidth={2.5} />

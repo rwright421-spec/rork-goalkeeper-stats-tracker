@@ -788,7 +788,7 @@ export default function GoalkeeperStatsScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 64 }]}
         showsVerticalScrollIndicator={false}
         testID="stats-scroll-view"
       >
