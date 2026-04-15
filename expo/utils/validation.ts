@@ -96,7 +96,7 @@ const GameSetupSchema: z.ZodType<GameSetup> = z.object({
   date: z.string().default(''),
   gameName: z.string().default(''),
   keeperSelection: z.enum(['home', 'away', 'both']).default('home'),
-  ageGroup: z.enum(['U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', '']).optional().default(''),
+  ageGroup: z.enum(['U4', 'U5', 'U6', 'U7', 'U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19', 'High School', 'College', '']).optional().default(''),
 });
 
 export const GoalkeeperProfileSchema = z.object({
