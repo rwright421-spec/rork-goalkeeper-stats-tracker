@@ -1,6 +1,6 @@
 // Track - Game list and management screen
 import React, { useCallback, useMemo, useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Platform, Modal, Pressable, TextInput, Animated, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Platform, Modal, Pressable, TextInput, Animated, Keyboard, KeyboardAvoidingView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Plus, Shield, Filter, ChevronDown, Users, Check, ArrowLeftRight, Zap, ClipboardList } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -361,6 +361,7 @@ export default function TrackScreen() {
         onRequestClose={closeNewGameSheet}
         statusBarTranslucent
       >
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <Pressable style={styles.sheetOverlay} onPress={closeNewGameSheet}>
           <Animated.View
             style={[
@@ -478,6 +479,7 @@ export default function TrackScreen() {
             </Pressable>
           </Animated.View>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

@@ -14,6 +14,7 @@ import {
   Pressable,
   Animated,
   Keyboard,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -851,6 +852,7 @@ export default function DashboardScreen() {
         onRequestClose={closeNewGameSheet}
         statusBarTranslucent
       >
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <Pressable style={styles.sheetOverlay} onPress={closeNewGameSheet}>
           <Animated.View
             style={[
@@ -968,6 +970,7 @@ export default function DashboardScreen() {
             </Pressable>
           </Animated.View>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
