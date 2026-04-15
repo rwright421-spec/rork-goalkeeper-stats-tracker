@@ -168,7 +168,7 @@ export default function NewGameScreen() {
                   }}
                   activeOpacity={0.7}
                 >
-                  <Text style={[styles.dropdownOptionText, ageGroup === ag && styles.dropdownOptionTextActive, ag.length > 3 && { fontSize: fontSize.caption, textAlign: 'center' as const }]}>
+                  <Text style={[styles.dropdownOptionText, ageGroup === ag && styles.dropdownOptionTextActive, ag.length > 3 && { fontSize: fontSize.caption }]}>
                     {ag}
                   </Text>
                 </TouchableOpacity>
