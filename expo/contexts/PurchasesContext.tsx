@@ -8,13 +8,7 @@ let rcConfigured = false;
 const ENTITLEMENT_ID = 'pro';
 
 function getRCApiKey(): string | null {
-  const iosKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;
-  const androidKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY;
-  const testKey = process.env.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY;
-
-  if (Platform.OS === 'ios' && iosKey) return iosKey;
-  if (Platform.OS === 'android' && androidKey) return androidKey;
-  if (testKey) return testKey;
+  if (Platform.OS === 'ios') return 'appl_tHhrbyQZcKyEfWVYDxxyxYaZGra';
   return null;
 }
 
