@@ -1,11 +1,10 @@
-// Stats screen - Comprehensive goalkeeper performance analytics
 import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { TrendingUp, Shield, Target, Award, ChevronDown, ChevronUp, Check, Square, Share2, FileText, FileSpreadsheet, Image, ArrowLeftRight, MoreHorizontal } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { DarkTheme as Colors } from '@/constants/themes';
+import { ThemeColors } from '@/constants/themes';
 import { useColors } from '@/contexts/ThemeContext';
 import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useGames, FREE_GAME_LIMIT } from '@/contexts/GameContext';
@@ -43,125 +42,241 @@ const ALL_GROUP_OPTIONS: { key: GroupMode; label: string }[] = [
   ...SECONDARY_MODES,
 ];
 
-function StatCard({ label, value, color, icon }: { label: string; value: string | number; color: string; icon?: React.ReactNode }) {
+function createStatCardStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    card: {
+      flex: 1,
+      alignItems: 'center' as const,
+      backgroundColor: c.surface,
+      borderRadius: 14,
+      paddingVertical: 16,
+      paddingHorizontal: 8,
+      borderWidth: 1,
+      borderColor: c.border,
+      gap: 6,
+    },
+    iconBg: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+    },
+    value: {
+      fontSize: fontSize.h1,
+      fontWeight: '800' as const,
+    },
+    label: {
+      fontSize: fontSize.xs,
+      fontWeight: '600' as const,
+      color: c.textMuted,
+      textTransform: 'uppercase' as const,
+      letterSpacing: 0.5,
+      textAlign: 'center' as const,
+    },
+  });
+}
+
+function StatCard({ label, value, color, icon, colors }: { label: string; value: string | number; color: string; icon?: React.ReactNode; colors: ThemeColors }) {
+  const s = useMemo(() => createStatCardStyles(colors), [colors]);
   return (
-    <View style={statCardStyles.card}>
-      <View style={[statCardStyles.iconBg, { backgroundColor: color + '18' }]}>
+    <View style={s.card}>
+      <View style={[s.iconBg, { backgroundColor: color + '18' }]}>
         {icon}
       </View>
-      <Text style={[statCardStyles.value, { color }]}>{value}</Text>
-      <Text style={statCardStyles.label}>{label}</Text>
+      <Text style={[s.value, { color }]}>{value}</Text>
+      <Text style={s.label}>{label}</Text>
     </View>
   );
 }
 
-const statCardStyles = StyleSheet.create({
-  card: {
-    flex: 1,
-    alignItems: 'center' as const,
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    gap: 6,
-  },
-  iconBg: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-  },
-  value: {
-    fontSize: fontSize.h1,
-    fontWeight: '800' as const,
-  },
-  label: {
-    fontSize: fontSize.xs,
-    fontWeight: '600' as const,
-    color: Colors.textMuted,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
-    textAlign: 'center' as const,
-  },
-});
+function createBlockStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      gap: 12,
+    },
+    topRow: {
+      flexDirection: 'row' as const,
+      gap: 8,
+    },
+    row: {
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+      gap: 10,
+    },
+    statRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 10,
+    },
+    statDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+    },
+    statLabel: {
+      flex: 1,
+      fontSize: fontSize.body,
+      fontWeight: '500' as const,
+      color: c.textSecondary,
+    },
+    statValue: {
+      fontSize: fontSize.h3,
+      fontWeight: '800' as const,
+    },
+    avgRow: {
+      flexDirection: 'row' as const,
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+      overflow: 'hidden' as const,
+    },
+    avgItem: {
+      flex: 1,
+      alignItems: 'center' as const,
+      paddingVertical: 14,
+    },
+    avgDivider: {
+      width: 1,
+      backgroundColor: c.border,
+    },
+    avgValue: {
+      fontSize: fontSize.h2,
+      fontWeight: '700' as const,
+      color: c.text,
+    },
+    avgLabel: {
+      fontSize: fontSize.xs,
+      fontWeight: '600' as const,
+      color: c.textMuted,
+      textTransform: 'uppercase' as const,
+      letterSpacing: 0.3,
+      marginTop: 4,
+    },
+    distSection: {
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    distTitle: {
+      fontSize: fontSize.sm,
+      fontWeight: '700' as const,
+      color: c.textMuted,
+      textTransform: 'uppercase' as const,
+      letterSpacing: 0.8,
+      textAlign: 'center' as const,
+      marginBottom: 14,
+    },
+    distGrid: {
+      gap: 14,
+    },
+    distRow: {
+      flexDirection: 'row' as const,
+      justifyContent: 'space-around' as const,
+    },
+    distItem: {
+      flex: 1,
+      alignItems: 'center' as const,
+    },
+    distValue: {
+      fontSize: fontSize.h2,
+      fontWeight: '700' as const,
+      color: c.text,
+    },
+    distLabel: {
+      fontSize: fontSize.xs2,
+      color: c.textMuted,
+      fontWeight: '500' as const,
+      marginTop: 3,
+      textAlign: 'center' as const,
+    },
+  });
+}
 
-function StatsBlock({ stats, expanded }: { stats: AggregatedStats; expanded?: boolean }) {
-  const savePctColor = stats.savePercentage === null ? Colors.textMuted : stats.savePercentage >= 75 ? Colors.primary : stats.savePercentage >= 50 ? Colors.accent : Colors.danger;
+function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expanded?: boolean; colors: ThemeColors }) {
+  const s = useMemo(() => createBlockStyles(colors), [colors]);
+  const savePctColor = stats.savePercentage === null ? colors.textMuted : stats.savePercentage >= 75 ? colors.primary : stats.savePercentage >= 50 ? colors.accent : colors.danger;
 
   return (
-    <View style={blockStyles.container}>
-      <View style={blockStyles.topRow}>
+    <View style={s.container}>
+      <View style={s.topRow}>
         <StatCard
           label="Games"
           value={stats.gamesPlayed}
           color="#3B82F6"
           icon={<Shield size={18} color="#3B82F6" />}
+          colors={colors}
         />
         <StatCard
           label="Save %"
           value={stats.savePercentage !== null ? `${stats.savePercentage}%` : '—'}
           color={savePctColor}
           icon={<Target size={18} color={savePctColor} />}
+          colors={colors}
         />
         <StatCard
           label="Clean Sheets"
           value={stats.cleanSheets}
           color="#8B5CF6"
           icon={<Award size={18} color="#8B5CF6" />}
+          colors={colors}
         />
       </View>
 
-      <View style={blockStyles.row}>
-        <View style={blockStyles.statRow}>
-          <View style={[blockStyles.statDot, { backgroundColor: Colors.primary }]} />
-          <Text style={blockStyles.statLabel}>Total Saves</Text>
-          <Text style={[blockStyles.statValue, { color: Colors.primary }]}>{stats.totalSaves}</Text>
+      <View style={s.row}>
+        <View style={s.statRow}>
+          <View style={[s.statDot, { backgroundColor: colors.primary }]} />
+          <Text style={s.statLabel}>Total Saves</Text>
+          <Text style={[s.statValue, { color: colors.primary }]}>{stats.totalSaves}</Text>
         </View>
-        <View style={blockStyles.statRow}>
-          <View style={[blockStyles.statDot, { backgroundColor: Colors.danger }]} />
-          <Text style={blockStyles.statLabel}>Goals Against</Text>
-          <Text style={[blockStyles.statValue, { color: Colors.danger }]}>{stats.totalGoalsAgainst}</Text>
+        <View style={s.statRow}>
+          <View style={[s.statDot, { backgroundColor: colors.danger }]} />
+          <Text style={s.statLabel}>Goals Against</Text>
+          <Text style={[s.statValue, { color: colors.danger }]}>{stats.totalGoalsAgainst}</Text>
         </View>
-        <View style={blockStyles.statRow}>
-          <View style={[blockStyles.statDot, { backgroundColor: '#3B82F6' }]} />
-          <Text style={blockStyles.statLabel}>Shots on Target</Text>
-          <Text style={[blockStyles.statValue, { color: '#3B82F6' }]}>{stats.totalShotsFaced}</Text>
+        <View style={s.statRow}>
+          <View style={[s.statDot, { backgroundColor: '#3B82F6' }]} />
+          <Text style={s.statLabel}>Shots on Target</Text>
+          <Text style={[s.statValue, { color: '#3B82F6' }]}>{stats.totalShotsFaced}</Text>
         </View>
         {stats.oneVsOneFaced > 0 && (
-          <View style={blockStyles.statRow}>
-            <View style={[blockStyles.statDot, { backgroundColor: '#F59E0B' }]} />
-            <Text style={blockStyles.statLabel}>1v1 Save Rate</Text>
-            <Text style={[blockStyles.statValue, { color: '#F59E0B' }]}>{stats.oneVsOneSaveRate !== null ? `${stats.oneVsOneSaveRate}%` : '—'}</Text>
+          <View style={s.statRow}>
+            <View style={[s.statDot, { backgroundColor: '#F59E0B' }]} />
+            <Text style={s.statLabel}>1v1 Save Rate</Text>
+            <Text style={[s.statValue, { color: '#F59E0B' }]}>{stats.oneVsOneSaveRate !== null ? `${stats.oneVsOneSaveRate}%` : '—'}</Text>
           </View>
         )}
         {stats.gaa !== null && stats.gamesPlayed > 0 && (
-          <View style={blockStyles.statRow}>
-            <View style={[blockStyles.statDot, { backgroundColor: '#EC4899' }]} />
-            <Text style={blockStyles.statLabel}>GAA</Text>
-            <Text style={[blockStyles.statValue, { color: '#EC4899' }]}>{stats.gaa.toFixed(2)}</Text>
+          <View style={s.statRow}>
+            <View style={[s.statDot, { backgroundColor: '#EC4899' }]} />
+            <Text style={s.statLabel}>GAA</Text>
+            <Text style={[s.statValue, { color: '#EC4899' }]}>{stats.gaa.toFixed(2)}</Text>
           </View>
         )}
       </View>
 
-      <View style={blockStyles.avgRow}>
-        <View style={blockStyles.avgItem}>
-          <Text style={blockStyles.avgValue}>{stats.avgSavesPerGame}</Text>
-          <Text style={blockStyles.avgLabel}>Avg Saves/Game</Text>
+      <View style={s.avgRow}>
+        <View style={s.avgItem}>
+          <Text style={s.avgValue}>{stats.avgSavesPerGame}</Text>
+          <Text style={s.avgLabel}>Avg Saves/Game</Text>
         </View>
-        <View style={blockStyles.avgDivider} />
-        <View style={blockStyles.avgItem}>
-          <Text style={blockStyles.avgValue}>{stats.avgGoalsAgainstPerGame}</Text>
-          <Text style={blockStyles.avgLabel}>Avg GA/Game</Text>
+        <View style={s.avgDivider} />
+        <View style={s.avgItem}>
+          <Text style={s.avgValue}>{stats.avgGoalsAgainstPerGame}</Text>
+          <Text style={s.avgLabel}>Avg GA/Game</Text>
         </View>
         {stats.gaa !== null && stats.gamesPlayed > 0 && (
           <>
-            <View style={blockStyles.avgDivider} />
-            <View style={blockStyles.avgItem}>
-              <Text style={blockStyles.avgValue}>{stats.gaa.toFixed(2)}</Text>
-              <Text style={blockStyles.avgLabel}>GAA</Text>
+            <View style={s.avgDivider} />
+            <View style={s.avgItem}>
+              <Text style={s.avgValue}>{stats.gaa.toFixed(2)}</Text>
+              <Text style={s.avgLabel}>GAA</Text>
             </View>
           </>
         )}
@@ -169,81 +284,81 @@ function StatsBlock({ stats, expanded }: { stats: AggregatedStats; expanded?: bo
 
       {(expanded !== false) && (
         <>
-          <View style={blockStyles.distSection}>
-            <Text style={blockStyles.distTitle}>Distribution</Text>
-            <View style={blockStyles.distGrid}>
-              <View style={blockStyles.distRow}>
-                <View style={blockStyles.distItem}>
-                  <Text style={blockStyles.distValue}>{stats.distribution.handledCrosses}</Text>
-                  <Text style={blockStyles.distLabel}>Crosses/Int.</Text>
+          <View style={s.distSection}>
+            <Text style={s.distTitle}>Distribution</Text>
+            <View style={s.distGrid}>
+              <View style={s.distRow}>
+                <View style={s.distItem}>
+                  <Text style={s.distValue}>{stats.distribution.handledCrosses}</Text>
+                  <Text style={s.distLabel}>Crosses/Int.</Text>
                 </View>
-                <View style={blockStyles.distItem}>
-                  <Text style={blockStyles.distValue}>{stats.distribution.punts}</Text>
-                  <Text style={blockStyles.distLabel}>Punts</Text>
+                <View style={s.distItem}>
+                  <Text style={s.distValue}>{stats.distribution.punts}</Text>
+                  <Text style={s.distLabel}>Punts</Text>
                 </View>
-                <View style={blockStyles.distItem}>
-                  <Text style={blockStyles.distValue}>{stats.distribution.throwouts}</Text>
-                  <Text style={blockStyles.distLabel}>Throwouts / Rollouts</Text>
+                <View style={s.distItem}>
+                  <Text style={s.distValue}>{stats.distribution.throwouts}</Text>
+                  <Text style={s.distLabel}>Throwouts / Rollouts</Text>
                 </View>
               </View>
-              <View style={blockStyles.distRow}>
-                <View style={blockStyles.distItem}>
-                  <Text style={blockStyles.distValue}>{stats.distribution.drives}</Text>
-                  <Text style={blockStyles.distLabel}>Drives</Text>
+              <View style={s.distRow}>
+                <View style={s.distItem}>
+                  <Text style={s.distValue}>{stats.distribution.drives}</Text>
+                  <Text style={s.distLabel}>Drives</Text>
                 </View>
-                <View style={blockStyles.distItem}>
-                  <Text style={blockStyles.distValue}>{stats.distribution.dropBacks}</Text>
-                  <Text style={blockStyles.distLabel}>Drop Backs</Text>
+                <View style={s.distItem}>
+                  <Text style={s.distValue}>{stats.distribution.dropBacks}</Text>
+                  <Text style={s.distLabel}>Drop Backs</Text>
                 </View>
-                <View style={blockStyles.distItem} />
+                <View style={s.distItem} />
               </View>
             </View>
           </View>
 
-          <View style={blockStyles.distSection}>
-            <Text style={blockStyles.distTitle}>Penalties</Text>
-            <View style={blockStyles.distGrid}>
-              <View style={blockStyles.distRow}>
-                <View style={blockStyles.distItem}>
-                  <Text style={blockStyles.distValue}>{stats.penalties.penaltiesFaced}</Text>
-                  <Text style={blockStyles.distLabel}>PK Goals Against</Text>
+          <View style={s.distSection}>
+            <Text style={s.distTitle}>Penalties</Text>
+            <View style={s.distGrid}>
+              <View style={s.distRow}>
+                <View style={s.distItem}>
+                  <Text style={s.distValue}>{stats.penalties.penaltiesFaced}</Text>
+                  <Text style={s.distLabel}>PK Goals Against</Text>
                 </View>
-                <View style={blockStyles.distItem}>
-                  <Text style={blockStyles.distValue}>{stats.penalties.penaltiesSaved}</Text>
-                  <Text style={blockStyles.distLabel}>PK Saved</Text>
+                <View style={s.distItem}>
+                  <Text style={s.distValue}>{stats.penalties.penaltiesSaved}</Text>
+                  <Text style={s.distLabel}>PK Saved</Text>
                 </View>
-                <View style={blockStyles.distItem} />
+                <View style={s.distItem} />
               </View>
-              <View style={blockStyles.distRow}>
-                <View style={blockStyles.distItem}>
-                  <Text style={[blockStyles.distValue, { color: Colors.warning }]}>{stats.penalties.yellowCards}</Text>
-                  <Text style={blockStyles.distLabel}>Yellow</Text>
+              <View style={s.distRow}>
+                <View style={s.distItem}>
+                  <Text style={[s.distValue, { color: colors.warning }]}>{stats.penalties.yellowCards}</Text>
+                  <Text style={s.distLabel}>Yellow</Text>
                 </View>
-                <View style={blockStyles.distItem}>
-                  <Text style={[blockStyles.distValue, { color: Colors.danger }]}>{stats.penalties.redCards}</Text>
-                  <Text style={blockStyles.distLabel}>Red</Text>
+                <View style={s.distItem}>
+                  <Text style={[s.distValue, { color: colors.danger }]}>{stats.penalties.redCards}</Text>
+                  <Text style={s.distLabel}>Red</Text>
                 </View>
-                <View style={blockStyles.distItem} />
+                <View style={s.distItem} />
               </View>
             </View>
           </View>
 
           {(stats.shootout.saves > 0 || stats.shootout.goalsAgainst > 0) && (
-            <View style={blockStyles.distSection}>
-              <Text style={blockStyles.distTitle}>Shootout</Text>
-              <View style={blockStyles.distGrid}>
-                <View style={blockStyles.distRow}>
-                  <View style={blockStyles.distItem}>
-                    <Text style={[blockStyles.distValue, { color: Colors.primary }]}>{stats.shootout.saves}</Text>
-                    <Text style={blockStyles.distLabel}>Saves</Text>
+            <View style={s.distSection}>
+              <Text style={s.distTitle}>Shootout</Text>
+              <View style={s.distGrid}>
+                <View style={s.distRow}>
+                  <View style={s.distItem}>
+                    <Text style={[s.distValue, { color: colors.primary }]}>{stats.shootout.saves}</Text>
+                    <Text style={s.distLabel}>Saves</Text>
                   </View>
-                  <View style={blockStyles.distItem}>
-                    <Text style={[blockStyles.distValue, { color: Colors.danger }]}>{stats.shootout.goalsAgainst}</Text>
-                    <Text style={blockStyles.distLabel}>Goals Against</Text>
+                  <View style={s.distItem}>
+                    <Text style={[s.distValue, { color: colors.danger }]}>{stats.shootout.goalsAgainst}</Text>
+                    <Text style={s.distLabel}>Goals Against</Text>
                   </View>
-                  <View style={blockStyles.distItem}>
-                    <Text style={[blockStyles.distValue, { color: '#3B82F6' }]}>{stats.shootout.saves + stats.shootout.goalsAgainst}</Text>
-                    <Text style={blockStyles.distLabel}>Shots on Target</Text>
+                  <View style={s.distItem}>
+                    <Text style={[s.distValue, { color: '#3B82F6' }]}>{stats.shootout.saves + stats.shootout.goalsAgainst}</Text>
+                    <Text style={s.distLabel}>Shots on Target</Text>
                   </View>
                 </View>
               </View>
@@ -255,114 +370,96 @@ function StatsBlock({ stats, expanded }: { stats: AggregatedStats; expanded?: bo
   );
 }
 
-const blockStyles = StyleSheet.create({
-  container: {
-    gap: 12,
-  },
-  topRow: {
-    flexDirection: 'row' as const,
-    gap: 8,
-  },
-  row: {
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    gap: 10,
-  },
-  statRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 10,
-  },
-  statDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statLabel: {
-    flex: 1,
-    fontSize: fontSize.body,
-    fontWeight: '500' as const,
-    color: Colors.textSecondary,
-  },
-  statValue: {
-    fontSize: fontSize.h3,
-    fontWeight: '800' as const,
-  },
-  avgRow: {
-    flexDirection: 'row' as const,
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden' as const,
-  },
-  avgItem: {
-    flex: 1,
-    alignItems: 'center' as const,
-    paddingVertical: 14,
-  },
-  avgDivider: {
-    width: 1,
-    backgroundColor: Colors.border,
-  },
-  avgValue: {
-    fontSize: fontSize.h2,
-    fontWeight: '700' as const,
-    color: Colors.text,
-  },
-  avgLabel: {
-    fontSize: fontSize.xs,
-    fontWeight: '600' as const,
-    color: Colors.textMuted,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.3,
-    marginTop: 4,
-  },
-  distSection: {
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  distTitle: {
-    fontSize: fontSize.sm,
-    fontWeight: '700' as const,
-    color: Colors.textMuted,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.8,
-    textAlign: 'center' as const,
-    marginBottom: 14,
-  },
-  distGrid: {
-    gap: 14,
-  },
-  distRow: {
-    flexDirection: 'row' as const,
-    justifyContent: 'space-around' as const,
-  },
-  distItem: {
-    flex: 1,
-    alignItems: 'center' as const,
-  },
-  distValue: {
-    fontSize: fontSize.h2,
-    fontWeight: '700' as const,
-    color: Colors.text,
-  },
-  distLabel: {
-    fontSize: fontSize.xs2,
-    color: Colors.textMuted,
-    fontWeight: '500' as const,
-    marginTop: 3,
-    textAlign: 'center' as const,
-  },
-});
+function createGroupStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: c.surfaceLight,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+      overflow: 'hidden' as const,
+    },
+    header: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+      padding: 16,
+    },
+    headerLeft: {
+      flex: 1,
+      marginRight: 12,
+    },
+    label: {
+      fontSize: fontSize.subtitle,
+      fontWeight: '700' as const,
+      color: c.text,
+    },
+    sublabel: {
+      fontSize: fontSize.caption,
+      fontWeight: '500' as const,
+      color: c.textMuted,
+      marginTop: 2,
+    },
+    headerRight: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 10,
+    },
+    pctBadge: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 8,
+    },
+    pctText: {
+      fontSize: fontSize.body2,
+      fontWeight: '700' as const,
+    },
+    content: {
+      padding: 16,
+      paddingTop: 0,
+    },
+    exportSection: {
+      marginTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: c.border,
+      paddingTop: 14,
+    },
+    exportTitle: {
+      fontSize: fontSize.sm,
+      fontWeight: '700' as const,
+      color: c.textMuted,
+      textTransform: 'uppercase' as const,
+      letterSpacing: 0.8,
+      marginBottom: 10,
+    },
+    exportButtons: {
+      flexDirection: 'row' as const,
+      gap: 8,
+    },
+    exportButton: {
+      flex: 1,
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      gap: 6,
+      backgroundColor: c.surface,
+      borderRadius: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 10,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    exportButtonText: {
+      fontSize: fontSize.caption,
+      fontWeight: '600' as const,
+      color: c.text,
+    },
+  });
+}
 
 function GroupSection({ group, defaultExpanded, keeperName }: { group: GroupedStats; defaultExpanded?: boolean; keeperName: string }) {
+  const colors = useColors();
+  const s = useMemo(() => createGroupStyles(colors), [colors]);
   const [expanded, setExpanded] = useState(defaultExpanded ?? false);
 
   const handleToggle = useCallback(() => {
@@ -416,166 +513,136 @@ function GroupSection({ group, defaultExpanded, keeperName }: { group: GroupedSt
   }, [keeperName, group]);
 
   return (
-    <View style={groupStyles.container}>
+    <View style={s.container}>
       <TouchableOpacity
-        style={groupStyles.header}
+        style={s.header}
         onPress={handleToggle}
         activeOpacity={0.7}
       >
-        <View style={groupStyles.headerLeft}>
-          <Text style={groupStyles.label}>{group.label}</Text>
-          {group.sublabel ? <Text style={groupStyles.sublabel}>{group.sublabel}</Text> : null}
+        <View style={s.headerLeft}>
+          <Text style={s.label}>{group.label}</Text>
+          {group.sublabel ? <Text style={s.sublabel}>{group.sublabel}</Text> : null}
         </View>
-        <View style={groupStyles.headerRight}>
-          <View style={[groupStyles.pctBadge, { backgroundColor: group.stats.savePercentage === null ? Colors.surface : group.stats.savePercentage >= 50 ? Colors.primaryGlow : Colors.dangerGlow }]}>
-            <Text style={[groupStyles.pctText, { color: group.stats.savePercentage === null ? Colors.textMuted : group.stats.savePercentage >= 50 ? Colors.primary : Colors.danger }]}>
+        <View style={s.headerRight}>
+          <View style={[s.pctBadge, { backgroundColor: group.stats.savePercentage === null ? colors.surface : group.stats.savePercentage >= 50 ? colors.primaryGlow : colors.dangerGlow }]}>
+            <Text style={[s.pctText, { color: group.stats.savePercentage === null ? colors.textMuted : group.stats.savePercentage >= 50 ? colors.primary : colors.danger }]}>
               {group.stats.savePercentage !== null ? `${group.stats.savePercentage}%` : '—'}
             </Text>
           </View>
-          {expanded ? <ChevronUp size={18} color={Colors.textMuted} /> : <ChevronDown size={18} color={Colors.textMuted} />}
+          {expanded ? <ChevronUp size={18} color={colors.textMuted} /> : <ChevronDown size={18} color={colors.textMuted} />}
         </View>
       </TouchableOpacity>
       {expanded && (
-        <View style={groupStyles.content}>
-          <StatsBlock stats={group.stats} />
-          <View style={groupStyles.exportSection}>
-            <Text style={groupStyles.exportTitle}>Export {group.label} Stats</Text>
-            <View style={groupStyles.exportButtons}>
-              <TouchableOpacity style={groupStyles.exportButton} onPress={handleGroupExportText} activeOpacity={0.7}>
-                <FileText size={16} color={Colors.primary} />
-                <Text style={groupStyles.exportButtonText}>Text</Text>
+        <View style={s.content}>
+          <StatsBlock stats={group.stats} colors={colors} />
+          <View style={s.exportSection}>
+            <Text style={s.exportTitle}>Export {group.label} Stats</Text>
+            <View style={s.exportButtons}>
+              <TouchableOpacity style={s.exportButton} onPress={handleGroupExportText} activeOpacity={0.7}>
+                <FileText size={16} color={colors.primary} />
+                <Text style={s.exportButtonText}>Text</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={groupStyles.exportButton} onPress={handleGroupExportCSV} activeOpacity={0.7}>
-                <FileSpreadsheet size={16} color={Colors.accent} />
-                <Text style={groupStyles.exportButtonText}>CSV</Text>
+              <TouchableOpacity style={s.exportButton} onPress={handleGroupExportCSV} activeOpacity={0.7}>
+                <FileSpreadsheet size={16} color={colors.accent} />
+                <Text style={s.exportButtonText}>CSV</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={groupStyles.exportButton} onPress={handleGroupExportImage} activeOpacity={0.7}>
+              <TouchableOpacity style={s.exportButton} onPress={handleGroupExportImage} activeOpacity={0.7}>
                 <Image size={16} color="#8B5CF6" />
-                <Text style={groupStyles.exportButtonText}>Image</Text>
+                <Text style={s.exportButtonText}>Image</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
       )}
-
     </View>
   );
 }
 
-const groupStyles = StyleSheet.create({
-  container: {
-    backgroundColor: Colors.surfaceLight,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    overflow: 'hidden' as const,
-  },
-  header: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
-    padding: 16,
-  },
-  headerLeft: {
-    flex: 1,
-    marginRight: 12,
-  },
-  label: {
-    fontSize: fontSize.subtitle,
-    fontWeight: '700' as const,
-    color: Colors.text,
-  },
-  sublabel: {
-    fontSize: fontSize.caption,
-    fontWeight: '500' as const,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  headerRight: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 10,
-  },
-  pctBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  pctText: {
-    fontSize: fontSize.body2,
-    fontWeight: '700' as const,
-  },
-  content: {
-    padding: 16,
-    paddingTop: 0,
-  },
-  exportSection: {
-    marginTop: 16,
-    borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    paddingTop: 14,
-  },
-  exportTitle: {
-    fontSize: fontSize.sm,
-    fontWeight: '700' as const,
-    color: Colors.textMuted,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.8,
-    marginBottom: 10,
-  },
-  exportButtons: {
-    flexDirection: 'row' as const,
-    gap: 8,
-  },
-  exportButton: {
-    flex: 1,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    gap: 6,
-    backgroundColor: Colors.surface,
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  exportButtonText: {
-    fontSize: fontSize.caption,
-    fontWeight: '600' as const,
-    color: Colors.text,
-  },
-  offscreenContainer: {
-    position: 'absolute' as const,
-    left: -9999,
-    top: -9999,
-    opacity: 0,
-  },
-});
+function createSelectorStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      backgroundColor: c.surface,
+      borderRadius: 14,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    title: {
+      fontSize: fontSize.caption,
+      fontWeight: '700' as const,
+      color: c.textMuted,
+      textTransform: 'uppercase' as const,
+      letterSpacing: 0.8,
+      marginBottom: 12,
+    },
+    item: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      paddingVertical: 10,
+      paddingHorizontal: 10,
+      borderRadius: 10,
+      marginBottom: 4,
+      gap: 12,
+    },
+    itemSelected: {
+      backgroundColor: c.primaryGlow,
+    },
+    checkbox: {
+      width: 26,
+      height: 26,
+      borderRadius: 7,
+      borderWidth: 2,
+      borderColor: c.border,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+    },
+    checkboxSelected: {
+      backgroundColor: c.primary,
+      borderColor: c.primary,
+    },
+    itemInfo: {
+      flex: 1,
+    },
+    itemName: {
+      fontSize: fontSize.body,
+      fontWeight: '600' as const,
+      color: c.text,
+    },
+    itemMeta: {
+      fontSize: fontSize.sm,
+      color: c.textMuted,
+      fontWeight: '500' as const,
+      marginTop: 2,
+    },
+  });
+}
 
 function GameSelector({ games, selectedIds, onToggle }: { games: SavedGame[]; selectedIds: Set<string>; onToggle: (id: string) => void }) {
+  const colors = useColors();
+  const s = useMemo(() => createSelectorStyles(colors), [colors]);
+
   return (
-    <View style={selectorStyles.container}>
-      <Text style={selectorStyles.title}>Select Games</Text>
+    <View style={s.container}>
+      <Text style={s.title}>Select Games</Text>
       {games.map((game) => {
         const isSelected = selectedIds.has(game.id);
         const dateStr = game.setup.date ? new Date(game.setup.date).toLocaleDateString() : '';
         return (
           <TouchableOpacity
             key={game.id}
-            style={[selectorStyles.item, isSelected && selectorStyles.itemSelected]}
+            style={[s.item, isSelected && s.itemSelected]}
             onPress={() => {
               void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
               onToggle(game.id);
             }}
             activeOpacity={0.7}
           >
-            <View style={[selectorStyles.checkbox, isSelected && selectorStyles.checkboxSelected]}>
-              {isSelected ? <Check size={14} color={Colors.white} /> : <Square size={14} color={Colors.textMuted} />}
+            <View style={[s.checkbox, isSelected && s.checkboxSelected]}>
+              {isSelected ? <Check size={14} color={colors.white} /> : <Square size={14} color={colors.textMuted} />}
             </View>
-            <View style={selectorStyles.itemInfo}>
-              <Text style={selectorStyles.itemName} numberOfLines={1}>{game.setup.eventName || game.setup.gameName || 'Unnamed Game'}</Text>
-              <Text style={selectorStyles.itemMeta}>
+            <View style={s.itemInfo}>
+              <Text style={s.itemName} numberOfLines={1}>{game.setup.eventName || game.setup.gameName || 'Unnamed Game'}</Text>
+              <Text style={s.itemMeta}>
                 {dateStr}{game.setup.gameName ? ` · ${game.setup.gameName}` : ''}
               </Text>
             </View>
@@ -586,65 +653,235 @@ function GameSelector({ games, selectedIds, onToggle }: { games: SavedGame[]; se
   );
 }
 
-const selectorStyles = StyleSheet.create({
-  container: {
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  title: {
-    fontSize: fontSize.caption,
-    fontWeight: '700' as const,
-    color: Colors.textMuted,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.8,
-    marginBottom: 12,
-  },
-  item: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: 10,
-    marginBottom: 4,
-    gap: 12,
-  },
-  itemSelected: {
-    backgroundColor: Colors.primaryGlow,
-  },
-  checkbox: {
-    width: 26,
-    height: 26,
-    borderRadius: 7,
-    borderWidth: 2,
-    borderColor: Colors.border,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-  },
-  checkboxSelected: {
-    backgroundColor: Colors.primary,
-    borderColor: Colors.primary,
-  },
-  itemInfo: {
-    flex: 1,
-  },
-  itemName: {
-    fontSize: fontSize.body,
-    fontWeight: '600' as const,
-    color: Colors.text,
-  },
-  itemMeta: {
-    fontSize: fontSize.sm,
-    color: Colors.textMuted,
-    fontWeight: '500' as const,
-    marginTop: 2,
-  },
-});
+function createMainStyles(c: ThemeColors) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: c.background,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: 20,
+      paddingBottom: 40,
+    },
+    profileHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 14,
+      marginBottom: 24,
+    },
+    profileIconBg: {
+      width: 48,
+      height: 48,
+      borderRadius: 14,
+      backgroundColor: c.primaryGlow,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(16, 185, 129, 0.25)',
+    },
+    profileHeaderText: {
+      flex: 1,
+    },
+    profileNameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 8,
+    },
+    switchKeeperBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 5,
+      backgroundColor: c.primaryGlow,
+      paddingHorizontal: 10,
+      paddingVertical: 7,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: 'rgba(16, 185, 129, 0.2)',
+    },
+    switchKeeperText: {
+      fontSize: fontSize.caption,
+      fontWeight: '600' as const,
+      color: c.primary,
+    },
+    profileName: {
+      fontSize: fontSize.h2,
+      fontWeight: '800' as const,
+      color: c.text,
+    },
+    profileSub: {
+      fontSize: fontSize.body2,
+      fontWeight: '500' as const,
+      color: c.textMuted,
+      marginTop: 2,
+    },
+    modeSelectorWrap: {
+      marginBottom: 20,
+      gap: 6,
+    },
+    groupSelector: {
+      flexDirection: 'row',
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 4,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    groupOption: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 9,
+      alignItems: 'center',
+    },
+    groupOptionActive: {
+      backgroundColor: c.primaryDark,
+    },
+    groupOptionText: {
+      fontSize: fontSize.body2,
+      fontWeight: '600' as const,
+      color: c.textMuted,
+    },
+    groupOptionTextActive: {
+      color: c.white,
+      fontWeight: '700' as const,
+    },
+    moreViewsInner: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    moreViewsDropdown: {
+      flexDirection: 'row',
+      backgroundColor: c.surface,
+      borderRadius: 10,
+      padding: 4,
+      borderWidth: 1,
+      borderColor: c.border,
+      gap: 4,
+    },
+    moreViewsItem: {
+      flex: 1,
+      paddingVertical: 10,
+      borderRadius: 8,
+      alignItems: 'center',
+    },
+    moreViewsItemActive: {
+      backgroundColor: c.primaryDark,
+    },
+    moreViewsItemText: {
+      fontSize: fontSize.body2,
+      fontWeight: '600' as const,
+      color: c.textMuted,
+    },
+    moreViewsItemTextActive: {
+      color: c.white,
+      fontWeight: '700' as const,
+    },
+    groupList: {
+      gap: 12,
+    },
+    emptyContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 60,
+      gap: 8,
+    },
+    emptyTitle: {
+      fontSize: fontSize.h3,
+      fontWeight: '600' as const,
+      color: c.textSecondary,
+      marginTop: 8,
+    },
+    emptySubtitle: {
+      fontSize: fontSize.body,
+      color: c.textMuted,
+    },
+    noDataText: {
+      fontSize: fontSize.body,
+      color: c.textMuted,
+      textAlign: 'center',
+      paddingVertical: 30,
+    },
+    customSection: {
+      gap: 12,
+    },
+    selectAllBtn: {
+      alignSelf: 'flex-end',
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 8,
+      backgroundColor: c.surface,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    selectAllText: {
+      fontSize: fontSize.body2,
+      fontWeight: '600' as const,
+      color: c.primary,
+    },
+    customResults: {
+      gap: 12,
+    },
+    customResultsHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 4,
+    },
+    customResultsTitle: {
+      fontSize: fontSize.bodyLg,
+      fontWeight: '700' as const,
+      color: c.text,
+    },
+    customResultsCount: {
+      fontSize: fontSize.caption,
+      fontWeight: '600' as const,
+      color: c.textMuted,
+      backgroundColor: c.surface,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      borderRadius: 8,
+      overflow: 'hidden' as const,
+    },
+    exportSection: {
+      marginTop: 24,
+    },
+    exportTitle: {
+      fontSize: fontSize.body,
+      fontWeight: '700' as const,
+      color: c.textSecondary,
+      textTransform: 'uppercase' as const,
+      letterSpacing: 1,
+      marginBottom: 12,
+    },
+    exportButtons: {
+      gap: 10,
+    },
+    exportButton: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 12,
+      backgroundColor: c.surface,
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    exportButtonText: {
+      flex: 1,
+      fontSize: fontSize.bodyLg,
+      fontWeight: '600' as const,
+      color: c.text,
+    },
+  });
+}
 
 export default function GoalkeeperStatsScreen() {
   const colors = useColors();
+  const styles = useMemo(() => createMainStyles(colors), [colors]);
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { activeProfile, clearSelection } = useGoalkeepers();
@@ -840,11 +1077,11 @@ export default function GoalkeeperStatsScreen() {
                   </Text>
                 ) : (
                   <>
-                    <MoreHorizontal size={14} color={Colors.textMuted} />
+                    <MoreHorizontal size={14} color={colors.textMuted} />
                     <Text style={styles.groupOptionText}>More</Text>
                   </>
                 )}
-                <ChevronDown size={12} color={isSecondaryMode ? Colors.white : Colors.textMuted} style={moreViewsOpen ? { transform: [{ rotate: '180deg' }] } : undefined} />
+                <ChevronDown size={12} color={isSecondaryMode ? colors.white : colors.textMuted} style={moreViewsOpen ? { transform: [{ rotate: '180deg' }] } : undefined} />
               </View>
             </TouchableOpacity>
           </View>
@@ -908,7 +1145,7 @@ export default function GoalkeeperStatsScreen() {
         ) : (
           <>
             {groupMode === 'career' && careerStats && (
-              <StatsBlock stats={careerStats} />
+              <StatsBlock stats={careerStats} colors={colors} />
             )}
 
             {groupMode === 'team' && (
@@ -969,7 +1206,7 @@ export default function GoalkeeperStatsScreen() {
                       <Text style={styles.customResultsTitle}>Selected Stats</Text>
                       <Text style={styles.customResultsCount}>{selectedGameIds.size} game{selectedGameIds.size !== 1 ? 's' : ''}</Text>
                     </View>
-                    <StatsBlock stats={groupedStats[0]?.stats ?? { gamesPlayed: 0, totalSaves: 0, totalGoalsAgainst: 0, totalShotsFaced: 0, savePercentage: null, cleanSheets: 0, distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 }, penalties: { penaltiesFaced: 0, penaltiesSaved: 0, redCards: 0, yellowCards: 0 }, shootout: { saves: 0, goalsAgainst: 0 }, avgSavesPerGame: 0, avgGoalsAgainstPerGame: 0, oneVsOneFaced: 0, oneVsOneSaved: 0, oneVsOneSaveRate: null, totalEstimatedMinutes: 0, gaa: null }} />
+                    <StatsBlock stats={groupedStats[0]?.stats ?? { gamesPlayed: 0, totalSaves: 0, totalGoalsAgainst: 0, totalShotsFaced: 0, savePercentage: null, cleanSheets: 0, distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 }, penalties: { penaltiesFaced: 0, penaltiesSaved: 0, redCards: 0, yellowCards: 0 }, shootout: { saves: 0, goalsAgainst: 0 }, avgSavesPerGame: 0, avgGoalsAgainstPerGame: 0, oneVsOneFaced: 0, oneVsOneSaved: 0, oneVsOneSaveRate: null, totalEstimatedMinutes: 0, gaa: null }} colors={colors} />
                   </View>
                 )}
               </View>
@@ -1005,237 +1242,6 @@ export default function GoalkeeperStatsScreen() {
           </View>
         )}
       </ScrollView>
-
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginBottom: 24,
-  },
-  profileIconBg: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: Colors.primaryGlow,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.25)',
-  },
-  profileHeaderText: {
-    flex: 1,
-  },
-  profileNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  switchKeeperBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    backgroundColor: Colors.primaryGlow,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.2)',
-  },
-  switchKeeperText: {
-    fontSize: fontSize.caption,
-    fontWeight: '600' as const,
-    color: Colors.primary,
-  },
-  profileName: {
-    fontSize: fontSize.h2,
-    fontWeight: '800' as const,
-    color: Colors.text,
-  },
-  profileSub: {
-    fontSize: fontSize.body2,
-    fontWeight: '500' as const,
-    color: Colors.textMuted,
-    marginTop: 2,
-  },
-  modeSelectorWrap: {
-    marginBottom: 20,
-    gap: 6,
-  },
-  groupSelector: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  groupOption: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 9,
-    alignItems: 'center',
-  },
-  groupOptionActive: {
-    backgroundColor: Colors.primaryDark,
-  },
-  groupOptionText: {
-    fontSize: fontSize.body2,
-    fontWeight: '600' as const,
-    color: Colors.textMuted,
-  },
-  groupOptionTextActive: {
-    color: Colors.white,
-    fontWeight: '700' as const,
-  },
-  moreViewsInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  moreViewsDropdown: {
-    flexDirection: 'row',
-    backgroundColor: Colors.surface,
-    borderRadius: 10,
-    padding: 4,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    gap: 4,
-  },
-  moreViewsItem: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  moreViewsItemActive: {
-    backgroundColor: Colors.primaryDark,
-  },
-  moreViewsItemText: {
-    fontSize: fontSize.body2,
-    fontWeight: '600' as const,
-    color: Colors.textMuted,
-  },
-  moreViewsItemTextActive: {
-    color: Colors.white,
-    fontWeight: '700' as const,
-  },
-  groupList: {
-    gap: 12,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    gap: 8,
-  },
-  emptyTitle: {
-    fontSize: fontSize.h3,
-    fontWeight: '600' as const,
-    color: Colors.textSecondary,
-    marginTop: 8,
-  },
-  emptySubtitle: {
-    fontSize: fontSize.body,
-    color: Colors.textMuted,
-  },
-  noDataText: {
-    fontSize: fontSize.body,
-    color: Colors.textMuted,
-    textAlign: 'center',
-    paddingVertical: 30,
-  },
-  customSection: {
-    gap: 12,
-  },
-  selectAllBtn: {
-    alignSelf: 'flex-end',
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  selectAllText: {
-    fontSize: fontSize.body2,
-    fontWeight: '600' as const,
-    color: Colors.primary,
-  },
-  customResults: {
-    gap: 12,
-  },
-  customResultsHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  customResultsTitle: {
-    fontSize: fontSize.bodyLg,
-    fontWeight: '700' as const,
-    color: Colors.text,
-  },
-  customResultsCount: {
-    fontSize: fontSize.caption,
-    fontWeight: '600' as const,
-    color: Colors.textMuted,
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 8,
-    overflow: 'hidden' as const,
-  },
-  exportSection: {
-    marginTop: 24,
-  },
-  exportTitle: {
-    fontSize: fontSize.body,
-    fontWeight: '700' as const,
-    color: Colors.textSecondary,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 1,
-    marginBottom: 12,
-  },
-  exportButtons: {
-    gap: 10,
-  },
-  exportButton: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: 12,
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  exportButtonText: {
-    flex: 1,
-    fontSize: fontSize.bodyLg,
-    fontWeight: '600' as const,
-    color: Colors.text,
-  },
-  offscreenContainer: {
-    position: 'absolute' as const,
-    left: -9999,
-    top: -9999,
-    opacity: 0,
-  },
-});
