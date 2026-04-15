@@ -18,7 +18,6 @@ const FEATURES = [
   'Unlimited games',
   'Unlimited goalkeeper profiles',
   'Unlimited teams',
-  'Advanced stats: GAA, 1v1 Save Rate & more',
 ];
 
 const PRIVACY_URL = 'https://smiling-gorgonzola-c76.notion.site/Privacy-Policy-a70ef03840ca4301b83bb7a302c070fa?pvs=74';
