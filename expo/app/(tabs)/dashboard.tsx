@@ -1089,6 +1089,7 @@ function createStyles(c: ThemeColors) {
       fontSize: fontSize.caption,
       fontWeight: '800' as const,
       color: c.primary,
+      textAlign: 'center',
     },
     teamInfo: {
       flex: 1,
