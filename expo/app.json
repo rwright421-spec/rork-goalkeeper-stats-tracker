@@ -36,7 +36,8 @@
       ],
       "expo-font",
       "expo-web-browser",
-      "expo-secure-store"
+      "expo-secure-store",
+      "react-native-purchases"
     ],
     "experiments": {
       "typedRoutes": true
