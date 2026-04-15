@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
-import * as Sentry from '@sentry/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 import { useTheme, useColors } from '@/contexts/ThemeContext';
@@ -90,21 +89,12 @@ export default function SettingsScreen() {
               resetGoalkeepers();
               resetOpponents();
 
-              Sentry.addBreadcrumb({
-                category: 'user_action',
-                message: 'User deleted all data',
-                level: 'info',
-                data: {
-                  profileCount: profiles.length,
-                  timestamp: new Date().toISOString(),
-                },
-              });
-              Sentry.captureMessage('User initiated full data deletion', 'info');
+              console.log('[Settings] User deleted all data, profiles:', profiles.length);
 
               void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
               router.replace('/onboarding');
             } catch (e) {
-              Sentry.captureException(e);
+              console.error('[Settings] Delete error:', e);
               Alert.alert('Deletion Failed', 'Something went wrong while deleting your data. Please try again.');
             } finally {
               setIsDeleting(false);
@@ -147,7 +137,7 @@ export default function SettingsScreen() {
 
     } catch (e) {
 
-      Sentry.captureException(e);
+      console.error('[Settings] Sync error:', e);
       Alert.alert('Sync Failed', 'Something went wrong during sync. Please try again.');
     } finally {
       setIsSyncingNow(false);
@@ -190,7 +180,7 @@ export default function SettingsScreen() {
 
     } catch (e) {
 
-      Sentry.captureException(e);
+      console.error('[Settings] Export error:', e);
       Alert.alert('Export Failed', 'Something went wrong while exporting your data. Please try again.');
     } finally {
       setIsExporting(false);
@@ -268,7 +258,7 @@ export default function SettingsScreen() {
 
               } catch (e) {
 
-                Sentry.captureException(e);
+                console.error('[Settings] Import merge error:', e);
                 Alert.alert('Import Failed', 'Something went wrong while importing your data.');
               } finally {
                 setIsImporting(false);
@@ -279,7 +269,7 @@ export default function SettingsScreen() {
       );
     } catch (e) {
 
-      Sentry.captureException(e);
+      console.error('[Settings] Import read error:', e);
       Alert.alert('Import Failed', 'Something went wrong while reading the file.');
       setIsImporting(false);
     }

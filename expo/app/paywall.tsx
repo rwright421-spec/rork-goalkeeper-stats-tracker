@@ -1,5 +1,4 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import * as Sentry from '@sentry/react-native';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, Linking } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { X, Shield, Check, Crown } from 'lucide-react-native';
@@ -77,7 +76,7 @@ export default function PaywallScreen() {
     );
     if (!pkg) {
       Alert.alert('Unavailable', 'This plan is not available right now. Please try again later.');
-      Sentry.captureMessage('Paywall package not found', { level: 'warning', extra: { targetId, available: currentOffering.availablePackages.map((p: any) => p.product.identifier) } });
+      console.warn('[Paywall] Package not found:', targetId, 'Available:', currentOffering.availablePackages.map((p: any) => p.product.identifier));
       return;
     }
     setIsPurchasing(true);

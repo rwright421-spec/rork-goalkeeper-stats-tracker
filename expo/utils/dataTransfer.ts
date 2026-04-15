@@ -1,5 +1,4 @@
 import { Platform, Alert } from 'react-native';
-import * as Sentry from '@sentry/react-native';
 import * as secureStorage from '@/utils/secureStorage';
 import { GoalkeeperProfile, Team, SavedGame } from '@/types/game';
 import {
@@ -84,7 +83,7 @@ export function validateImportPayload(raw: unknown): { success: true; data: Expo
   const parsed = ExportPayloadSchema.safeParse(raw);
   if (!parsed.success) {
     const msg = parsed.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ');
-    Sentry.captureMessage('Import validation failed', { level: 'warning', extra: { errors: msg } });
+    console.warn('[DataTransfer] Import validation failed:', msg);
     return { success: false, error: `Invalid export file structure: ${msg}` };
   }
 

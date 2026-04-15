@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import * as Sentry from '@sentry/react-native';
 import * as secureStorage from '@/utils/secureStorage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
@@ -17,7 +16,7 @@ async function loadLocalProfiles(): Promise<GoalkeeperProfile[]> {
     }
     return [];
   } catch (e) {
-    Sentry.captureException(e);
+    console.error('[Goalkeeper] Error loading profiles:', e);
     return [];
   }
 }
@@ -83,8 +82,8 @@ export const [GoalkeeperProvider, useGoalkeepers] = createContextHook(() => {
     const updated = localProfiles.filter(p => p.id !== profileId);
     queryClient.setQueryData(['goalkeeper-profiles-local'], updated);
     localSaveMutation.mutate(updated);
-    secureStorage.removeItem(`gk_tracker_games_${profileId}`).catch((e) => Sentry.captureException(e));
-    secureStorage.removeItem(`gk_tracker_teams_${profileId}`).catch((e) => Sentry.captureException(e));
+    secureStorage.removeItem(`gk_tracker_games_${profileId}`).catch((e) => console.error('[Goalkeeper] Error removing games:', e));
+    secureStorage.removeItem(`gk_tracker_teams_${profileId}`).catch((e) => console.error('[Goalkeeper] Error removing teams:', e));
   }, [queryClient, localSaveMutation]);
 
   const selectProfile = useCallback((profileId: string) => {

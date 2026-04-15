@@ -1,6 +1,5 @@
 // Profiles - Goalkeeper profile management screen
 import React, { useCallback, useMemo, useState } from 'react';
-import * as Sentry from '@sentry/react-native';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ArrowLeftRight, Users, Pencil, ChevronRight } from 'lucide-react-native';
@@ -40,7 +39,7 @@ export default function ProfilesScreen() {
     try {
       router.replace('/');
     } catch (e) {
-      Sentry.captureException(e);
+      console.error('[Profiles] Navigation error:', e);
       router.replace('/');
     }
   }, [clearSelection, clearTeamSelection, router]);

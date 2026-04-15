@@ -1,5 +1,4 @@
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
-import * as Sentry from '@sentry/react-native';
 import * as secureStorage from '@/utils/secureStorage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
@@ -79,7 +78,7 @@ async function loadGamesFromStorage(storageKey: string): Promise<SavedGame[]> {
     }
     return [];
   } catch (e) {
-    Sentry.captureException(e);
+    console.error('[Game] Error:', e);
     return [];
   }
 }
@@ -153,7 +152,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
       }
       markSuccess();
     } catch (e) {
-      Sentry.captureException(e);
+      console.error('[Game] Error:', e);
       markFailed(async () => {
         const currentData = queryClient.getQueryData<SavedGame[]>(['games', storageKey]) ?? [];
         await uploadProfileData(sharedProfileId!, 'games', currentData);
@@ -258,7 +257,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
               if (e?.message === GAME_LIMIT_ERROR_KEY) {
                 setGameLimitExceeded(true);
               } else {
-                Sentry.captureException(e);
+                console.error('[Game] Error:', e);
                 markFailed(async () => {
                   await uploadProfileData(sharedProfileId!, 'games', updatedGames);
                 });
@@ -267,7 +266,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
           }
         }
       } catch (e) {
-        Sentry.captureException(e);
+        console.error('[Game] Error:', e);
       } finally {
         pendingSyncInProgress.current = false;
       }
@@ -326,7 +325,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
 
       return true;
     } catch (e) {
-      Sentry.captureException(e);
+      console.error('[Game] Error:', e);
       return false;
     }
   }, [storageKey, queryClient]);
@@ -373,7 +372,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
             setGlobalGameCount(total);
           }
         } catch (e) {
-          Sentry.captureException(e);
+          console.error('[Game] Error:', e);
         }
       }
       void countAllGames();

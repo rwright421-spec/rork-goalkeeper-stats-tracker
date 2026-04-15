@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/react-native';
 import { getSupabase } from './supabase';
 import { Team, SavedGame } from '@/types/game';
 
@@ -49,7 +48,7 @@ export async function uploadProfileData(
     if (e?.message === GAME_LIMIT_ERROR_KEY) {
       throw e;
     }
-    Sentry.captureException(e);
+    console.error('[Sync] Error:', e);
     return false;
   }
 }
@@ -82,7 +81,7 @@ export async function downloadProfileData<T>(
     const parsed = typeof data.data === 'string' ? JSON.parse(data.data) : data.data;
     return parsed as T[];
   } catch (e) {
-    Sentry.captureException(e);
+    console.error('[Sync] Error:', e);
     return null;
   }
 }
@@ -134,7 +133,7 @@ export async function generateServerGameId(): Promise<string | null> {
     }
     return null;
   } catch (e) {
-    Sentry.captureException(e);
+    console.error('[Sync] Error:', e);
     return null;
   }
 }

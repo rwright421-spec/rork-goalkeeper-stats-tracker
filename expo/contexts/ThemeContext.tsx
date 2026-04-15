@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import * as Sentry from '@sentry/react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
 import { ThemeColors, ThemeName, themes, DarkTheme } from '@/constants/themes';
@@ -18,7 +17,7 @@ export const [ThemeProvider, useTheme] = createContextHook(() => {
           setThemeName(stored as ThemeName);
         }
       } catch (e) {
-        Sentry.captureException(e);
+        console.error('[Theme] Error loading theme:', e);
       } finally {
         setIsLoaded(true);
       }
@@ -28,7 +27,7 @@ export const [ThemeProvider, useTheme] = createContextHook(() => {
   const setTheme = useCallback((name: ThemeName) => {
     setThemeName(name);
     void AsyncStorage.setItem(THEME_STORAGE_KEY, name).catch((e) => {
-      Sentry.captureException(e);
+      console.error('[Theme] Error saving theme:', e);
     });
   }, []);
 

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import * as Sentry from '@sentry/react-native';
 import type {
   GoalkeeperProfile,
   Team,
@@ -184,14 +183,7 @@ export function validateAndSanitize<T extends SchemaType>(
     console.warn(`[Validation DEV] ${schemaType} validation failed:\n  Shape: ${shape}\n  Errors: ${errorDetails}`);
   }
 
-  Sentry.captureMessage(`Validation failed for ${schemaType}`, {
-    level: 'warning',
-    extra: {
-      schemaType,
-      rawDataShape: shape,
-      errors: errorDetails,
-    },
-  });
+  console.warn(`[Validation] ${schemaType} failed: ${errorDetails}`);
 
   return { success: false, error: errorDetails };
 }
@@ -215,15 +207,7 @@ export function validateAndSanitizeArray<T extends SchemaType>(
     if (__DEV__) {
       console.warn(`[Validation DEV] ${skippedCount} ${schemaType} items failed validation and were dropped`);
     }
-    Sentry.captureMessage(`${skippedCount} ${schemaType} items failed array validation`, {
-      level: 'warning',
-      extra: {
-        schemaType,
-        totalItems: data.length,
-        validItems: validated.length,
-        skippedItems: skippedCount,
-      },
-    });
+    console.warn(`[Validation] ${skippedCount} ${schemaType} items failed array validation (${validated.length}/${data.length} valid)`);
   }
 
   return validated;

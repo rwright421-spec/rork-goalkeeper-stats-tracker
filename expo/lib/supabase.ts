@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/react-native';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -72,7 +71,7 @@ export async function ensureTables(): Promise<boolean> {
 
     return true;
   } catch (e) {
-    Sentry.captureException(e);
+    console.error('[Supabase] Error:', e);
     return true;
   }
 }
@@ -171,7 +170,7 @@ async function executeSql(sql: string): Promise<boolean> {
         return true;
       }
     } catch (e) {
-      Sentry.captureException(e);
+      console.error('[Supabase] Error:', e);
     }
   }
 
@@ -183,7 +182,7 @@ async function executeSql(sql: string): Promise<boolean> {
         return true;
       }
     } catch (e) {
-      Sentry.captureException(e);
+      console.error('[Supabase] Error:', e);
     }
   }
 

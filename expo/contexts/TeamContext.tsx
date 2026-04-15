@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import * as Sentry from '@sentry/react-native';
 import * as secureStorage from '@/utils/secureStorage';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import createContextHook from '@nkzw/create-context-hook';
@@ -25,7 +24,7 @@ async function loadTeams(key: string): Promise<Team[]> {
     }
     return [];
   } catch (e) {
-    Sentry.captureException(e);
+    console.error('[Team] Error:', e);
     return [];
   }
 }
@@ -81,7 +80,7 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
       }
       markSuccess();
     } catch (e) {
-      Sentry.captureException(e);
+      console.error('[Team] Error:', e);
       markFailed(async () => {
         const currentData = queryClient.getQueryData<Team[]>(['teams', storageKey]) ?? [];
         await uploadProfileData(sharedProfileId!, 'teams', currentData);
