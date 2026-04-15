@@ -9,11 +9,9 @@ export function getSupabase(): SupabaseClient | null {
   const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
   const key = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (__DEV__ && !url) {
-    throw new Error(
-      '[Supabase] EXPO_PUBLIC_SUPABASE_URL is undefined. ' +
-      'Check your .env / environment variables configuration.'
-    );
+  if (!url) {
+    console.log('[Supabase] EXPO_PUBLIC_SUPABASE_URL is not set, Supabase disabled');
+    return null;
   }
 
   if (!url || !key) {
