@@ -38,12 +38,7 @@ export default function ProfilesScreen() {
     clearSelection();
     clearTeamSelection();
     try {
-      if (Platform.OS === 'web') {
-        router.replace('/');
-      } else {
-        router.dismissAll();
-        router.replace('/');
-      }
+      router.replace('/');
     } catch (e) {
       Sentry.captureException(e);
       router.replace('/');

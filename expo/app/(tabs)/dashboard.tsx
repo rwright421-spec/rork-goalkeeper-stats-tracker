@@ -123,12 +123,7 @@ export default function DashboardScreen() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     clearSelection();
     clearTeamSelection();
-    if (Platform.OS === 'web') {
-      router.replace('/');
-    } else {
-      try { router.dismissAll(); } catch (_e) { /* dismissAll may fail if no screens to dismiss */ }
-      setTimeout(() => router.replace('/'), 100);
-    }
+    router.replace('/');
   }, [clearSelection, clearTeamSelection, router]);
 
   const openNewGameSheet = useCallback(() => {

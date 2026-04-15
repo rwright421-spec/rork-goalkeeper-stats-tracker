@@ -199,7 +199,7 @@ export default function GameTrackingScreen() {
         finalScore: computedFinalScore,
       };
       updateGame(updated);
-      Alert.alert('Game Updated', 'Stats have been updated.', [{ text: 'OK', onPress: () => { if (Platform.OS === 'web') { router.replace('/(tabs)/dashboard'); } else { router.dismissAll(); router.replace('/(tabs)/dashboard'); } } }]);
+      Alert.alert('Game Updated', 'Stats have been updated.', [{ text: 'OK', onPress: () => { router.replace('/(tabs)/dashboard'); } }]);
     } else {
       if (!isPro && isAtFreeLimit) {
         void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -247,7 +247,7 @@ export default function GameTrackingScreen() {
       const savedMsg = pendingSync
         ? 'Stats saved locally. Will sync with server when online.'
         : 'Stats have been saved to Prior Games.';
-      Alert.alert('Game Saved', savedMsg, [{ text: 'OK', onPress: () => { if (Platform.OS === 'web') { router.replace('/(tabs)/dashboard'); } else { router.dismissAll(); router.replace('/(tabs)/dashboard'); } } }]);
+      Alert.alert('Game Saved', savedMsg, [{ text: 'OK', onPress: () => { router.replace('/(tabs)/dashboard'); } }]);
     }
   }, [isSaving, isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent, isPro, isAtFreeLimit, totalGameCount]);
 
