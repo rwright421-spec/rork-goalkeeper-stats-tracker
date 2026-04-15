@@ -169,46 +169,73 @@ export function validateAndSanitize<T extends SchemaType>(
   schemaType: T,
   data: unknown,
 ): { success: true; data: SchemaOutput<T> } | { success: false; error: string } {
-  const schema = schemaMap[schemaType];
-  const result = schema.safeParse(data);
+  try {
+    const schema = schemaMap[schemaType];
+    if (!schema) {
+      return { success: false, error: `Unknown schema type: ${schemaType}` };
+    }
+    const result = schema.safeParse(data);
 
-  if (result.success) {
-    return { success: true, data: result.data as SchemaOutput<T> };
+    if (result.success) {
+      return { success: true, data: result.data as SchemaOutput<T> };
+    }
+
+    let errorDetails = 'Unknown validation error';
+    try {
+      const issues = result.error?.issues ?? result.error?.errors ?? [];
+      errorDetails = (issues as Array<{ path?: string[]; message?: string }>)
+        .map((i: { path?: string[]; message?: string }) => `${(i.path ?? []).join('.')}: ${i.message ?? 'invalid'}`)
+        .join(', ');
+    } catch {
+      errorDetails = String(result.error);
+    }
+
+    const shape = describeShape(data);
+
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      console.warn(`[Validation DEV] ${schemaType} validation failed:\n  Shape: ${shape}\n  Errors: ${errorDetails}`);
+    }
+
+    console.warn(`[Validation] ${schemaType} failed: ${errorDetails}`);
+
+    return { success: false, error: errorDetails };
+  } catch (e) {
+    console.error(`[Validation] Unexpected error validating ${schemaType}:`, e);
+    return { success: false, error: String(e) };
   }
-
-  const errorDetails = result.error.issues.map(i => `${i.path.join('.')}: ${i.message}`).join(', ');
-  const shape = describeShape(data);
-
-  if (__DEV__) {
-    console.warn(`[Validation DEV] ${schemaType} validation failed:\n  Shape: ${shape}\n  Errors: ${errorDetails}`);
-  }
-
-  console.warn(`[Validation] ${schemaType} failed: ${errorDetails}`);
-
-  return { success: false, error: errorDetails };
 }
 
 export function validateAndSanitizeArray<T extends SchemaType>(
   schemaType: T,
   data: unknown[],
 ): SchemaOutput<T>[] {
-  const validated: SchemaOutput<T>[] = [];
-  let skippedCount = 0;
-  for (const item of data) {
-    const result = validateAndSanitize(schemaType, item);
-    if (result.success) {
-      validated.push(result.data);
-    } else {
-      skippedCount++;
+  try {
+    if (!Array.isArray(data)) {
+      console.warn(`[Validation] Expected array for ${schemaType}, got ${typeof data}`);
+      return [];
     }
-  }
 
-  if (skippedCount > 0) {
-    if (__DEV__) {
-      console.warn(`[Validation DEV] ${skippedCount} ${schemaType} items failed validation and were dropped`);
+    const validated: SchemaOutput<T>[] = [];
+    let skippedCount = 0;
+    for (const item of data) {
+      const result = validateAndSanitize(schemaType, item);
+      if (result.success) {
+        validated.push(result.data);
+      } else {
+        skippedCount++;
+      }
     }
-    console.warn(`[Validation] ${skippedCount} ${schemaType} items failed array validation (${validated.length}/${data.length} valid)`);
-  }
 
-  return validated;
+    if (skippedCount > 0) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn(`[Validation DEV] ${skippedCount} ${schemaType} items failed validation and were dropped`);
+      }
+      console.warn(`[Validation] ${skippedCount} ${schemaType} items failed array validation (${validated.length}/${data.length} valid)`);
+    }
+
+    return validated;
+  } catch (e) {
+    console.error(`[Validation] Unexpected error in array validation for ${schemaType}:`, e);
+    return [];
+  }
 }

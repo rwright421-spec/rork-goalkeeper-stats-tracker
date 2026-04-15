@@ -11,10 +11,22 @@ import { TeamProvider } from "@/contexts/TeamContext";
 import { GameProvider } from "@/contexts/GameContext";
 import { OpponentProvider } from "@/contexts/OpponentContext";
 import { PurchasesProvider } from "@/contexts/PurchasesContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
-SplashScreen.preventAutoHideAsync();
+try {
+  SplashScreen.preventAutoHideAsync();
+} catch (e) {
+  console.warn('[Layout] SplashScreen.preventAutoHideAsync failed:', e);
+}
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 5000,
+    },
+  },
+});
 
 function RootLayoutNav() {
   return (
@@ -34,30 +46,36 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   useEffect(() => {
-    SplashScreen.hideAsync();
+    try {
+      SplashScreen.hideAsync();
+    } catch (e) {
+      console.warn('[Layout] SplashScreen.hideAsync failed:', e);
+    }
   }, []);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <AuthProvider>
-          <ThemeProvider>
-            <SyncStatusProvider>
-              <GoalkeeperProvider>
-                <OpponentProvider>
-                  <TeamProvider>
-                    <GameProvider>
-                      <PurchasesProvider>
-                        <RootLayoutNav />
-                      </PurchasesProvider>
-                    </GameProvider>
-                  </TeamProvider>
-                </OpponentProvider>
-              </GoalkeeperProvider>
-            </SyncStatusProvider>
-          </ThemeProvider>
-        </AuthProvider>
-      </GestureHandlerRootView>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <AuthProvider>
+            <ThemeProvider>
+              <SyncStatusProvider>
+                <GoalkeeperProvider>
+                  <OpponentProvider>
+                    <TeamProvider>
+                      <GameProvider>
+                        <PurchasesProvider>
+                          <RootLayoutNav />
+                        </PurchasesProvider>
+                      </GameProvider>
+                    </TeamProvider>
+                  </OpponentProvider>
+                </GoalkeeperProvider>
+              </SyncStatusProvider>
+            </ThemeProvider>
+          </AuthProvider>
+        </GestureHandlerRootView>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }

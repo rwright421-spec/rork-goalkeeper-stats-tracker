@@ -43,10 +43,16 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
   const [currentOffering, setCurrentOffering] = useState<any>(null);
 
   const checkEntitlementFromInfo = useCallback((info: any) => {
-    const entitlement = info.entitlements.active[ENTITLEMENT_ID];
-    const hasPro = !!entitlement;
-    setIsPro(hasPro);
-    return hasPro;
+    try {
+      const entitlement = info?.entitlements?.active?.[ENTITLEMENT_ID];
+      const hasPro = !!entitlement;
+      setIsPro(hasPro);
+      return hasPro;
+    } catch (e) {
+      console.log('[RevenueCat] Error checking entitlements:', e);
+      setIsPro(false);
+      return false;
+    }
   }, []);
 
   const initAndFetchOfferings = useCallback(async (forceRetry = false) => {
@@ -65,21 +71,30 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
       }
 
       console.log('[RevenueCat] Fetching customer info...');
-      const customerInfo = await Purchases.getCustomerInfo();
-      checkEntitlementFromInfo(customerInfo);
+      try {
+        const customerInfo = await Purchases.getCustomerInfo();
+        checkEntitlementFromInfo(customerInfo);
+      } catch (infoErr) {
+        console.log('[RevenueCat] Error fetching customer info:', infoErr);
+      }
 
       console.log('[RevenueCat] Fetching offerings...');
-      const offerings = await Purchases.getOfferings();
-      console.log('[RevenueCat] Offerings result:', offerings?.current ? 'Found current offering' : 'No current offering', 'Available packages:', offerings?.current?.availablePackages?.length ?? 0);
-      if (offerings.current) {
-        console.log('[RevenueCat] Package IDs:', offerings.current.availablePackages.map((p: any) => p.product.identifier));
-        setCurrentOffering(offerings.current);
-      } else {
-        console.log('[RevenueCat] No current offering found. All offerings:', JSON.stringify(Object.keys(offerings.all ?? {})));
+      try {
+        const offerings = await Purchases.getOfferings();
+        console.log('[RevenueCat] Offerings result:', offerings?.current ? 'Found current offering' : 'No current offering', 'Available packages:', offerings?.current?.availablePackages?.length ?? 0);
+        if (offerings?.current) {
+          console.log('[RevenueCat] Package IDs:', offerings.current.availablePackages?.map((p: any) => p?.product?.identifier));
+          setCurrentOffering(offerings.current);
+        } else {
+          console.log('[RevenueCat] No current offering found. All offerings:', JSON.stringify(Object.keys(offerings?.all ?? {})));
+        }
+        return offerings?.current ?? null;
+      } catch (offerErr) {
+        console.log('[RevenueCat] Error fetching offerings:', offerErr);
+        return null;
       }
-      return offerings.current ?? null;
     } catch (e) {
-      console.log('[RevenueCat] Error fetching offerings:', e);
+      console.log('[RevenueCat] Error in initAndFetchOfferings:', e);
       return null;
     } finally {
       setIsLoading(false);
