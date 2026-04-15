@@ -613,7 +613,7 @@ export default function DashboardScreen() {
                         activeOpacity={0.7}
                       >
                         <View style={styles.teamBadge}>
-                          <Text style={styles.teamBadgeText}>{team.year}</Text>
+                          <Text style={[styles.teamBadgeText, team.year && team.year.length > 4 ? { fontSize: 7, lineHeight: 10 } : team.year && team.year.length > 3 ? { fontSize: 9 } : undefined]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.4}>{team.year}</Text>
                         </View>
                         <View style={styles.teamInfo}>
                           <Text style={styles.teamName}>{team.teamName}</Text>

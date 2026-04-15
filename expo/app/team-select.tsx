@@ -121,7 +121,7 @@ export default function TeamSelectScreen() {
     }
     return (
       <TouchableOpacity style={styles.teamCard} onPress={() => handleSelectTeam(item.id)} activeOpacity={0.7}>
-        <View style={styles.teamBadge}><Text style={styles.teamBadgeText}>{item.year}</Text></View>
+        <View style={styles.teamBadge}><Text style={[styles.teamBadgeText, item.year && item.year.length > 4 ? { fontSize: 7, lineHeight: 10 } : item.year && item.year.length > 3 ? { fontSize: 9 } : undefined]} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.4}>{item.year}</Text></View>
         <View style={styles.teamInfo}><Text style={styles.teamName}>{item.teamName}</Text><Text style={styles.teamMeta}>{item.year}</Text></View>
         <TouchableOpacity style={styles.teamEditBtn} onPress={() => handleEditTeam(item)} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}><Pencil size={14} color={colors.primary} /></TouchableOpacity>
         <TouchableOpacity style={styles.teamDeleteBtn} onPress={() => handleDeleteTeam(item)} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}><Trash2 size={14} color={colors.danger} /></TouchableOpacity>
