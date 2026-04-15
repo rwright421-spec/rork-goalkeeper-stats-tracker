@@ -26,9 +26,17 @@ const PRIVACY_URL = 'https://smiling-gorgonzola-c76.notion.site/Privacy-Policy-a
 export default function PaywallScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { restorePurchases, isRestoring, currentOffering, purchasePackage, isPro } = usePurchases();
+  const { restorePurchases, isRestoring, currentOffering, purchasePackage, isPro, initAndFetchOfferings, isLoading } = usePurchases();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('annual');
   const [isPurchasing, setIsPurchasing] = useState<boolean>(false);
+  const [retrying, setRetrying] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (!currentOffering && !isLoading) {
+      console.log('[Paywall] No offering loaded, retrying fetch...');
+      initAndFetchOfferings(true);
+    }
+  }, [currentOffering, isLoading, initAndFetchOfferings]);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -42,10 +50,26 @@ export default function PaywallScreen() {
     setSelectedPlan(plan);
   }, []);
 
+  const handleRetry = useCallback(async () => {
+    setRetrying(true);
+    try {
+      await initAndFetchOfferings(true);
+    } finally {
+      setRetrying(false);
+    }
+  }, [initAndFetchOfferings]);
+
   const handlePurchase = useCallback(async () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (!currentOffering) {
-      Alert.alert('Unavailable', 'Unable to load subscription options. Please try again later.');
+      Alert.alert(
+        'Loading Plans',
+        'Subscription options are still loading. Would you like to retry?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Retry', onPress: () => initAndFetchOfferings(true) },
+        ]
+      );
       return;
     }
     const targetId = selectedPlan === 'annual' ? ANNUAL_ID : MONTHLY_ID;

@@ -49,7 +49,7 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
     return hasPro;
   }, []);
 
-  const initAndFetchOfferings = useCallback(async () => {
+  const initAndFetchOfferings = useCallback(async (forceRetry = false) => {
     if (Platform.OS === 'web') {
       setIsLoading(false);
       return null;
@@ -60,16 +60,22 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
       await configureRC();
 
       if (!Purchases || !rcConfigured) {
-        console.log('[RevenueCat] Not configured, skipping fetch');
+        console.log('[RevenueCat] Not configured, skipping fetch. Purchases:', !!Purchases, 'rcConfigured:', rcConfigured);
         return null;
       }
 
+      console.log('[RevenueCat] Fetching customer info...');
       const customerInfo = await Purchases.getCustomerInfo();
       checkEntitlementFromInfo(customerInfo);
 
+      console.log('[RevenueCat] Fetching offerings...');
       const offerings = await Purchases.getOfferings();
+      console.log('[RevenueCat] Offerings result:', offerings?.current ? 'Found current offering' : 'No current offering', 'Available packages:', offerings?.current?.availablePackages?.length ?? 0);
       if (offerings.current) {
+        console.log('[RevenueCat] Package IDs:', offerings.current.availablePackages.map((p: any) => p.product.identifier));
         setCurrentOffering(offerings.current);
+      } else {
+        console.log('[RevenueCat] No current offering found. All offerings:', JSON.stringify(Object.keys(offerings.all ?? {})));
       }
       return offerings.current ?? null;
     } catch (e) {
