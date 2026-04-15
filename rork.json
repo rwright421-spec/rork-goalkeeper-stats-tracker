@@ -2,11 +2,6 @@
   "$schema": "https://rork.com/schema/rork.json",
   "apps": [
     {
-      "name": "GK Stats Goalkeeper Tracker",
-      "path": "expo",
-      "framework": "react-native"
-    },
-    {
       "name": "Keeper Stats",
       "path": "expo",
       "framework": "react-native"
