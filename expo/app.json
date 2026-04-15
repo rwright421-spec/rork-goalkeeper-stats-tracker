@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "GK Stats Goalkeeper Tracker",
+    "name": "Keeper Stats",
     "slug": "qghcrb50ht8pldbyfomrt",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "rork-app",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
@@ -15,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "app.rork.goalkeeper-stats-tracker"
+      "bundleIdentifier": "app.rork.qghcrb50ht8pldbyfomrt"
     },
     "android": {
       "adaptiveIcon": {

@@ -1,35 +1,48 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import * as Sentry from '@sentry/react-native';
 import { Alert, Platform } from 'react-native';
 import createContextHook from '@nkzw/create-context-hook';
-import Purchases, { PurchasesOffering, CustomerInfo } from 'react-native-purchases';
 
-const RC_API_KEY = 'appl_tHhrbyQZcKyEfWVYDxxyxYaZGra';
-const ENTITLEMENT_ID = 'pro';
-
+let Purchases: any = null;
 let rcConfigured = false;
 
-function configureRC() {
-  if (rcConfigured) return;
-  try {
-    Purchases.configure({ apiKey: RC_API_KEY });
-    rcConfigured = true;
-  } catch (e) {
-    Sentry.captureException(e);
-  }
+const ENTITLEMENT_ID = 'pro';
+
+function getRCApiKey(): string | null {
+  const iosKey = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY;
+  const androidKey = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY;
+  const testKey = process.env.EXPO_PUBLIC_REVENUECAT_TEST_API_KEY;
+
+  if (Platform.OS === 'ios' && iosKey) return iosKey;
+  if (Platform.OS === 'android' && androidKey) return androidKey;
+  if (testKey) return testKey;
+  return null;
 }
 
-if (Platform.OS !== 'web') {
-  configureRC();
+async function configureRC() {
+  if (rcConfigured || Platform.OS === 'web') return;
+  const apiKey = getRCApiKey();
+  if (!apiKey) {
+    console.log('[RevenueCat] No API key configured, skipping initialization');
+    return;
+  }
+  try {
+    const mod = await import('react-native-purchases');
+    Purchases = mod.default;
+    Purchases.configure({ apiKey });
+    rcConfigured = true;
+    console.log('[RevenueCat] Configured successfully');
+  } catch (e) {
+    console.log('[RevenueCat] Configuration failed:', e);
+  }
 }
 
 export const [PurchasesProvider, usePurchases] = createContextHook(() => {
   const [isPro, setIsPro] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRestoring, setIsRestoring] = useState<boolean>(false);
-  const [currentOffering, setCurrentOffering] = useState<PurchasesOffering | null>(null);
+  const [currentOffering, setCurrentOffering] = useState<any>(null);
 
-  const checkEntitlementFromInfo = useCallback((info: CustomerInfo) => {
+  const checkEntitlementFromInfo = useCallback((info: any) => {
     const entitlement = info.entitlements.active[ENTITLEMENT_ID];
     const hasPro = !!entitlement;
     setIsPro(hasPro);
@@ -44,7 +57,12 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
 
     try {
       setIsLoading(true);
-      configureRC();
+      await configureRC();
+
+      if (!Purchases || !rcConfigured) {
+        console.log('[RevenueCat] Not configured, skipping fetch');
+        return null;
+      }
 
       const customerInfo = await Purchases.getCustomerInfo();
       checkEntitlementFromInfo(customerInfo);
@@ -55,7 +73,7 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
       }
       return offerings.current ?? null;
     } catch (e) {
-      Sentry.captureException(e);
+      console.log('[RevenueCat] Error fetching offerings:', e);
       return null;
     } finally {
       setIsLoading(false);
@@ -63,6 +81,10 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
   }, [checkEntitlementFromInfo]);
 
   const purchasePackage = useCallback(async (pkg: any) => {
+    if (!Purchases || !rcConfigured) {
+      Alert.alert('Not Available', 'Purchases are not configured.');
+      return false;
+    }
     try {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
       const hasPro = checkEntitlementFromInfo(customerInfo);
@@ -72,9 +94,9 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
       return hasPro;
     } catch (e: any) {
       if (e.userCancelled) {
-        // User cancelled — no action needed
+        // User cancelled
       } else {
-        Sentry.captureException(e);
+        console.log('[RevenueCat] Purchase error:', e);
         Alert.alert('Purchase Error', 'Something went wrong. Please try again.');
       }
       return false;
@@ -82,8 +104,8 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
   }, [checkEntitlementFromInfo]);
 
   const restorePurchases = useCallback(async () => {
-    if (Platform.OS === 'web') {
-      Alert.alert('Not Available', 'Restore is not available on web.');
+    if (Platform.OS === 'web' || !Purchases || !rcConfigured) {
+      Alert.alert('Not Available', 'Restore is not available.');
       return;
     }
     setIsRestoring(true);
@@ -96,7 +118,7 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
         Alert.alert('No Purchases Found', 'We could not find any previous purchases to restore.');
       }
     } catch (e) {
-      Sentry.captureException(e);
+      console.log('[RevenueCat] Restore error:', e);
       Alert.alert('Restore Error', 'Something went wrong while restoring. Please try again.');
     } finally {
       setIsRestoring(false);
