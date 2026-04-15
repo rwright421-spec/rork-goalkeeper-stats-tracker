@@ -135,6 +135,7 @@ export const SavedGameSchema = z.object({
   awayKeeper: KeeperDataSchema.optional(),
   finalScore: FinalScoreSchema.optional(),
   createdAt: z.string().default(() => new Date().toISOString()),
+  pendingSync: z.boolean().optional(),
 });
 
 type SchemaType = 'GoalkeeperProfile' | 'Team' | 'SavedGame';
