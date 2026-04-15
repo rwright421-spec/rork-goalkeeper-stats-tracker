@@ -6,7 +6,7 @@ import { ArrowRight, Home, Plane, Users, ChevronDown, Plus, Check, X } from 'luc
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
-import { KeeperSelection, AgeGroup } from '@/types/game';
+import { KeeperSelection, AgeGroup, AGE_GROUP_OPTIONS } from '@/types/game';
 import { useTeams } from '@/contexts/TeamContext';
 import { useOpponents } from '@/contexts/OpponentContext';
 import { useGames } from '@/contexts/GameContext';
@@ -25,7 +25,7 @@ const SELECTION_OPTIONS: SelectionOption[] = [
   { key: 'both', label: 'Both', description: 'Track home & away keepers' },
 ];
 
-const AGE_GROUPS: AgeGroup[] = ['U8', 'U9', 'U10', 'U11', 'U12', 'U13', 'U14', 'U15', 'U16', 'U17', 'U18', 'U19'];
+const AGE_GROUPS: AgeGroup[] = AGE_GROUP_OPTIONS as AgeGroup[];
 
 const HALF_LENGTH_OPTIONS = [20, 25, 30, 35, 40, 45];
 

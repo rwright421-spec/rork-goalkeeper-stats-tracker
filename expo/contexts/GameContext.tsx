@@ -105,7 +105,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
   const gamesQuery = useQuery({
     queryKey: ['games', storageKey],
     queryFn: () => loadGamesFromStorage(storageKey),
-    staleTime: 0,
+    staleTime: 30000,
   });
 
   const allGames = useMemo(() => gamesQuery.data ?? [], [gamesQuery.data]);
@@ -340,33 +340,52 @@ export const [GameProvider, useGames] = createContextHook(() => {
 
   const { profiles } = useGoalkeepers();
   const [globalGameCount, setGlobalGameCount] = useState<number>(0);
+  const countDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const allGamesLengthRef = useRef(allGames.length);
 
   useEffect(() => {
-    let cancelled = false;
-    async function countAllGames() {
-      try {
-        let total = 0;
-        const guestGames = await secureStorage.getItem<SavedGame[]>('gk_tracker_games_guest');
-        if (guestGames) {
-          total += guestGames.length;
-        }
-        for (const profile of profiles) {
-          const key = `gk_tracker_games_${profile.id}`;
-          const profileGames = await secureStorage.getItem<SavedGame[]>(key);
-          if (profileGames) {
-            total += profileGames.length;
-          }
-        }
-        if (!cancelled) {
-          setGlobalGameCount(total);
-        }
-      } catch (e) {
-        Sentry.captureException(e);
-      }
+    if (allGamesLengthRef.current === allGames.length && globalGameCount > 0) {
+      return;
     }
-    void countAllGames();
-    return () => { cancelled = true; };
-  }, [profiles, allGames]);
+    allGamesLengthRef.current = allGames.length;
+
+    if (countDebounceRef.current) {
+      clearTimeout(countDebounceRef.current);
+    }
+
+    let cancelled = false;
+    countDebounceRef.current = setTimeout(() => {
+      async function countAllGames() {
+        try {
+          let total = 0;
+          const guestGames = await secureStorage.getItem<SavedGame[]>('gk_tracker_games_guest');
+          if (guestGames) {
+            total += guestGames.length;
+          }
+          for (const profile of profiles) {
+            const key = `gk_tracker_games_${profile.id}`;
+            const profileGames = await secureStorage.getItem<SavedGame[]>(key);
+            if (profileGames) {
+              total += profileGames.length;
+            }
+          }
+          if (!cancelled) {
+            setGlobalGameCount(total);
+          }
+        } catch (e) {
+          Sentry.captureException(e);
+        }
+      }
+      void countAllGames();
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      if (countDebounceRef.current) {
+        clearTimeout(countDebounceRef.current);
+      }
+    };
+  }, [profiles, allGames.length, globalGameCount]);
 
   const totalGameCount = globalGameCount;
   const isAtFreeLimit = totalGameCount >= FREE_GAME_LIMIT;
