@@ -106,7 +106,7 @@ export default function GameTrackingScreen() {
     return '';
   });
   const isQuickStart = params.quickStart === '1' && !isEditMode;
-  const [gameDetailsCollapsed, setGameDetailsCollapsed] = useState<boolean>(!isQuickStart);
+  const [gameDetailsCollapsed, setGameDetailsCollapsed] = useState<boolean>(true);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
