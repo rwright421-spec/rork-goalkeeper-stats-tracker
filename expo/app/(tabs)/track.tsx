@@ -1,8 +1,8 @@
 // Track - Game list and management screen
 import React, { useCallback, useMemo, useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Platform, Modal, Pressable, TextInput, Animated, Keyboard, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, Platform, Modal, Pressable, TextInput, Animated, Keyboard, KeyboardAvoidingView, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus, Shield, Filter, ChevronDown, Users, Check, ArrowLeftRight, Zap, ClipboardList } from 'lucide-react-native';
+import { Plus, Shield, Filter, ChevronDown, Users, Check, ArrowLeftRight, Zap, ClipboardList, Home, Plane } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
@@ -14,7 +14,7 @@ import { usePurchases } from '@/contexts/PurchasesContext';
 import GameCard from '@/components/GameCard';
 import MoveGameModal from '@/components/MoveGameModal';
 import { useOpponents } from '@/contexts/OpponentContext';
-import { SavedGame } from '@/types/game';
+import { SavedGame, deriveKeeperSelection } from '@/types/game';
 import SyncStatusBanner from '@/components/SyncStatusBanner';
 import { GameListSkeleton } from '@/components/LoadingSkeleton';
 import { fontSize } from '@/constants/typography';
@@ -35,6 +35,8 @@ export default function TrackScreen() {
   const [quickOpponent, setQuickOpponent] = useState('');
   const [quickOpponentSuggestions, setQuickOpponentSuggestions] = useState<string[]>([]);
   const [showQuickSuggestions, setShowQuickSuggestions] = useState(false);
+  const [quickIsHome, setQuickIsHome] = useState<boolean>(true);
+  const [quickTrackBoth, setQuickTrackBoth] = useState<boolean>(false);
   const sheetAnim = useRef(new Animated.Value(0)).current;
   const quickStartAnim = useRef(new Animated.Value(0)).current;
 
@@ -72,6 +74,8 @@ export default function TrackScreen() {
       setQuickOpponent('');
       setQuickOpponentSuggestions([]);
       setShowQuickSuggestions(false);
+      setQuickIsHome(true);
+      setQuickTrackBoth(false);
     });
   }, [sheetAnim]);
 
@@ -106,6 +110,8 @@ export default function TrackScreen() {
     addOpponent(opponent);
     const now = new Date();
     const todayDate = `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
+    const keeperSelection = deriveKeeperSelection(quickIsHome, quickTrackBoth);
+    const isHomeParam = quickIsHome ? '1' : '0';
     closeNewGameSheet();
     setTimeout(() => {
       router.push({
@@ -114,13 +120,14 @@ export default function TrackScreen() {
           eventName: '',
           date: todayDate,
           gameName: opponent,
-          keeperSelection: 'home',
+          keeperSelection,
           ageGroup: '',
           quickStart: '1',
+          isHome: isHomeParam,
         },
       });
     }, 250);
-  }, [quickOpponent, addOpponent, closeNewGameSheet, router]);
+  }, [quickOpponent, addOpponent, closeNewGameSheet, router, quickIsHome, quickTrackBoth]);
 
   const handleViewGame = useCallback((gameId: string) => {
     router.push(`/game-detail?id=${gameId}`);
@@ -426,6 +433,48 @@ export default function TrackScreen() {
                     <Text style={styles.sheetTitle}>Quick Start</Text>
                   </View>
                   <Text style={styles.quickStartHint}>Enter the opponent and go. Fill in the rest later.</Text>
+                  <View style={styles.quickToggleRow}>
+                    <TouchableOpacity
+                      testID="quick-home-option"
+                      style={[styles.quickToggleOption, quickIsHome && styles.quickToggleOptionActiveHome]}
+                      onPress={() => {
+                        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setQuickIsHome(true);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Home size={14} color={quickIsHome ? colors.cardHome : colors.textMuted} />
+                      <Text style={[styles.quickToggleText, quickIsHome && { color: colors.cardHome }]}>Home</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      testID="quick-away-option"
+                      style={[styles.quickToggleOption, !quickIsHome && styles.quickToggleOptionActiveAway]}
+                      onPress={() => {
+                        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        setQuickIsHome(false);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Plane size={14} color={!quickIsHome ? colors.cardAway : colors.textMuted} />
+                      <Text style={[styles.quickToggleText, !quickIsHome && { color: colors.cardAway }]}>Away</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.quickSwitchBlock}>
+                    <View style={styles.quickSwitchRow}>
+                      <Text style={styles.quickSwitchLabel}>Track both keepers</Text>
+                      <Switch
+                        testID="quick-track-both"
+                        value={quickTrackBoth}
+                        onValueChange={(v) => {
+                          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setQuickTrackBoth(v);
+                        }}
+                        trackColor={{ false: colors.border, true: colors.primary }}
+                        thumbColor={Platform.OS === 'android' ? (quickTrackBoth ? colors.primaryLight : colors.surfaceLight) : undefined}
+                      />
+                    </View>
+                    <Text style={styles.quickSwitchHint}>Turn on to record stats for the opponent&apos;s goalkeeper too.</Text>
+                  </View>
                   <View style={styles.quickStartInputWrap}>
                     <TextInput
                       testID="quick-opponent-input"
@@ -837,6 +886,61 @@ function createStyles(c: ThemeColors) {
       color: c.white,
       fontSize: fontSize.h4,
       fontWeight: '700' as const,
+    },
+    quickToggleRow: {
+      flexDirection: 'row' as const,
+      gap: 10,
+      marginBottom: 12,
+    },
+    quickToggleOption: {
+      flex: 1,
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      gap: 6,
+      paddingVertical: 10,
+      borderRadius: 10,
+      backgroundColor: c.background,
+      borderWidth: 1.5,
+      borderColor: c.border,
+    },
+    quickToggleOptionActiveHome: {
+      borderColor: c.cardHome,
+      backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    },
+    quickToggleOptionActiveAway: {
+      borderColor: c.cardAway,
+      backgroundColor: 'rgba(59, 130, 246, 0.12)',
+    },
+    quickToggleText: {
+      fontSize: fontSize.body,
+      fontWeight: '700' as const,
+      color: c.textMuted,
+    },
+    quickSwitchBlock: {
+      backgroundColor: c.background,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: 12,
+      marginBottom: 14,
+    },
+    quickSwitchRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+    },
+    quickSwitchLabel: {
+      fontSize: fontSize.body,
+      fontWeight: '700' as const,
+      color: c.text,
+    },
+    quickSwitchHint: {
+      fontSize: fontSize.caption,
+      color: c.textMuted,
+      fontWeight: '500' as const,
+      marginTop: 4,
+      lineHeight: 15,
     },
   });
 }

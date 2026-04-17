@@ -104,6 +104,23 @@ export interface GameSetup {
   gameName: string;
   keeperSelection: KeeperSelection;
   ageGroup?: AgeGroup;
+  isHome?: boolean;
+}
+
+export function deriveKeeperSelection(isHome: boolean, trackBoth: boolean): KeeperSelection {
+  if (trackBoth) return 'both';
+  return isHome ? 'home' : 'away';
+}
+
+export function normalizeGameSetup(setup: Partial<GameSetup> | undefined): GameSetup {
+  return {
+    eventName: setup?.eventName ?? '',
+    date: setup?.date ?? '',
+    gameName: setup?.gameName ?? '',
+    keeperSelection: (setup?.keeperSelection ?? 'home') as KeeperSelection,
+    ageGroup: setup?.ageGroup,
+    isHome: setup?.isHome ?? true,
+  };
 }
 
 export interface SavedGame {

@@ -2,28 +2,17 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform, Keyboard } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
-import { ArrowRight, Home, Plane, Users, ChevronDown, Plus, Check, X } from 'lucide-react-native';
+import { ArrowRight, Home, Plane, Users, ChevronDown, Plus, Check, X, ChevronRight } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
-import { KeeperSelection, AgeGroup, AGE_GROUP_OPTIONS } from '@/types/game';
+import { KeeperSelection, AgeGroup, AGE_GROUP_OPTIONS, deriveKeeperSelection } from '@/types/game';
+import GameTypeModal from '@/components/GameTypeModal';
 import { useTeams } from '@/contexts/TeamContext';
 import { useOpponents } from '@/contexts/OpponentContext';
 import { useGames } from '@/contexts/GameContext';
 import { usePurchases } from '@/contexts/PurchasesContext';
 import { fontSize } from '@/constants/typography';
-
-type SelectionOption = {
-  key: KeeperSelection;
-  label: string;
-  description: string;
-};
-
-const SELECTION_OPTIONS: SelectionOption[] = [
-  { key: 'home', label: 'Home Only', description: 'Track home goalkeeper' },
-  { key: 'away', label: 'Away Only', description: 'Track away goalkeeper' },
-  { key: 'both', label: 'Both', description: 'Track home & away keepers' },
-];
 
 const AGE_GROUPS: AgeGroup[] = AGE_GROUP_OPTIONS as AgeGroup[];
 
@@ -40,7 +29,10 @@ export default function NewGameScreen() {
     return `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
   });
   const [opponent, setOpponent] = useState('');
-  const [keeperSelection, setKeeperSelection] = useState<KeeperSelection>('home');
+  const [isHome, setIsHome] = useState<boolean>(true);
+  const [trackBoth, setTrackBoth] = useState<boolean>(false);
+  const [gameTypeModalVisible, setGameTypeModalVisible] = useState<boolean>(false);
+  const keeperSelection: KeeperSelection = deriveKeeperSelection(isHome, trackBoth);
   const { teams, activeTeamId, selectTeam, clearTeamSelection, createTeam } = useTeams();
   const { addOpponent, getSuggestions } = useOpponents();
   const { isAtFreeLimit } = useGames();
@@ -59,15 +51,15 @@ export default function NewGameScreen() {
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const getIcon = useCallback((key: KeeperSelection) => {
-    if (key === 'home') return <Home size={20} color={colors.cardHome} />;
-    if (key === 'away') return <Plane size={20} color={colors.cardAway} />;
-    return <Users size={20} color={colors.accent} />;
-  }, [colors]);
+  const gameTypeSummary = useMemo(() => {
+    const side = isHome ? 'Home' : 'Away';
+    const tracking = trackBoth ? 'Track both keepers' : 'Track my keeper only';
+    return `${side} · ${tracking}`;
+  }, [isHome, trackBoth]);
 
-  const handleSelect = useCallback((selection: KeeperSelection) => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setKeeperSelection(selection);
+  const handleConfirmGameType = useCallback((nextIsHome: boolean, nextTrackBoth: boolean) => {
+    setIsHome(nextIsHome);
+    setTrackBoth(nextTrackBoth);
   }, []);
 
   const handleOpponentChange = useCallback((text: string) => {
@@ -106,9 +98,10 @@ export default function NewGameScreen() {
         gameName: opponent.trim(),
         keeperSelection,
         ageGroup,
+        isHome: isHome ? '1' : '0',
       },
     });
-  }, [canProceed, router, eventName, date, opponent, keeperSelection, ageGroup, addOpponent, isPro, isAtFreeLimit]);
+  }, [canProceed, router, eventName, date, opponent, keeperSelection, ageGroup, addOpponent, isPro, isAtFreeLimit, isHome]);
 
   return (
     <View style={styles.container}>
@@ -373,33 +366,33 @@ export default function NewGameScreen() {
           )}
         </View>
 
-        <Text style={[styles.sectionLabel, { marginTop: 28 }]}>Keeper Tracking</Text>
+        <Text style={[styles.sectionLabel, { marginTop: 28 }]}>Game Type</Text>
 
-        <View style={styles.selectionContainer}>
-          {SELECTION_OPTIONS.map((opt) => {
-            const selected = keeperSelection === opt.key;
-            return (
-              <TouchableOpacity
-                key={opt.key}
-                testID={`select-${opt.key}`}
-                style={[styles.selectionCard, selected && styles.selectionCardActive]}
-                onPress={() => handleSelect(opt.key)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.selectionIcon, selected && styles.selectionIconActive]}>
-                  {getIcon(opt.key)}
-                </View>
-                <Text style={[styles.selectionLabel, selected && styles.selectionLabelActive]}>
-                  {opt.label}
-                </Text>
-                <Text style={styles.selectionDesc}>{opt.description}</Text>
-                <View style={[styles.radio, selected && styles.radioActive]}>
-                  {selected && <View style={styles.radioInner} />}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        <TouchableOpacity
+          testID="open-game-type-modal"
+          style={styles.gameTypeRow}
+          onPress={() => {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            setGameTypeModalVisible(true);
+          }}
+          activeOpacity={0.7}
+        >
+          <View style={styles.gameTypeIcon}>
+            {trackBoth ? (
+              <Users size={20} color={colors.accent} />
+            ) : isHome ? (
+              <Home size={20} color={colors.cardHome} />
+            ) : (
+              <Plane size={20} color={colors.cardAway} />
+            )}
+          </View>
+          <View style={styles.gameTypeTextWrap}>
+            <Text style={styles.gameTypeLabel}>Game Type</Text>
+            <Text style={styles.gameTypeValue}>{gameTypeSummary}</Text>
+          </View>
+          <ChevronRight size={18} color={colors.textMuted} />
+        </TouchableOpacity>
+        <View style={{ height: 24 }} />
 
         <TouchableOpacity
           testID="continue-button"
@@ -412,6 +405,14 @@ export default function NewGameScreen() {
           <ArrowRight size={18} color={colors.white} />
         </TouchableOpacity>
       </ScrollView>
+
+      <GameTypeModal
+        visible={gameTypeModalVisible}
+        onClose={() => setGameTypeModalVisible(false)}
+        initialIsHome={isHome}
+        initialTrackBoth={trackBoth}
+        onConfirm={handleConfirmGameType}
+      />
     </View>
   );
 }
@@ -433,6 +434,11 @@ function createStyles(c: ThemeColors) {
     dropdownOptionActive: { backgroundColor: c.primaryGlow },
     dropdownOptionText: { fontSize: fontSize.bodyLg, color: c.text, fontWeight: '500' as const },
     dropdownOptionTextActive: { color: c.primary, fontWeight: '700' as const },
+    gameTypeRow: { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: c.surface, borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14, borderWidth: 1, borderColor: c.border },
+    gameTypeIcon: { width: 42, height: 42, borderRadius: 12, backgroundColor: c.surfaceLight, alignItems: 'center', justifyContent: 'center' },
+    gameTypeTextWrap: { flex: 1 },
+    gameTypeLabel: { fontSize: fontSize.caption, color: c.textMuted, fontWeight: '600' as const, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 2 },
+    gameTypeValue: { fontSize: fontSize.bodyLg, color: c.text, fontWeight: '700' as const },
     selectionContainer: { gap: 10, marginBottom: 32 },
     selectionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.surface, borderRadius: 14, padding: 16, borderWidth: 1.5, borderColor: c.border },
     selectionCardActive: { borderColor: c.primary, backgroundColor: c.primaryGlow },

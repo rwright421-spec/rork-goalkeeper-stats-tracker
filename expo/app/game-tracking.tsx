@@ -27,6 +27,7 @@ export default function GameTrackingScreen() {
     gameId?: string;
     ageGroup?: string;
     quickStart?: string;
+    isHome?: string;
   }>();
 
   const { addGame, updateGame, getGame, isAtFreeLimit, totalGameCount, gameLimitExceeded, clearGameLimitExceeded } = useGames();
@@ -52,6 +53,13 @@ export default function GameTrackingScreen() {
   }, [createProfile]);
   const initialKeeperSelection = (params.keeperSelection || existingGame?.setup.keeperSelection || 'home') as KeeperSelection;
   const [keeperSelection, setKeeperSelection] = useState<KeeperSelection>(initialKeeperSelection);
+  const initialIsHome = (() => {
+    if (params.isHome === '1') return true;
+    if (params.isHome === '0') return false;
+    if (existingGame?.setup.isHome !== undefined) return existingGame.setup.isHome;
+    return true;
+  })();
+  const [isHomeGame, setIsHomeGame] = useState<boolean>(initialIsHome);
 
   const profileName = activeProfile?.name ?? '';
   const teamYear = activeTeam?.year ?? '';
@@ -192,7 +200,7 @@ export default function GameTrackingScreen() {
       if (opponentName) addOpponent(opponentName);
       const updated: SavedGame = {
         ...existingGame,
-        setup: { eventName: editEventName.trim() || existingGame.setup.eventName, date: editDate.trim() || existingGame.setup.date, gameName: opponentName, keeperSelection, ageGroup: (editAgeGroup || existingGame.setup.ageGroup || '') as any },
+        setup: { eventName: editEventName.trim() || existingGame.setup.eventName, date: editDate.trim() || existingGame.setup.date, gameName: opponentName, keeperSelection, ageGroup: (editAgeGroup || existingGame.setup.ageGroup || '') as any, isHome: isHomeGame },
         homeKeeper: hasHome ? homeKeeper : undefined,
         awayKeeper: hasAway ? awayKeeper : undefined,
         finalScore: computedFinalScore,
@@ -233,7 +241,7 @@ export default function GameTrackingScreen() {
       const game: SavedGame = {
         id: gameId,
         teamId: activeTeamId ?? undefined,
-        setup: { eventName: finalEventName, date: finalDate, gameName: finalGameName, keeperSelection, ageGroup: finalAgeGroup as any },
+        setup: { eventName: finalEventName, date: finalDate, gameName: finalGameName, keeperSelection, ageGroup: finalAgeGroup as any, isHome: isHomeGame },
         homeKeeper: hasHome ? homeKeeper : undefined,
         awayKeeper: hasAway ? awayKeeper : undefined,
         finalScore: computedFinalScore,
@@ -248,7 +256,7 @@ export default function GameTrackingScreen() {
         : 'Stats have been saved to Prior Games.';
       Alert.alert('Game Saved', savedMsg, [{ text: 'OK', onPress: () => { router.replace('/(tabs)/dashboard'); } }]);
     }
-  }, [isSaving, isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent, isPro, isAtFreeLimit, totalGameCount]);
+  }, [isSaving, isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent, isPro, isAtFreeLimit, totalGameCount, isHomeGame]);
 
   const headerSubtitle = useMemo(() => {
     if (isEditMode) return `${editEventName} · ${editDate}`;
