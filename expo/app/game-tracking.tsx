@@ -6,7 +6,7 @@ import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
-import { KeeperSelection, KeeperData, FinalScore, createEmptyKeeperData, SavedGame, GoalkeeperProfile, getTotalGoalsAgainst, normalizeKeeper, deriveKeeperSelection } from '@/types/game';
+import { KeeperSelection, KeeperData, FinalScore, createEmptyKeeperData, SavedGame, GoalkeeperProfile, getTotalGoalsAgainst, normalizeKeeper, deriveKeeperSelection, resolveHalfLength, getHalfLengthForAgeGroup } from '@/types/game';
 import { useGames, FREE_GAME_LIMIT } from '@/contexts/GameContext';
 import { usePurchases } from '@/contexts/PurchasesContext';
 import { generateServerGameId, createLocalGameId } from '@/lib/sync';
@@ -29,6 +29,7 @@ export default function GameTrackingScreen() {
     ageGroup?: string;
     quickStart?: string;
     isHome?: string;
+    halfLengthMinutes?: string;
   }>();
 
   const { addGame, updateGame, getGame, isAtFreeLimit, totalGameCount, gameLimitExceeded, clearGameLimitExceeded } = useGames();
@@ -61,6 +62,14 @@ export default function GameTrackingScreen() {
     return true;
   })();
   const [isHomeGame, setIsHomeGame] = useState<boolean>(initialIsHome);
+  const initialHalfLengthMinutes = (() => {
+    const fromParam = params.halfLengthMinutes ? parseInt(params.halfLengthMinutes, 10) : NaN;
+    if (!isNaN(fromParam) && fromParam > 0) return fromParam;
+    if (existingGame?.setup.halfLengthMinutes) return existingGame.setup.halfLengthMinutes;
+    return undefined as number | undefined;
+  })();
+  const [editHalfLengthMinutes, setEditHalfLengthMinutes] = useState<number | undefined>(initialHalfLengthMinutes);
+  const [halfLengthPickerOpen, setHalfLengthPickerOpen] = useState<boolean>(false);
 
   const profileName = activeProfile?.name ?? '';
   const teamYear = activeTeam?.year ?? '';
@@ -69,6 +78,8 @@ export default function GameTrackingScreen() {
   const hasHome = keeperSelection === 'home' || keeperSelection === 'both';
   const hasAway = keeperSelection === 'away' || keeperSelection === 'both';
   const isBoth = keeperSelection === 'both';
+
+  const resolvedHalfLength = resolveHalfLength({ halfLengthMinutes: editHalfLengthMinutes, ageGroup: (params.ageGroup || existingGame?.setup.ageGroup || '') as any });
 
   const [editEventName, setEditEventName] = useState(() => params.eventName || existingGame?.setup.eventName || '');
   const [editAgeGroup, setEditAgeGroup] = useState(() => params.ageGroup || existingGame?.setup.ageGroup || '');
@@ -201,7 +212,7 @@ export default function GameTrackingScreen() {
       if (opponentName) addOpponent(opponentName);
       const updated: SavedGame = {
         ...existingGame,
-        setup: { eventName: editEventName.trim() || existingGame.setup.eventName, date: editDate.trim() || existingGame.setup.date, gameName: opponentName, keeperSelection, ageGroup: (editAgeGroup || existingGame.setup.ageGroup || '') as any, isHome: isHomeGame },
+        setup: { eventName: editEventName.trim() || existingGame.setup.eventName, date: editDate.trim() || existingGame.setup.date, gameName: opponentName, keeperSelection, ageGroup: (editAgeGroup || existingGame.setup.ageGroup || '') as any, isHome: isHomeGame, halfLengthMinutes: editHalfLengthMinutes },
         homeKeeper: hasHome ? homeKeeper : undefined,
         awayKeeper: hasAway ? awayKeeper : undefined,
         finalScore: computedFinalScore,
@@ -242,7 +253,7 @@ export default function GameTrackingScreen() {
       const game: SavedGame = {
         id: gameId,
         teamId: activeTeamId ?? undefined,
-        setup: { eventName: finalEventName, date: finalDate, gameName: finalGameName, keeperSelection, ageGroup: finalAgeGroup as any, isHome: isHomeGame },
+        setup: { eventName: finalEventName, date: finalDate, gameName: finalGameName, keeperSelection, ageGroup: finalAgeGroup as any, isHome: isHomeGame, halfLengthMinutes: editHalfLengthMinutes },
         homeKeeper: hasHome ? homeKeeper : undefined,
         awayKeeper: hasAway ? awayKeeper : undefined,
         finalScore: computedFinalScore,
@@ -257,7 +268,7 @@ export default function GameTrackingScreen() {
         : 'Stats have been saved to Prior Games.';
       Alert.alert('Game Saved', savedMsg, [{ text: 'OK', onPress: () => { router.replace('/(tabs)/dashboard'); } }]);
     }
-  }, [isSaving, isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent, isPro, isAtFreeLimit, totalGameCount, isHomeGame]);
+  }, [isSaving, isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent, isPro, isAtFreeLimit, totalGameCount, isHomeGame, editHalfLengthMinutes]);
 
   const headerSubtitle = useMemo(() => {
     if (isEditMode) return `${editEventName} · ${editDate}`;
@@ -313,6 +324,33 @@ export default function GameTrackingScreen() {
                     {editOpponentSuggestions.map((s) => (
                       <TouchableOpacity key={s} style={styles.suggestionItem} onPress={() => handleSelectEditOpponentSuggestion(s)} activeOpacity={0.7}>
                         <Text style={styles.suggestionText}>{s}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+              <View style={styles.editInputGroup}>
+                <Text style={styles.editInputLabel}>Half Length</Text>
+                <TouchableOpacity
+                  testID="edit-half-length"
+                  style={styles.editInput}
+                  onPress={() => setHalfLengthPickerOpen(!halfLengthPickerOpen)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ fontSize: fontSize.bodyLg, color: colors.text }}>
+                    {resolvedHalfLength} min{!editHalfLengthMinutes && editAgeGroup ? ` (${editAgeGroup} default)` : ''}
+                  </Text>
+                </TouchableOpacity>
+                {halfLengthPickerOpen && (
+                  <View style={styles.halfLengthDropdown}>
+                    {[20, 25, 30, 35, 40, 45].map((hl) => (
+                      <TouchableOpacity
+                        key={hl}
+                        style={[styles.halfLengthOption, editHalfLengthMinutes === hl && styles.halfLengthOptionActive]}
+                        onPress={() => { setEditHalfLengthMinutes(hl); setHalfLengthPickerOpen(false); }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.halfLengthOptionText, editHalfLengthMinutes === hl && styles.halfLengthOptionTextActive]}>{hl} min</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -402,8 +440,8 @@ export default function GameTrackingScreen() {
       <KeyboardDoneBar />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" showsVerticalScrollIndicator={false}>
-        {(hasHome && activeTab === 'home') || (hasHome && !showTabs) ? <KeeperStatsSection label="HOME" keeper={homeKeeper} onUpdate={setHomeKeeper} accentColor={colors.cardHome} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} /> : null}
-        {(hasAway && activeTab === 'away') || (hasAway && !showTabs) ? <KeeperStatsSection label="AWAY" keeper={awayKeeper} onUpdate={setAwayKeeper} accentColor={colors.cardAway} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} /> : null}
+        {(hasHome && activeTab === 'home') || (hasHome && !showTabs) ? <KeeperStatsSection label="HOME" keeper={homeKeeper} onUpdate={setHomeKeeper} accentColor={colors.cardHome} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} halfLengthMinutes={resolvedHalfLength} inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} /> : null}
+        {(hasAway && activeTab === 'away') || (hasAway && !showTabs) ? <KeeperStatsSection label="AWAY" keeper={awayKeeper} onUpdate={setAwayKeeper} accentColor={colors.cardAway} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} halfLengthMinutes={resolvedHalfLength} inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} /> : null}
 
         {showTabs ? (
           <TouchableOpacity style={styles.switchButton} onPress={() => { void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveTab(activeTab === 'home' ? 'away' : 'home'); }} activeOpacity={0.7}>
@@ -497,6 +535,11 @@ function createStyles(c: ThemeColors) {
     trackBothTextWrap: { flex: 1 },
     trackBothHelper: { fontSize: fontSize.caption, color: c.textMuted, marginTop: 2 },
     suggestionsDropdown: { backgroundColor: c.surface, borderRadius: 10, borderWidth: 1, borderColor: c.border, marginTop: 4, overflow: 'hidden' as const, maxHeight: 160 },
+    halfLengthDropdown: { backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border, marginTop: 4, overflow: 'hidden' as const },
+    halfLengthOption: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
+    halfLengthOptionActive: { backgroundColor: c.primaryGlow },
+    halfLengthOptionText: { fontSize: fontSize.body, color: c.text, fontWeight: '500' as const },
+    halfLengthOptionTextActive: { color: c.primary, fontWeight: '700' as const },
     suggestionItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
     suggestionText: { fontSize: fontSize.body, color: c.text, fontWeight: '500' as const },
   });

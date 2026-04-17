@@ -1,4 +1,4 @@
-import { SavedGame, KeeperData, DistributionStats, PenaltyStats, HalfStats, ShootoutStats, calculateSavePercentage, normalizeKeeper, getHalfLengthForAgeGroup, defaultHalfStats, DEFAULT_HALF_LENGTH } from '@/types/game';
+import { SavedGame, KeeperData, DistributionStats, PenaltyStats, HalfStats, ShootoutStats, calculateSavePercentage, normalizeKeeper, resolveHalfLength, defaultHalfStats, DEFAULT_HALF_LENGTH } from '@/types/game';
 import { Team } from '@/types/game';
 
 export interface AggregatedStats {
@@ -92,8 +92,7 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
       keeper.secondHalfName || keeper.name || '',
     );
 
-    const team = game.teamId && teams ? teams.find(t => t.id === game.teamId) : undefined;
-    const halfLength = team?.halfLengthMinutes ?? getHalfLengthForAgeGroup(game.setup.ageGroup || '');
+    const halfLength = resolveHalfLength(game.setup);
     const halvesPlayed = keeper.halvesPlayed ?? 2;
     totalEstimatedMinutes += halvesPlayed * halfLength;
 

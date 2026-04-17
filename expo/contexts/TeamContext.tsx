@@ -19,7 +19,14 @@ async function loadTeams(key: string): Promise<Team[]> {
   try {
     const stored = await secureStorage.getItem<unknown[]>(key);
     if (stored) {
-      const validated = validateAndSanitizeArray('Team', stored);
+      const cleaned = (stored as Array<Record<string, unknown>>).map((t) => {
+        if (t && typeof t === 'object' && 'halfLengthMinutes' in t) {
+          const { halfLengthMinutes: _drop, ...rest } = t as Record<string, unknown>;
+          return rest;
+        }
+        return t;
+      });
+      const validated = validateAndSanitizeArray('Team', cleaned);
       return validated;
     }
     return [];
@@ -142,13 +149,12 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
     },
   });
 
-  const createTeam = useCallback((year: string, teamName: string, halfLengthMinutes?: number): Team => {
+  const createTeam = useCallback((year: string, teamName: string): Team => {
     const team: Team = {
       id: Date.now().toString() + Math.random().toString(36).slice(2, 8),
       goalkeeperProfileId: activeProfileId ?? 'guest',
       year: year.trim(),
       teamName: teamName.trim(),
-      halfLengthMinutes,
       createdAt: new Date().toISOString(),
     };
     const currentTeams = queryClient.getQueryData<Team[]>(['teams', storageKey]) ?? [];
@@ -158,10 +164,10 @@ export const [TeamProvider, useTeams] = createContextHook(() => {
     return team;
   }, [activeProfileId, storageKey, saveMutation, queryClient]);
 
-  const updateTeam = useCallback((teamId: string, year: string, teamName: string, halfLengthMinutes?: number) => {
+  const updateTeam = useCallback((teamId: string, year: string, teamName: string) => {
     const currentTeams = queryClient.getQueryData<Team[]>(['teams', storageKey]) ?? [];
     const updated = currentTeams.map(t =>
-      t.id === teamId ? { ...t, year: year.trim(), teamName: teamName.trim(), halfLengthMinutes } : t
+      t.id === teamId ? { ...t, year: year.trim(), teamName: teamName.trim() } : t
     );
     queryClient.setQueryData(['teams', storageKey], updated);
     saveMutation.mutate({ key: storageKey, updatedTeams: updated });

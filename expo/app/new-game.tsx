@@ -6,7 +6,7 @@ import { ArrowRight, Home, Plane, Users, ChevronDown, Plus, Check, X, ChevronRig
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
-import { KeeperSelection, AgeGroup, AGE_GROUP_OPTIONS, deriveKeeperSelection } from '@/types/game';
+import { KeeperSelection, AgeGroup, AGE_GROUP_OPTIONS, deriveKeeperSelection, getHalfLengthForAgeGroup } from '@/types/game';
 import GameTypeModal from '@/components/GameTypeModal';
 import KeyboardDoneBar, { KEYBOARD_DONE_BAR_ID } from '@/components/KeyboardDoneBar';
 import { useTeams } from '@/contexts/TeamContext';
@@ -25,6 +25,9 @@ export default function NewGameScreen() {
   const [eventName, setEventName] = useState('');
   const [ageGroup, setAgeGroup] = useState<AgeGroup>('');
   const [ageGroupPickerOpen, setAgeGroupPickerOpen] = useState(false);
+  const [halfLengthMinutes, setHalfLengthMinutes] = useState<number>(() => getHalfLengthForAgeGroup(''));
+  const [halfLengthOverridden, setHalfLengthOverridden] = useState<boolean>(false);
+  const [halfLengthPickerOpen, setHalfLengthPickerOpen] = useState<boolean>(false);
   const [date, setDate] = useState(() => {
     const now = new Date();
     return `${now.getMonth() + 1}/${now.getDate()}/${now.getFullYear()}`;
@@ -42,8 +45,6 @@ export default function NewGameScreen() {
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamYear, setNewTeamYear] = useState('');
-  const [newTeamHalfLength, setNewTeamHalfLength] = useState<number | undefined>(undefined);
-  const [newTeamHalfLengthPickerOpen, setNewTeamHalfLengthPickerOpen] = useState(false);
   const selectedTeam = teams.find(t => t.id === activeTeamId) ?? null;
   const [opponentSuggestions, setOpponentSuggestions] = useState<string[]>([]);
   const [showOpponentSuggestions, setShowOpponentSuggestions] = useState(false);
@@ -100,9 +101,10 @@ export default function NewGameScreen() {
         keeperSelection,
         ageGroup,
         isHome: isHome ? '1' : '0',
+        halfLengthMinutes: String(halfLengthMinutes),
       },
     });
-  }, [canProceed, router, eventName, date, opponent, keeperSelection, ageGroup, addOpponent, isPro, isAtFreeLimit, isHome]);
+  }, [canProceed, router, eventName, date, opponent, keeperSelection, ageGroup, addOpponent, isPro, isAtFreeLimit, isHome, halfLengthMinutes]);
 
   return (
     <View style={styles.container}>
@@ -160,12 +162,46 @@ export default function NewGameScreen() {
                   onPress={() => {
                     setAgeGroup(ag);
                     setAgeGroupPickerOpen(false);
+                    if (!halfLengthOverridden) {
+                      setHalfLengthMinutes(getHalfLengthForAgeGroup(ag));
+                    }
                   }}
                   activeOpacity={0.7}
                 >
                   <Text style={[styles.dropdownOptionText, ageGroup === ag && styles.dropdownOptionTextActive, ag.length > 3 && { fontSize: fontSize.caption }]}>
                     {ag}
                   </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.inputGroup}>
+          <Text style={styles.inputLabel}>Half Length</Text>
+          <TouchableOpacity
+            testID="half-length-selector"
+            style={styles.dropdownSelector}
+            onPress={() => setHalfLengthPickerOpen(!halfLengthPickerOpen)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.dropdownText}>{halfLengthMinutes} min{!halfLengthOverridden && ageGroup ? ` (${ageGroup} default)` : ''}</Text>
+            <ChevronDown size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+          {halfLengthPickerOpen && (
+            <View style={styles.dropdownList}>
+              {HALF_LENGTH_OPTIONS.map((hl) => (
+                <TouchableOpacity
+                  key={hl}
+                  style={[styles.dropdownOption, halfLengthMinutes === hl && styles.dropdownOptionActive]}
+                  onPress={() => {
+                    setHalfLengthMinutes(hl);
+                    setHalfLengthOverridden(true);
+                    setHalfLengthPickerOpen(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.dropdownOptionText, halfLengthMinutes === hl && styles.dropdownOptionTextActive]}>{hl} min</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -277,36 +313,6 @@ export default function NewGameScreen() {
                 returnKeyType="done"
                 inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined}
               />
-              <TouchableOpacity
-                style={styles.createTeamInput}
-                onPress={() => setNewTeamHalfLengthPickerOpen(!newTeamHalfLengthPickerOpen)}
-                activeOpacity={0.7}
-              >
-                <Text style={{ fontSize: fontSize.bodyLg, color: newTeamHalfLength ? colors.text : colors.textMuted }}>
-                  {newTeamHalfLength ? `Half: ${newTeamHalfLength} min` : 'Half length (default 40 min)'}
-                </Text>
-              </TouchableOpacity>
-              {newTeamHalfLengthPickerOpen && (
-                <View style={styles.dropdownList}>
-                  <TouchableOpacity
-                    style={[styles.dropdownOption, !newTeamHalfLength && styles.dropdownOptionActive]}
-                    onPress={() => { setNewTeamHalfLength(undefined); setNewTeamHalfLengthPickerOpen(false); }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[styles.dropdownOptionText, !newTeamHalfLength && styles.dropdownOptionTextActive]}>Default (40 min)</Text>
-                  </TouchableOpacity>
-                  {HALF_LENGTH_OPTIONS.map((hl) => (
-                    <TouchableOpacity
-                      key={hl}
-                      style={[styles.dropdownOption, newTeamHalfLength === hl && styles.dropdownOptionActive]}
-                      onPress={() => { setNewTeamHalfLength(hl); setNewTeamHalfLengthPickerOpen(false); }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={[styles.dropdownOptionText, newTeamHalfLength === hl && styles.dropdownOptionTextActive]}>{hl} min</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
               <View style={styles.createTeamActions}>
                 <TouchableOpacity
                   testID="cancel-create-team"
@@ -325,13 +331,11 @@ export default function NewGameScreen() {
                   ]}
                   onPress={() => {
                     if (!newTeamName.trim() || !newTeamYear.trim()) return;
-                    const newTeam = createTeam(newTeamYear.trim(), newTeamName.trim(), newTeamHalfLength);
+                    const newTeam = createTeam(newTeamYear.trim(), newTeamName.trim());
                     selectTeam(newTeam.id);
                     setShowCreateTeam(false);
                     setNewTeamName('');
                     setNewTeamYear('');
-                    setNewTeamHalfLength(undefined);
-                    setNewTeamHalfLengthPickerOpen(false);
                     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
                   }}
                   disabled={!newTeamName.trim() || !newTeamYear.trim()}

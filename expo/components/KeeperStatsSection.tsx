@@ -18,12 +18,13 @@ interface KeeperStatsSectionProps {
   profiles?: GoalkeeperProfile[];
   onCreateProfile?: (name: string, birthYear: string) => GoalkeeperProfile;
   ageGroup?: string;
+  halfLengthMinutes?: number;
   inputAccessoryViewID?: string;
 }
 
 const AGE_GROUPS = AGE_GROUP_OPTIONS;
 
-export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate, accentColor, showShootout, profiles, onCreateProfile, ageGroup, inputAccessoryViewID }: KeeperStatsSectionProps) {
+export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate, accentColor, showShootout, profiles, onCreateProfile, ageGroup, halfLengthMinutes, inputAccessoryViewID }: KeeperStatsSectionProps) {
   const accessoryProps = Platform.OS === 'ios' && inputAccessoryViewID ? { inputAccessoryViewID } : {};
   const colors = useColors();
   const [yearPickerOpen, setYearPickerOpen] = React.useState(false);
@@ -325,9 +326,16 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
             <Text style={[styles.halvesPlayedOptionText, (keeper.halvesPlayed ?? 2) === 2 && styles.halvesPlayedOptionTextActive]}>2</Text>
           </TouchableOpacity>
         </View>
-        <Text style={styles.halvesPlayedHint}>
-          Est. {(keeper.halvesPlayed ?? 2) * getHalfLengthForAgeGroup(ageGroup ?? '')} min ({getHalfLengthForAgeGroup(ageGroup ?? '')} min/half{ageGroup ? ` for ${ageGroup}` : ''})
-        </Text>
+        {(() => {
+          const hasOverride = typeof halfLengthMinutes === 'number' && halfLengthMinutes > 0;
+          const resolvedLength = hasOverride ? (halfLengthMinutes as number) : getHalfLengthForAgeGroup(ageGroup ?? '');
+          const halves = keeper.halvesPlayed ?? 2;
+          return (
+            <Text style={styles.halvesPlayedHint}>
+              Est. {halves * resolvedLength} min ({resolvedLength} min/half{!hasOverride && ageGroup ? ` for ${ageGroup}` : ''})
+            </Text>
+          );
+        })()}
       </View>
 
       {showShootout && (

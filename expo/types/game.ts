@@ -42,7 +42,6 @@ export interface Team {
   goalkeeperProfileId: string;
   year: string;
   teamName: string;
-  halfLengthMinutes?: number;
   createdAt: string;
 }
 
@@ -105,6 +104,12 @@ export interface GameSetup {
   keeperSelection: KeeperSelection;
   ageGroup?: AgeGroup;
   isHome?: boolean;
+  halfLengthMinutes?: number;
+}
+
+export function resolveHalfLength(setup: Pick<GameSetup, 'halfLengthMinutes' | 'ageGroup'>): number {
+  if (setup.halfLengthMinutes && setup.halfLengthMinutes > 0) return setup.halfLengthMinutes;
+  return getHalfLengthForAgeGroup(setup.ageGroup ?? '');
 }
 
 export function deriveKeeperSelection(isHome: boolean, trackBoth: boolean): KeeperSelection {
@@ -120,6 +125,7 @@ export function normalizeGameSetup(setup: Partial<GameSetup> | undefined): GameS
     keeperSelection: (setup?.keeperSelection ?? 'home') as KeeperSelection,
     ageGroup: setup?.ageGroup,
     isHome: setup?.isHome ?? true,
+    halfLengthMinutes: setup?.halfLengthMinutes,
   };
 }
 
