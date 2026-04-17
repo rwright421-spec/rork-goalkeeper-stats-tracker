@@ -1,12 +1,12 @@
 // Game Tracking - Live stat entry screen for game tracking
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, InputAccessoryView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, InputAccessoryView, Pressable, Switch } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
-import { KeeperSelection, KeeperData, FinalScore, createEmptyKeeperData, SavedGame, GoalkeeperProfile, getTotalGoalsAgainst, normalizeKeeper } from '@/types/game';
+import { KeeperSelection, KeeperData, FinalScore, createEmptyKeeperData, SavedGame, GoalkeeperProfile, getTotalGoalsAgainst, normalizeKeeper, deriveKeeperSelection } from '@/types/game';
 import { useGames, FREE_GAME_LIMIT } from '@/contexts/GameContext';
 import { usePurchases } from '@/contexts/PurchasesContext';
 import { generateServerGameId, createLocalGameId } from '@/lib/sync';
@@ -333,6 +333,53 @@ export default function GameTrackingScreen() {
                   })}
                 </View>
               </View>
+              <View style={styles.editInputGroup}>
+                <Text style={styles.editInputLabel}>Game Type</Text>
+                <View style={styles.keeperSelectionRow}>
+                  {([true, false] as const).map((option) => {
+                    const isActive = isHomeGame === option;
+                    const label = option ? 'Home' : 'Away';
+                    return (
+                      <TouchableOpacity
+                        key={label}
+                        testID={`edit-game-type-${label.toLowerCase()}`}
+                        style={[styles.keeperSelectionOption, isActive && styles.keeperSelectionOptionActive]}
+                        onPress={() => {
+                          void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setIsHomeGame(option);
+                          const trackBoth = keeperSelection === 'both';
+                          const newSelection = deriveKeeperSelection(option, trackBoth);
+                          if (newSelection !== keeperSelection) {
+                            handleKeeperSelectionChange(newSelection);
+                          }
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.keeperSelectionText, isActive && styles.keeperSelectionTextActive]}>{label}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+              <View style={styles.editInputGroup}>
+                <View style={styles.trackBothRow}>
+                  <View style={styles.trackBothTextWrap}>
+                    <Text style={styles.editInputLabel}>Track both keepers</Text>
+                    <Text style={styles.trackBothHelper}>Also record stats for the opposing goalkeeper.</Text>
+                  </View>
+                  <Switch
+                    testID="edit-track-both-switch"
+                    value={keeperSelection === 'both'}
+                    onValueChange={(val) => {
+                      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      const newSelection = deriveKeeperSelection(isHomeGame, val);
+                      handleKeeperSelectionChange(newSelection);
+                    }}
+                    trackColor={{ false: colors.border, true: colors.primary }}
+                    thumbColor={colors.white}
+                  />
+                </View>
+              </View>
             </View>
           ) : null}
         </View>
@@ -455,6 +502,9 @@ function createStyles(c: ThemeColors) {
     keeperSelectionText: { fontSize: fontSize.body, fontWeight: '600' as const, color: c.textMuted },
     keeperSelectionTextActive: { color: c.primary },
     quickStartDetailHint: { fontSize: fontSize.caption, color: c.accent, fontWeight: '600' as const, fontStyle: 'italic' },
+    trackBothRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, gap: 12 },
+    trackBothTextWrap: { flex: 1 },
+    trackBothHelper: { fontSize: fontSize.caption, color: c.textMuted, marginTop: 2 },
     suggestionsDropdown: { backgroundColor: c.surface, borderRadius: 10, borderWidth: 1, borderColor: c.border, marginTop: 4, overflow: 'hidden' as const, maxHeight: 160 },
     suggestionItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
     suggestionText: { fontSize: fontSize.body, color: c.text, fontWeight: '500' as const },
