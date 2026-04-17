@@ -20,11 +20,12 @@ interface KeeperStatsSectionProps {
   ageGroup?: string;
   halfLengthMinutes?: number;
   inputAccessoryViewID?: string;
+  isOpponentKeeper?: boolean;
 }
 
 const AGE_GROUPS = AGE_GROUP_OPTIONS;
 
-export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate, accentColor, showShootout, profiles, onCreateProfile, ageGroup, halfLengthMinutes, inputAccessoryViewID }: KeeperStatsSectionProps) {
+export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate, accentColor, showShootout, profiles, onCreateProfile, ageGroup, halfLengthMinutes, inputAccessoryViewID, isOpponentKeeper = false }: KeeperStatsSectionProps) {
   const accessoryProps = Platform.OS === 'ios' && inputAccessoryViewID ? { inputAccessoryViewID } : {};
   const colors = useColors();
   const [yearPickerOpen, setYearPickerOpen] = React.useState(false);
@@ -211,7 +212,12 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
 
       <View style={styles.infoSection}>
         <View style={styles.inputRow}>
-          {profiles ? (
+          {isOpponentKeeper ? (
+            <View style={styles.inputGroup}>
+              <Text style={styles.inputLabel}>Keeper</Text>
+              <TextInput testID={`${label}-name`} style={styles.input} value={keeper.name} onChangeText={(v) => updateField('name', v)} placeholder="Opposing keeper name (optional)" placeholderTextColor={colors.textMuted} returnKeyType="done" {...accessoryProps} />
+            </View>
+          ) : profiles ? (
             <KeeperSelectorButton
               selectionState={firstHalfSelection}
               onPress={() => setFirstHalfSelectorOpen(true)}
@@ -263,7 +269,12 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         {!secondHalfInfoCollapsed ? (
           <View style={styles.secondHalfInfoContent}>
             <View style={styles.inputRow}>
-              {profiles ? (
+              {isOpponentKeeper ? (
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>2nd Half Keeper</Text>
+                  <TextInput testID={`${label}-2nd-half-name`} style={styles.input} value={keeper.secondHalfName} onChangeText={(v) => onUpdate({ ...keeper, secondHalfName: v, secondHalfKeeperProfileId: null, secondHalfKeeperIsLinked: false })} placeholder="Opposing keeper name (optional)" placeholderTextColor={colors.textMuted} returnKeyType="done" {...accessoryProps} />
+                </View>
+              ) : profiles ? (
                 <KeeperSelectorButton
                   selectionState={secondHalfSelection}
                   onPress={() => setSecondHalfSelectorOpen(true)}
@@ -414,7 +425,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
           <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: colors.danger }]}>{totalPen.redCards}</Text><Text style={styles.totalDistLabel}>Red</Text></View>
         </View>
       </View>
-      {profiles && (
+      {profiles && !isOpponentKeeper && (
         <>
           <KeeperSelectorSheet
             visible={firstHalfSelectorOpen}
