@@ -15,6 +15,7 @@ import { useTeams } from '@/contexts/TeamContext';
 import { useOpponents } from '@/contexts/OpponentContext';
 import KeeperStatsSection from '@/components/KeeperStatsSection';
 import KeyboardDoneBar, { KEYBOARD_DONE_BAR_ID } from '@/components/KeyboardDoneBar';
+import SwapStatsConfirmModal from '@/components/SwapStatsConfirmModal';
 import { fontSize } from '@/constants/typography';
 
 export default function GameTrackingScreen() {
@@ -132,6 +133,8 @@ export default function GameTrackingScreen() {
   });
   const isQuickStart = params.quickStart === '1' && !isEditMode;
   const [gameDetailsCollapsed, setGameDetailsCollapsed] = useState<boolean>(true);
+  const [pendingIsHome, setPendingIsHome] = useState<boolean | null>(null);
+  const [swapStatsModalVisible, setSwapStatsModalVisible] = useState<boolean>(false);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -194,6 +197,79 @@ export default function GameTrackingScreen() {
     if (newHasHome) { setActiveTab('home'); } else { setActiveTab('away'); }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, [keeperSelection, profileName, teamYear, teamName, activeProfile, isHomeGame]);
+
+  const hasAnyStats = useCallback((k: KeeperData): boolean => {
+    const fh = k.firstHalf;
+    const sh = k.secondHalf;
+    const nums = [
+      fh.saves, fh.goalsAgainst, fh.oneVsOneFaced, fh.oneVsOneSaved,
+      fh.distribution.handledCrosses, fh.distribution.punts, fh.distribution.throwouts, fh.distribution.drives, fh.distribution.dropBacks,
+      fh.penalties.penaltiesFaced, fh.penalties.penaltiesSaved, fh.penalties.redCards, fh.penalties.yellowCards,
+      sh.saves, sh.goalsAgainst, sh.oneVsOneFaced, sh.oneVsOneSaved,
+      sh.distribution.handledCrosses, sh.distribution.punts, sh.distribution.throwouts, sh.distribution.drives, sh.distribution.dropBacks,
+      sh.penalties.penaltiesFaced, sh.penalties.penaltiesSaved, sh.penalties.redCards, sh.penalties.yellowCards,
+      k.shootout?.saves ?? 0, k.shootout?.goalsAgainst ?? 0,
+    ];
+    if (nums.some((n) => (n ?? 0) > 0)) return true;
+    if ((k.notes?.trim().length ?? 0) > 0) return true;
+    return false;
+  }, []);
+
+  const extractStats = useCallback((k: KeeperData) => ({
+    firstHalf: k.firstHalf,
+    secondHalf: k.secondHalf,
+    shootout: k.shootout,
+    notes: k.notes,
+    halvesPlayed: k.halvesPlayed,
+  }), []);
+
+  const handleGameTypeChange = useCallback((newIsHome: boolean) => {
+    if (newIsHome === isHomeGame) return;
+    const statsExist = hasAnyStats(homeKeeper) || hasAnyStats(awayKeeper);
+    if (!statsExist) {
+      setIsHomeGame(newIsHome);
+      const trackBoth = keeperSelection === 'both';
+      const newSelection = deriveKeeperSelection(newIsHome, trackBoth);
+      if (newSelection !== keeperSelection) {
+        handleKeeperSelectionChange(newSelection);
+      }
+      return;
+    }
+    setPendingIsHome(newIsHome);
+    setSwapStatsModalVisible(true);
+  }, [isHomeGame, hasAnyStats, homeKeeper, awayKeeper, keeperSelection, handleKeeperSelectionChange]);
+
+  const applyGameTypeChange = useCallback((newIsHome: boolean) => {
+    setIsHomeGame(newIsHome);
+    const trackBoth = keeperSelection === 'both';
+    const newSelection = deriveKeeperSelection(newIsHome, trackBoth);
+    if (newSelection !== keeperSelection) {
+      handleKeeperSelectionChange(newSelection);
+    }
+  }, [keeperSelection, handleKeeperSelectionChange]);
+
+  const onSwapStats = useCallback(() => {
+    if (pendingIsHome === null) return;
+    const homeStats = extractStats(homeKeeper);
+    const awayStats = extractStats(awayKeeper);
+    setHomeKeeper((prev) => ({ ...prev, ...awayStats }));
+    setAwayKeeper((prev) => ({ ...prev, ...homeStats }));
+    applyGameTypeChange(pendingIsHome);
+    setSwapStatsModalVisible(false);
+    setPendingIsHome(null);
+  }, [pendingIsHome, homeKeeper, awayKeeper, extractStats, applyGameTypeChange]);
+
+  const onKeepStats = useCallback(() => {
+    if (pendingIsHome === null) return;
+    applyGameTypeChange(pendingIsHome);
+    setSwapStatsModalVisible(false);
+    setPendingIsHome(null);
+  }, [pendingIsHome, applyGameTypeChange]);
+
+  const onCancelSwap = useCallback(() => {
+    setSwapStatsModalVisible(false);
+    setPendingIsHome(null);
+  }, []);
 
   const isHomeSeedMountRef = useRef<boolean>(true);
   useEffect(() => {
@@ -441,12 +517,7 @@ export default function GameTrackingScreen() {
                         style={[styles.keeperSelectionOption, isActive && styles.keeperSelectionOptionActive]}
                         onPress={() => {
                           void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setIsHomeGame(option);
-                          const trackBoth = keeperSelection === 'both';
-                          const newSelection = deriveKeeperSelection(option, trackBoth);
-                          if (newSelection !== keeperSelection) {
-                            handleKeeperSelectionChange(newSelection);
-                          }
+                          handleGameTypeChange(option);
                         }}
                         activeOpacity={0.7}
                       >
@@ -540,6 +611,13 @@ export default function GameTrackingScreen() {
           <Text style={styles.saveText}>Save Game</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      <SwapStatsConfirmModal
+        visible={swapStatsModalVisible}
+        onSwapStats={onSwapStats}
+        onKeepStats={onKeepStats}
+        onCancel={onCancelSwap}
+      />
     </View>
   );
 }
