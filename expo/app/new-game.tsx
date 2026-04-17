@@ -8,6 +8,7 @@ import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { KeeperSelection, AgeGroup, AGE_GROUP_OPTIONS, deriveKeeperSelection } from '@/types/game';
 import GameTypeModal from '@/components/GameTypeModal';
+import KeyboardDoneBar, { KEYBOARD_DONE_BAR_ID } from '@/components/KeyboardDoneBar';
 import { useTeams } from '@/contexts/TeamContext';
 import { useOpponents } from '@/contexts/OpponentContext';
 import { useGames } from '@/contexts/GameContext';
@@ -132,7 +133,8 @@ export default function NewGameScreen() {
             onChangeText={setEventName}
             placeholder="e.g. Spring Tournament, League Match"
             placeholderTextColor={colors.textMuted}
-            returnKeyType="next"
+            returnKeyType="done"
+            inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined}
           />
         </View>
 
@@ -180,7 +182,8 @@ export default function NewGameScreen() {
             placeholder="MM/DD/YYYY"
             placeholderTextColor={colors.textMuted}
             keyboardType={Platform.OS === 'web' ? 'default' : 'numbers-and-punctuation'}
-            returnKeyType="next"
+            returnKeyType="done"
+            inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined}
           />
         </View>
 
@@ -259,6 +262,8 @@ export default function NewGameScreen() {
                 autoFocus
                 editable={true}
                 selectTextOnFocus={true}
+                returnKeyType="done"
+                inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined}
               />
               <TextInput
                 testID="new-team-year-input"
@@ -269,6 +274,8 @@ export default function NewGameScreen() {
                 placeholderTextColor={colors.textMuted}
                 keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
                 editable={true}
+                returnKeyType="done"
+                inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined}
               />
               <TouchableOpacity
                 style={styles.createTeamInput}
@@ -348,7 +355,8 @@ export default function NewGameScreen() {
             onBlur={() => setTimeout(() => setShowOpponentSuggestions(false), 200)}
             placeholder="e.g. FC United"
             placeholderTextColor={colors.textMuted}
-            returnKeyType="next"
+            returnKeyType="done"
+            inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined}
           />
           {showOpponentSuggestions && opponentSuggestions.length > 0 && (
             <View style={styles.suggestionsDropdown}>
@@ -405,6 +413,8 @@ export default function NewGameScreen() {
           <ArrowRight size={18} color={colors.white} />
         </TouchableOpacity>
       </ScrollView>
+
+      <KeyboardDoneBar />
 
       <GameTypeModal
         visible={gameTypeModalVisible}

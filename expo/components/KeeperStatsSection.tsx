@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import StatCounter from '@/components/StatCounter';
 import SavePercentageBadge from '@/components/SavePercentageBadge';
@@ -18,11 +18,13 @@ interface KeeperStatsSectionProps {
   profiles?: GoalkeeperProfile[];
   onCreateProfile?: (name: string, birthYear: string) => GoalkeeperProfile;
   ageGroup?: string;
+  inputAccessoryViewID?: string;
 }
 
 const AGE_GROUPS = AGE_GROUP_OPTIONS;
 
-export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate, accentColor, showShootout, profiles, onCreateProfile, ageGroup }: KeeperStatsSectionProps) {
+export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate, accentColor, showShootout, profiles, onCreateProfile, ageGroup, inputAccessoryViewID }: KeeperStatsSectionProps) {
+  const accessoryProps = Platform.OS === 'ios' && inputAccessoryViewID ? { inputAccessoryViewID } : {};
   const colors = useColors();
   const [yearPickerOpen, setYearPickerOpen] = React.useState(false);
   const [secondHalfYearPickerOpen, setSecondHalfYearPickerOpen] = React.useState(false);
@@ -217,7 +219,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
           ) : (
             <View style={styles.inputGroup}>
               <Text style={styles.inputLabel}>Name</Text>
-              <TextInput testID={`${label}-name`} style={styles.input} value={keeper.name} onChangeText={(v) => updateField('name', v)} placeholder="Keeper name" placeholderTextColor={colors.textMuted} />
+              <TextInput testID={`${label}-name`} style={styles.input} value={keeper.name} onChangeText={(v) => updateField('name', v)} placeholder="Keeper name" placeholderTextColor={colors.textMuted} returnKeyType="done" {...accessoryProps} />
             </View>
           )}
         </View>
@@ -242,7 +244,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
           </View>
           <View style={[styles.inputGroup, { flex: 2 }]}>
             <Text style={styles.inputLabel}>Team</Text>
-            <TextInput testID={`${label}-team`} style={styles.input} value={keeper.teamName} onChangeText={(v) => updateField('teamName', v)} placeholder="Team name" placeholderTextColor={colors.textMuted} />
+            <TextInput testID={`${label}-team`} style={styles.input} value={keeper.teamName} onChangeText={(v) => updateField('teamName', v)} placeholder="Team name" placeholderTextColor={colors.textMuted} returnKeyType="done" {...accessoryProps} />
           </View>
         </View>
       </View>
@@ -269,7 +271,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
               ) : (
                 <View style={styles.inputGroup}>
                   <Text style={styles.inputLabel}>Name</Text>
-                  <TextInput testID={`${label}-2nd-half-name`} style={styles.input} value={keeper.secondHalfName} onChangeText={(v) => onUpdate({ ...keeper, secondHalfName: v })} placeholder="Keeper name" placeholderTextColor={colors.textMuted} />
+                  <TextInput testID={`${label}-2nd-half-name`} style={styles.input} value={keeper.secondHalfName} onChangeText={(v) => onUpdate({ ...keeper, secondHalfName: v })} placeholder="Keeper name" placeholderTextColor={colors.textMuted} returnKeyType="done" {...accessoryProps} />
                 </View>
               )}
             </View>
@@ -294,7 +296,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
               </View>
               <View style={[styles.inputGroup, { flex: 2 }]}>
                 <Text style={styles.inputLabel}>Team</Text>
-                <TextInput testID={`${label}-2nd-half-team`} style={styles.input} value={keeper.secondHalfTeamName} onChangeText={(v) => onUpdate({ ...keeper, secondHalfTeamName: v })} placeholder="Team name" placeholderTextColor={colors.textMuted} />
+                <TextInput testID={`${label}-2nd-half-team`} style={styles.input} value={keeper.secondHalfTeamName} onChangeText={(v) => onUpdate({ ...keeper, secondHalfTeamName: v })} placeholder="Team name" placeholderTextColor={colors.textMuted} returnKeyType="done" {...accessoryProps} />
               </View>
             </View>
           </View>
@@ -363,7 +365,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
           </View>
         </TouchableOpacity>
         {!notesCollapsed ? (
-          <TextInput testID={`${label}-notes`} style={styles.notesInput} value={keeper.notes} onChangeText={(v) => onUpdate({ ...keeper, notes: v })} placeholder="Injuries, cards, substitutions, etc." placeholderTextColor={colors.textMuted} multiline numberOfLines={4} textAlignVertical="top" />
+          <TextInput testID={`${label}-notes`} style={styles.notesInput} value={keeper.notes} onChangeText={(v) => onUpdate({ ...keeper, notes: v })} placeholder="Injuries, cards, substitutions, etc." placeholderTextColor={colors.textMuted} multiline numberOfLines={4} textAlignVertical="top" {...accessoryProps} />
         ) : null}
       </View>
 

@@ -1,6 +1,6 @@
 // Game Tracking - Live stat entry screen for game tracking
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, InputAccessoryView, Pressable, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, Switch } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -14,6 +14,7 @@ import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
 import { useOpponents } from '@/contexts/OpponentContext';
 import KeeperStatsSection from '@/components/KeeperStatsSection';
+import KeyboardDoneBar, { KEYBOARD_DONE_BAR_ID } from '@/components/KeyboardDoneBar';
 import { fontSize } from '@/constants/typography';
 
 export default function GameTrackingScreen() {
@@ -263,8 +264,6 @@ export default function GameTrackingScreen() {
     return `${params.eventName} · ${params.date}`;
   }, [isEditMode, editEventName, editDate, params.eventName, params.date]);
 
-  const scoreInputAccessoryId = 'score-input-done';
-
   const dismissKeyboard = useCallback(() => {
     Keyboard.dismiss();
   }, []);
@@ -296,19 +295,19 @@ export default function GameTrackingScreen() {
             <View style={styles.editInfoContent}>
               <View style={styles.editInputGroup}>
                 <Text style={styles.editInputLabel}>Event</Text>
-                <TextInput testID="edit-event-name" style={styles.editInput} value={editEventName} onChangeText={setEditEventName} placeholder="e.g. Spring Tournament, League Match" placeholderTextColor={colors.textMuted} />
+                <TextInput testID="edit-event-name" style={styles.editInput} value={editEventName} onChangeText={setEditEventName} placeholder="e.g. Spring Tournament, League Match" placeholderTextColor={colors.textMuted} returnKeyType="done" inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} />
               </View>
               <View style={styles.editInputGroup}>
                 <Text style={styles.editInputLabel}>Age Group</Text>
-                <TextInput testID="edit-age-group" style={styles.editInput} value={editAgeGroup} onChangeText={setEditAgeGroup} placeholder="e.g. U12" placeholderTextColor={colors.textMuted} />
+                <TextInput testID="edit-age-group" style={styles.editInput} value={editAgeGroup} onChangeText={setEditAgeGroup} placeholder="e.g. U12" placeholderTextColor={colors.textMuted} returnKeyType="done" inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} />
               </View>
               <View style={styles.editInputGroup}>
                 <Text style={styles.editInputLabel}>Date</Text>
-                <TextInput testID="edit-date" style={styles.editInput} value={editDate} onChangeText={setEditDate} placeholder="MM/DD/YYYY" placeholderTextColor={colors.textMuted} keyboardType={Platform.OS === 'web' ? 'default' : 'numbers-and-punctuation'} />
+                <TextInput testID="edit-date" style={styles.editInput} value={editDate} onChangeText={setEditDate} placeholder="MM/DD/YYYY" placeholderTextColor={colors.textMuted} keyboardType={Platform.OS === 'web' ? 'default' : 'numbers-and-punctuation'} returnKeyType="done" inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} />
               </View>
               <View style={[styles.editInputGroup, { zIndex: 10 }]}>
                 <Text style={styles.editInputLabel}>Opponent</Text>
-                <TextInput testID="edit-game-name" style={styles.editInput} value={editGameName} onChangeText={handleEditGameNameChange} onBlur={() => setTimeout(() => setShowEditOpponentSuggestions(false), 200)} placeholder="e.g. FC United" placeholderTextColor={colors.textMuted} />
+                <TextInput testID="edit-game-name" style={styles.editInput} value={editGameName} onChangeText={handleEditGameNameChange} onBlur={() => setTimeout(() => setShowEditOpponentSuggestions(false), 200)} placeholder="e.g. FC United" placeholderTextColor={colors.textMuted} returnKeyType="done" inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} />
                 {showEditOpponentSuggestions && editOpponentSuggestions.length > 0 && (
                   <View style={styles.suggestionsDropdown}>
                     {editOpponentSuggestions.map((s) => (
@@ -400,19 +399,11 @@ export default function GameTrackingScreen() {
         </View>
       ) : null}
 
-      {Platform.OS === 'ios' && (
-        <InputAccessoryView nativeID={scoreInputAccessoryId}>
-          <View style={styles.keyboardToolbar}>
-            <TouchableOpacity onPress={dismissKeyboard} style={styles.keyboardDoneButton} activeOpacity={0.7}>
-              <Text style={styles.keyboardDoneText}>Done</Text>
-            </TouchableOpacity>
-          </View>
-        </InputAccessoryView>
-      )}
+      <KeyboardDoneBar />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" showsVerticalScrollIndicator={false}>
-        {(hasHome && activeTab === 'home') || (hasHome && !showTabs) ? <KeeperStatsSection label="HOME" keeper={homeKeeper} onUpdate={setHomeKeeper} accentColor={colors.cardHome} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} /> : null}
-        {(hasAway && activeTab === 'away') || (hasAway && !showTabs) ? <KeeperStatsSection label="AWAY" keeper={awayKeeper} onUpdate={setAwayKeeper} accentColor={colors.cardAway} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} /> : null}
+        {(hasHome && activeTab === 'home') || (hasHome && !showTabs) ? <KeeperStatsSection label="HOME" keeper={homeKeeper} onUpdate={setHomeKeeper} accentColor={colors.cardHome} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} /> : null}
+        {(hasAway && activeTab === 'away') || (hasAway && !showTabs) ? <KeeperStatsSection label="AWAY" keeper={awayKeeper} onUpdate={setAwayKeeper} accentColor={colors.cardAway} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} /> : null}
 
         {showTabs ? (
           <TouchableOpacity style={styles.switchButton} onPress={() => { void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveTab(activeTab === 'home' ? 'away' : 'home'); }} activeOpacity={0.7}>
@@ -426,7 +417,7 @@ export default function GameTrackingScreen() {
             <View style={styles.scoreTeam}>
               <Text style={styles.scoreTeamLabel}>HOME</Text>
               {!isBoth && hasHome && !hasAway ? (
-                <TextInput testID="home-score-input" style={styles.scoreInput} value={homeScoreOverride} onChangeText={setHomeScoreOverride} keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.textMuted} maxLength={3} returnKeyType="done" onSubmitEditing={dismissKeyboard} inputAccessoryViewID={Platform.OS === 'ios' ? scoreInputAccessoryId : undefined} editable={true} selectTextOnFocus={true} />
+                <TextInput testID="home-score-input" style={styles.scoreInput} value={homeScoreOverride} onChangeText={setHomeScoreOverride} keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.textMuted} maxLength={3} returnKeyType="done" onSubmitEditing={dismissKeyboard} inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} editable={true} selectTextOnFocus={true} />
               ) : (
                 <Text style={[styles.scoreValue, { color: colors.cardHome }]}>{computedFinalScore.home}</Text>
               )}
@@ -435,7 +426,7 @@ export default function GameTrackingScreen() {
             <View style={styles.scoreTeam}>
               <Text style={styles.scoreTeamLabel}>AWAY</Text>
               {!isBoth && hasAway && !hasHome ? (
-                <TextInput testID="away-score-input" style={styles.scoreInput} value={awayScoreOverride} onChangeText={setAwayScoreOverride} keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.textMuted} maxLength={3} returnKeyType="done" onSubmitEditing={dismissKeyboard} inputAccessoryViewID={Platform.OS === 'ios' ? scoreInputAccessoryId : undefined} />
+                <TextInput testID="away-score-input" style={styles.scoreInput} value={awayScoreOverride} onChangeText={setAwayScoreOverride} keyboardType="number-pad" placeholder="0" placeholderTextColor={colors.textMuted} maxLength={3} returnKeyType="done" onSubmitEditing={dismissKeyboard} inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} />
               ) : (
                 <Text style={[styles.scoreValue, { color: colors.cardAway }]}>{computedFinalScore.away}</Text>
               )}
