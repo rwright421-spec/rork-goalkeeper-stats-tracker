@@ -88,31 +88,36 @@ export default function GameTrackingScreen() {
   const [editOpponentSuggestions, setEditOpponentSuggestions] = useState<string[]>([]);
   const [showEditOpponentSuggestions, setShowEditOpponentSuggestions] = useState(false);
 
+  const userSideInitial: 'HOME' | 'AWAY' = initialIsHome ? 'HOME' : 'AWAY';
   const [homeKeeper, setHomeKeeper] = useState<KeeperData>(() => {
     if (existingGame?.homeKeeper) return normalizeKeeper(existingGame.homeKeeper);
     const data = createEmptyKeeperData();
-    if (hasHome && profileName) { data.name = profileName; data.secondHalfName = profileName; }
-    if (hasHome && teamYear) { data.year = teamYear; data.secondHalfYear = teamYear; }
-    if (hasHome && teamName) { data.teamName = teamName; data.secondHalfTeamName = teamName; }
-    if (hasHome && activeProfile) {
-      data.keeperProfileId = activeProfile.id;
-      data.keeperIsLinked = true;
-      data.secondHalfKeeperProfileId = activeProfile.id;
-      data.secondHalfKeeperIsLinked = true;
+    if (hasHome && userSideInitial === 'HOME') {
+      if (profileName) { data.name = profileName; data.secondHalfName = profileName; }
+      if (teamYear) { data.year = teamYear; data.secondHalfYear = teamYear; }
+      if (teamName) { data.teamName = teamName; data.secondHalfTeamName = teamName; }
+      if (activeProfile) {
+        data.keeperProfileId = activeProfile.id;
+        data.keeperIsLinked = true;
+        data.secondHalfKeeperProfileId = activeProfile.id;
+        data.secondHalfKeeperIsLinked = true;
+      }
     }
     return data;
   });
   const [awayKeeper, setAwayKeeper] = useState<KeeperData>(() => {
     if (existingGame?.awayKeeper) return normalizeKeeper(existingGame.awayKeeper);
     const data = createEmptyKeeperData();
-    if (hasAway && !hasHome && profileName) { data.name = profileName; data.secondHalfName = profileName; }
-    if (hasAway && !hasHome && teamYear) { data.year = teamYear; data.secondHalfYear = teamYear; }
-    if (hasAway && !hasHome && teamName) { data.teamName = teamName; data.secondHalfTeamName = teamName; }
-    if (hasAway && !hasHome && activeProfile) {
-      data.keeperProfileId = activeProfile.id;
-      data.keeperIsLinked = true;
-      data.secondHalfKeeperProfileId = activeProfile.id;
-      data.secondHalfKeeperIsLinked = true;
+    if (hasAway && userSideInitial === 'AWAY') {
+      if (profileName) { data.name = profileName; data.secondHalfName = profileName; }
+      if (teamYear) { data.year = teamYear; data.secondHalfYear = teamYear; }
+      if (teamName) { data.teamName = teamName; data.secondHalfTeamName = teamName; }
+      if (activeProfile) {
+        data.keeperProfileId = activeProfile.id;
+        data.keeperIsLinked = true;
+        data.secondHalfKeeperProfileId = activeProfile.id;
+        data.secondHalfKeeperIsLinked = true;
+      }
     }
     return data;
   });
@@ -155,35 +160,40 @@ export default function GameTrackingScreen() {
     const newHasAway = newSelection === 'away' || newSelection === 'both';
     const prevHasHome = prevSelection === 'home' || prevSelection === 'both';
     const prevHasAway = prevSelection === 'away' || prevSelection === 'both';
+    const userSide: 'HOME' | 'AWAY' = isHomeGame ? 'HOME' : 'AWAY';
     if (newHasHome && !prevHasHome) {
       const data = createEmptyKeeperData();
-      if (profileName) { data.name = profileName; data.secondHalfName = profileName; }
-      if (teamYear) { data.year = teamYear; data.secondHalfYear = teamYear; }
-      if (teamName) { data.teamName = teamName; data.secondHalfTeamName = teamName; }
-      if (activeProfile) {
-        data.keeperProfileId = activeProfile.id;
-        data.keeperIsLinked = true;
-        data.secondHalfKeeperProfileId = activeProfile.id;
-        data.secondHalfKeeperIsLinked = true;
+      if (userSide === 'HOME') {
+        if (profileName) { data.name = profileName; data.secondHalfName = profileName; }
+        if (teamYear) { data.year = teamYear; data.secondHalfYear = teamYear; }
+        if (teamName) { data.teamName = teamName; data.secondHalfTeamName = teamName; }
+        if (activeProfile) {
+          data.keeperProfileId = activeProfile.id;
+          data.keeperIsLinked = true;
+          data.secondHalfKeeperProfileId = activeProfile.id;
+          data.secondHalfKeeperIsLinked = true;
+        }
       }
       setHomeKeeper(data);
     }
     if (newHasAway && !prevHasAway) {
       const data = createEmptyKeeperData();
-      if (!newHasHome && profileName) { data.name = profileName; data.secondHalfName = profileName; }
-      if (!newHasHome && teamYear) { data.year = teamYear; data.secondHalfYear = teamYear; }
-      if (!newHasHome && teamName) { data.teamName = teamName; data.secondHalfTeamName = teamName; }
-      if (!newHasHome && activeProfile) {
-        data.keeperProfileId = activeProfile.id;
-        data.keeperIsLinked = true;
-        data.secondHalfKeeperProfileId = activeProfile.id;
-        data.secondHalfKeeperIsLinked = true;
+      if (userSide === 'AWAY') {
+        if (profileName) { data.name = profileName; data.secondHalfName = profileName; }
+        if (teamYear) { data.year = teamYear; data.secondHalfYear = teamYear; }
+        if (teamName) { data.teamName = teamName; data.secondHalfTeamName = teamName; }
+        if (activeProfile) {
+          data.keeperProfileId = activeProfile.id;
+          data.keeperIsLinked = true;
+          data.secondHalfKeeperProfileId = activeProfile.id;
+          data.secondHalfKeeperIsLinked = true;
+        }
       }
       setAwayKeeper(data);
     }
     if (newHasHome) { setActiveTab('home'); } else { setActiveTab('away'); }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  }, [keeperSelection, profileName, teamYear, teamName, activeProfile]);
+  }, [keeperSelection, profileName, teamYear, teamName, activeProfile, isHomeGame]);
 
   const showTabs = hasHome && hasAway;
   const homeGoalsAgainst = hasHome ? getTotalGoalsAgainst(homeKeeper) : 0;
@@ -440,8 +450,8 @@ export default function GameTrackingScreen() {
       <KeyboardDoneBar />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive" showsVerticalScrollIndicator={false}>
-        {(hasHome && activeTab === 'home') || (hasHome && !showTabs) ? <KeeperStatsSection label="HOME" keeper={homeKeeper} onUpdate={setHomeKeeper} accentColor={colors.cardHome} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} halfLengthMinutes={resolvedHalfLength} inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} /> : null}
-        {(hasAway && activeTab === 'away') || (hasAway && !showTabs) ? <KeeperStatsSection label="AWAY" keeper={awayKeeper} onUpdate={setAwayKeeper} accentColor={colors.cardAway} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} halfLengthMinutes={resolvedHalfLength} inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} /> : null}
+        {(hasHome && activeTab === 'home') || (hasHome && !showTabs) ? <KeeperStatsSection label="HOME" keeper={homeKeeper} onUpdate={setHomeKeeper} accentColor={colors.cardHome} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} halfLengthMinutes={resolvedHalfLength} inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} isOpponentKeeper={!isHomeGame} /> : null}
+        {(hasAway && activeTab === 'away') || (hasAway && !showTabs) ? <KeeperStatsSection label="AWAY" keeper={awayKeeper} onUpdate={setAwayKeeper} accentColor={colors.cardAway} showShootout profiles={allProfiles} onCreateProfile={handleCreateProfile} ageGroup={editAgeGroup || params.ageGroup || ''} halfLengthMinutes={resolvedHalfLength} inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} isOpponentKeeper={isHomeGame} /> : null}
 
         {showTabs ? (
           <TouchableOpacity style={styles.switchButton} onPress={() => { void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveTab(activeTab === 'home' ? 'away' : 'home'); }} activeOpacity={0.7}>
