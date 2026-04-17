@@ -1,5 +1,5 @@
 // Game Tracking - Live stat entry screen for game tracking
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, Switch } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react-native';
@@ -194,6 +194,54 @@ export default function GameTrackingScreen() {
     if (newHasHome) { setActiveTab('home'); } else { setActiveTab('away'); }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }, [keeperSelection, profileName, teamYear, teamName, activeProfile, isHomeGame]);
+
+  const isHomeSeedMountRef = useRef<boolean>(true);
+  useEffect(() => {
+    if (isHomeSeedMountRef.current) {
+      isHomeSeedMountRef.current = false;
+      return;
+    }
+    const userSide: 'HOME' | 'AWAY' = isHomeGame ? 'HOME' : 'AWAY';
+    const seedUser = (prev: KeeperData): KeeperData => {
+      const next: KeeperData = { ...prev };
+      if (activeProfile) {
+        next.name = profileName;
+        next.secondHalfName = profileName;
+        next.year = teamYear;
+        next.secondHalfYear = teamYear;
+        next.teamName = teamName;
+        next.secondHalfTeamName = teamName;
+        next.keeperProfileId = activeProfile.id;
+        next.keeperIsLinked = true;
+        next.secondHalfKeeperProfileId = activeProfile.id;
+        next.secondHalfKeeperIsLinked = true;
+      } else {
+        next.name = '';
+        next.secondHalfName = '';
+        next.keeperProfileId = null;
+        next.keeperIsLinked = false;
+        next.secondHalfKeeperProfileId = null;
+        next.secondHalfKeeperIsLinked = false;
+      }
+      return next;
+    };
+    const clearOpponent = (prev: KeeperData): KeeperData => ({
+      ...prev,
+      name: '',
+      secondHalfName: '',
+      keeperProfileId: null,
+      keeperIsLinked: false,
+      secondHalfKeeperProfileId: null,
+      secondHalfKeeperIsLinked: false,
+    });
+    if (userSide === 'HOME') {
+      setHomeKeeper((prev) => seedUser(prev));
+      setAwayKeeper((prev) => clearOpponent(prev));
+    } else {
+      setAwayKeeper((prev) => seedUser(prev));
+      setHomeKeeper((prev) => clearOpponent(prev));
+    }
+  }, [isHomeGame, activeProfile, profileName, teamYear, teamName]);
 
   const showTabs = hasHome && hasAway;
   const homeGoalsAgainst = hasHome ? getTotalGoalsAgainst(homeKeeper) : 0;
