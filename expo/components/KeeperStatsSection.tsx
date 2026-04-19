@@ -21,11 +21,12 @@ interface KeeperStatsSectionProps {
   halfLengthMinutes?: number;
   inputAccessoryViewID?: string;
   isOpponentKeeper?: boolean;
+  hideTeamAndYear?: boolean;
 }
 
 const AGE_GROUPS = AGE_GROUP_OPTIONS;
 
-export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate, accentColor, showShootout, profiles, onCreateProfile, ageGroup, halfLengthMinutes, inputAccessoryViewID, isOpponentKeeper = false }: KeeperStatsSectionProps) {
+export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate, accentColor, showShootout, profiles, onCreateProfile, ageGroup, halfLengthMinutes, inputAccessoryViewID, isOpponentKeeper = false, hideTeamAndYear = false }: KeeperStatsSectionProps) {
   const accessoryProps = Platform.OS === 'ios' && inputAccessoryViewID ? { inputAccessoryViewID } : {};
   const colors = useColors();
   const [yearPickerOpen, setYearPickerOpen] = React.useState(false);
@@ -230,30 +231,32 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
             </View>
           )}
         </View>
-        <View style={styles.inputRow}>
-          <View style={[styles.inputGroup, { flex: 1 }]}>
-            <Text style={styles.inputLabel}>Age Group</Text>
-            <TouchableOpacity testID={`${label}-year`} style={styles.yearSelector} onPress={() => setYearPickerOpen(!yearPickerOpen)} activeOpacity={0.7}>
-              <Text style={[styles.yearText, !keeper.year && styles.yearPlaceholder]}>{keeper.year || 'Select'}</Text>
-              <ChevronDown size={16} color={colors.textMuted} />
-            </TouchableOpacity>
-            {yearPickerOpen && (
-              <View style={styles.yearDropdown}>
-                <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
-                  {AGE_GROUPS.map((ag) => (
-                    <TouchableOpacity key={ag} style={[styles.yearOption, keeper.year === ag && styles.yearOptionActive]} onPress={() => { updateField('year', ag); setYearPickerOpen(false); }} activeOpacity={0.7}>
-                      <Text style={[styles.yearOptionText, keeper.year === ag && styles.yearOptionTextActive, ag.length > 3 && { fontSize: fontSize.caption }]}>{ag}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
+        {!hideTeamAndYear ? (
+          <View style={styles.inputRow}>
+            <View style={[styles.inputGroup, { flex: 1 }]}>
+              <Text style={styles.inputLabel}>Age Group</Text>
+              <TouchableOpacity testID={`${label}-year`} style={styles.yearSelector} onPress={() => setYearPickerOpen(!yearPickerOpen)} activeOpacity={0.7}>
+                <Text style={[styles.yearText, !keeper.year && styles.yearPlaceholder]}>{keeper.year || 'Select'}</Text>
+                <ChevronDown size={16} color={colors.textMuted} />
+              </TouchableOpacity>
+              {yearPickerOpen && (
+                <View style={styles.yearDropdown}>
+                  <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
+                    {AGE_GROUPS.map((ag) => (
+                      <TouchableOpacity key={ag} style={[styles.yearOption, keeper.year === ag && styles.yearOptionActive]} onPress={() => { updateField('year', ag); setYearPickerOpen(false); }} activeOpacity={0.7}>
+                        <Text style={[styles.yearOptionText, keeper.year === ag && styles.yearOptionTextActive, ag.length > 3 && { fontSize: fontSize.caption }]}>{ag}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+            <View style={[styles.inputGroup, { flex: 2 }]}>
+              <Text style={styles.inputLabel}>Team</Text>
+              <TextInput testID={`${label}-team`} style={styles.input} value={keeper.teamName} onChangeText={(v) => updateField('teamName', v)} placeholder="Team name" placeholderTextColor={colors.textMuted} returnKeyType="done" {...accessoryProps} />
+            </View>
           </View>
-          <View style={[styles.inputGroup, { flex: 2 }]}>
-            <Text style={styles.inputLabel}>Team</Text>
-            <TextInput testID={`${label}-team`} style={styles.input} value={keeper.teamName} onChangeText={(v) => updateField('teamName', v)} placeholder="Team name" placeholderTextColor={colors.textMuted} returnKeyType="done" {...accessoryProps} />
-          </View>
-        </View>
+        ) : null}
       </View>
 
       {renderHalfSection('firstHalf', '1st Half')}
@@ -287,30 +290,32 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
                 </View>
               )}
             </View>
-            <View style={styles.inputRow}>
-              <View style={[styles.inputGroup, { flex: 1 }]}>
-                <Text style={styles.inputLabel}>Age Group</Text>
-                <TouchableOpacity testID={`${label}-2nd-half-year`} style={styles.yearSelector} onPress={() => setSecondHalfYearPickerOpen(!secondHalfYearPickerOpen)} activeOpacity={0.7}>
-                  <Text style={[styles.yearText, !keeper.secondHalfYear && styles.yearPlaceholder]}>{keeper.secondHalfYear || 'Select'}</Text>
-                  <ChevronDown size={16} color={colors.textMuted} />
-                </TouchableOpacity>
-                {secondHalfYearPickerOpen && (
-                  <View style={styles.yearDropdown}>
-                    <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
-                      {AGE_GROUPS.map((ag) => (
-                        <TouchableOpacity key={ag} style={[styles.yearOption, keeper.secondHalfYear === ag && styles.yearOptionActive]} onPress={() => { onUpdate({ ...keeper, secondHalfYear: ag }); setSecondHalfYearPickerOpen(false); }} activeOpacity={0.7}>
-                          <Text style={[styles.yearOptionText, keeper.secondHalfYear === ag && styles.yearOptionTextActive, ag.length > 3 && { fontSize: fontSize.caption }]}>{ag}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  </View>
-                )}
+            {!hideTeamAndYear ? (
+              <View style={styles.inputRow}>
+                <View style={[styles.inputGroup, { flex: 1 }]}>
+                  <Text style={styles.inputLabel}>Age Group</Text>
+                  <TouchableOpacity testID={`${label}-2nd-half-year`} style={styles.yearSelector} onPress={() => setSecondHalfYearPickerOpen(!secondHalfYearPickerOpen)} activeOpacity={0.7}>
+                    <Text style={[styles.yearText, !keeper.secondHalfYear && styles.yearPlaceholder]}>{keeper.secondHalfYear || 'Select'}</Text>
+                    <ChevronDown size={16} color={colors.textMuted} />
+                  </TouchableOpacity>
+                  {secondHalfYearPickerOpen && (
+                    <View style={styles.yearDropdown}>
+                      <ScrollView style={styles.yearScroll} nestedScrollEnabled showsVerticalScrollIndicator>
+                        {AGE_GROUPS.map((ag) => (
+                          <TouchableOpacity key={ag} style={[styles.yearOption, keeper.secondHalfYear === ag && styles.yearOptionActive]} onPress={() => { onUpdate({ ...keeper, secondHalfYear: ag }); setSecondHalfYearPickerOpen(false); }} activeOpacity={0.7}>
+                            <Text style={[styles.yearOptionText, keeper.secondHalfYear === ag && styles.yearOptionTextActive, ag.length > 3 && { fontSize: fontSize.caption }]}>{ag}</Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  )}
+                </View>
+                <View style={[styles.inputGroup, { flex: 2 }]}>
+                  <Text style={styles.inputLabel}>Team</Text>
+                  <TextInput testID={`${label}-2nd-half-team`} style={styles.input} value={keeper.secondHalfTeamName} onChangeText={(v) => onUpdate({ ...keeper, secondHalfTeamName: v })} placeholder="Team name" placeholderTextColor={colors.textMuted} returnKeyType="done" {...accessoryProps} />
+                </View>
               </View>
-              <View style={[styles.inputGroup, { flex: 2 }]}>
-                <Text style={styles.inputLabel}>Team</Text>
-                <TextInput testID={`${label}-2nd-half-team`} style={styles.input} value={keeper.secondHalfTeamName} onChangeText={(v) => onUpdate({ ...keeper, secondHalfTeamName: v })} placeholder="Team name" placeholderTextColor={colors.textMuted} returnKeyType="done" {...accessoryProps} />
-              </View>
-            </View>
+            ) : null}
           </View>
         ) : null}
       </View>
