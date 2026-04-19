@@ -179,9 +179,8 @@ export default function GameTrackingScreen() {
     const totalSeconds = elapsedMs / 1000;
     const minutes = Math.floor(totalSeconds / 60);
     const secondsWhole = Math.floor(totalSeconds - minutes * 60);
-    const tenths = Math.floor((elapsedMs % 1000) / 100);
-    const singleDigitSecond = (secondsWhole % 10 + tenths === 0 ? secondsWhole % 10 : secondsWhole % 10);
-    return `${minutes}:${singleDigitSecond}`;
+    const paddedSeconds = secondsWhole.toString().padStart(2, '0');
+    return `${minutes}:${paddedSeconds}`;
   }, [elapsedMs]);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
