@@ -6,7 +6,7 @@ import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Play, Square, 
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
-import { KeeperSelection, KeeperData, FinalScore, createEmptyKeeperData, SavedGame, GoalkeeperProfile, getTotalGoalsAgainst, normalizeKeeper, deriveKeeperSelection, resolveHalfLength, getHalfLengthForAgeGroup } from '@/types/game';
+import { KeeperSelection, KeeperData, FinalScore, createEmptyKeeperData, SavedGame, GoalkeeperProfile, getTotalGoalsAgainst, normalizeKeeper, deriveKeeperSelection, resolveHalfLength, getHalfLengthForAgeGroup, deriveHalvesPlayed } from '@/types/game';
 import { useGames, FREE_GAME_LIMIT } from '@/contexts/GameContext';
 import { usePurchases } from '@/contexts/PurchasesContext';
 import { generateServerGameId, createLocalGameId } from '@/lib/sync';
@@ -395,8 +395,8 @@ export default function GameTrackingScreen() {
       const updated: SavedGame = {
         ...existingGame,
         setup: { eventName: editEventName.trim() || existingGame.setup.eventName, date: editDate.trim() || existingGame.setup.date, gameName: opponentName, keeperSelection, ageGroup: (editAgeGroup || existingGame.setup.ageGroup || '') as any, isHome: isHomeGame, halfLengthMinutes: editHalfLengthMinutes },
-        homeKeeper: hasHome ? homeKeeper : undefined,
-        awayKeeper: hasAway ? awayKeeper : undefined,
+        homeKeeper: hasHome ? { ...homeKeeper, halvesPlayed: existingGame.homeKeeper?.halvesPlayed ?? deriveHalvesPlayed(homeKeeper) } : undefined,
+        awayKeeper: hasAway ? { ...awayKeeper, halvesPlayed: existingGame.awayKeeper?.halvesPlayed ?? deriveHalvesPlayed(awayKeeper) } : undefined,
         finalScore: computedFinalScore,
       };
       updateGame(updated);
@@ -436,8 +436,8 @@ export default function GameTrackingScreen() {
         id: gameId,
         teamId: activeTeamId ?? undefined,
         setup: { eventName: finalEventName, date: finalDate, gameName: finalGameName, keeperSelection, ageGroup: finalAgeGroup as any, isHome: isHomeGame, halfLengthMinutes: editHalfLengthMinutes },
-        homeKeeper: hasHome ? homeKeeper : undefined,
-        awayKeeper: hasAway ? awayKeeper : undefined,
+        homeKeeper: hasHome ? { ...homeKeeper, halvesPlayed: deriveHalvesPlayed(homeKeeper) } : undefined,
+        awayKeeper: hasAway ? { ...awayKeeper, halvesPlayed: deriveHalvesPlayed(awayKeeper) } : undefined,
         finalScore: computedFinalScore,
         createdAt: new Date().toISOString(),
         ...(pendingSync ? { pendingSync: true } : {}),

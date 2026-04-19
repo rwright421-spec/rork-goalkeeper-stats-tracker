@@ -112,6 +112,22 @@ export function resolveHalfLength(setup: Pick<GameSetup, 'halfLengthMinutes' | '
   return getHalfLengthForAgeGroup(setup.ageGroup ?? '');
 }
 
+export function deriveHalvesPlayed(keeper: Pick<KeeperData, 'name' | 'secondHalfName' | 'keeperProfileId' | 'secondHalfKeeperProfileId' | 'keeperIsLinked' | 'secondHalfKeeperIsLinked'>): number {
+  const firstName = (keeper.name ?? '').trim().toLowerCase();
+  const secondName = (keeper.secondHalfName ?? '').trim().toLowerCase();
+  const firstPid = keeper.keeperProfileId ?? null;
+  const secondPid = keeper.secondHalfKeeperProfileId ?? null;
+  if (firstPid && secondPid) {
+    return firstPid === secondPid ? 2 : 1;
+  }
+  if (firstPid || secondPid) {
+    if (!secondName) return 2;
+    return firstName === secondName ? 2 : 1;
+  }
+  if (!secondName || secondName === firstName) return 2;
+  return 1;
+}
+
 export function deriveKeeperSelection(isHome: boolean, trackBoth: boolean): KeeperSelection {
   if (trackBoth) return 'both';
   return isHome ? 'home' : 'away';

@@ -6,7 +6,7 @@ import SavePercentageBadge from '@/components/SavePercentageBadge';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { fontSize } from '@/constants/typography';
-import { KeeperData, DistributionStats, PenaltyStats, GoalkeeperProfile, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getShotsFaced, getTotalShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, getHalfLengthForAgeGroup, defaultHalfStats, AGE_GROUP_OPTIONS } from '@/types/game';
+import { KeeperData, DistributionStats, PenaltyStats, GoalkeeperProfile, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getShotsFaced, getTotalShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, getHalfLengthForAgeGroup, defaultHalfStats, AGE_GROUP_OPTIONS, deriveHalvesPlayed } from '@/types/game';
 import KeeperSelectorSheet, { KeeperSelectorButton, KeeperSelectionState } from '@/components/KeeperSelectorSheet';
 
 interface KeeperStatsSectionProps {
@@ -324,32 +324,20 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
 
       <View style={styles.halvesPlayedSection}>
         <Text style={styles.halvesPlayedLabel}>Halves Played</Text>
-        <View style={styles.halvesPlayedToggle}>
-          <TouchableOpacity
-            testID={`${label}-halves-1`}
-            style={[styles.halvesPlayedOption, (keeper.halvesPlayed ?? 2) === 1 && styles.halvesPlayedOptionActive]}
-            onPress={() => onUpdate({ ...keeper, halvesPlayed: 1 })}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.halvesPlayedOptionText, (keeper.halvesPlayed ?? 2) === 1 && styles.halvesPlayedOptionTextActive]}>1</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            testID={`${label}-halves-2`}
-            style={[styles.halvesPlayedOption, (keeper.halvesPlayed ?? 2) === 2 && styles.halvesPlayedOptionActive]}
-            onPress={() => onUpdate({ ...keeper, halvesPlayed: 2 })}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.halvesPlayedOptionText, (keeper.halvesPlayed ?? 2) === 2 && styles.halvesPlayedOptionTextActive]}>2</Text>
-          </TouchableOpacity>
-        </View>
         {(() => {
           const hasOverride = typeof halfLengthMinutes === 'number' && halfLengthMinutes > 0;
           const resolvedLength = hasOverride ? (halfLengthMinutes as number) : getHalfLengthForAgeGroup(ageGroup ?? '');
-          const halves = keeper.halvesPlayed ?? 2;
+          const halves = deriveHalvesPlayed(keeper);
           return (
-            <Text style={styles.halvesPlayedHint}>
-              Est. {halves * resolvedLength} min ({resolvedLength} min/half{!hasOverride && ageGroup ? ` for ${ageGroup}` : ''})
-            </Text>
+            <>
+              <Text style={styles.halvesPlayedValue}>{halves}</Text>
+              <Text style={styles.halvesPlayedHint}>
+                Est. {halves * resolvedLength} min ({resolvedLength} min/half{!hasOverride && ageGroup ? ` for ${ageGroup}` : ''})
+              </Text>
+              <Text style={styles.halvesPlayedSubHint}>
+                {halves === 2 ? 'Same keeper both halves' : 'Different 2nd half keeper'}
+              </Text>
+            </>
           );
         })()}
       </View>
@@ -512,12 +500,9 @@ function createStyles(c: ThemeColors) {
     shootoutHint: { fontSize: fontSize.sm, color: c.textMuted, fontStyle: 'italic' as const, textAlign: 'center' as const, marginBottom: 14, paddingHorizontal: 8 },
     oneVsOneHint: { fontSize: fontSize.xs, color: c.textMuted, fontStyle: 'italic' as const, textAlign: 'center' as const, marginBottom: 12, paddingHorizontal: 8 },
     halvesPlayedSection: { backgroundColor: c.surface, borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: c.border, alignItems: 'center' as const },
-    halvesPlayedLabel: { fontSize: fontSize.caption, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 0.8, marginBottom: 10 },
-    halvesPlayedToggle: { flexDirection: 'row' as const, gap: 8, marginBottom: 8 },
-    halvesPlayedOption: { paddingHorizontal: 24, paddingVertical: 10, borderRadius: 10, backgroundColor: c.background, borderWidth: 1, borderColor: c.border },
-    halvesPlayedOptionActive: { backgroundColor: c.primaryGlow, borderColor: 'rgba(16, 185, 129, 0.4)' },
-    halvesPlayedOptionText: { fontSize: fontSize.subtitle, fontWeight: '700' as const, color: c.textMuted },
-    halvesPlayedOptionTextActive: { color: c.primary },
+    halvesPlayedLabel: { fontSize: fontSize.caption, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 0.8, marginBottom: 6 },
+    halvesPlayedValue: { fontSize: fontSize.display3, fontWeight: '800' as const, color: c.primary, marginBottom: 4 },
     halvesPlayedHint: { fontSize: fontSize.xs, color: c.textMuted, fontStyle: 'italic' as const },
+    halvesPlayedSubHint: { fontSize: fontSize.xs, color: c.textMuted, marginTop: 2 },
   });
 }
