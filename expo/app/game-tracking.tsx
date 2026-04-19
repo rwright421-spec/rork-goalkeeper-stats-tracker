@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, Switch } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Play, Square, RotateCcw } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
@@ -135,6 +135,54 @@ export default function GameTrackingScreen() {
   const [gameDetailsCollapsed, setGameDetailsCollapsed] = useState<boolean>(true);
   const [pendingIsHome, setPendingIsHome] = useState<boolean | null>(null);
   const [swapStatsModalVisible, setSwapStatsModalVisible] = useState<boolean>(false);
+
+  const [timerRunning, setTimerRunning] = useState<boolean>(false);
+  const [elapsedMs, setElapsedMs] = useState<number>(0);
+  const timerStartRef = useRef<number | null>(null);
+  const timerBaseRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!timerRunning) return;
+    const tick = () => {
+      if (timerStartRef.current !== null) {
+        setElapsedMs(timerBaseRef.current + (Date.now() - timerStartRef.current));
+      }
+    };
+    const id = setInterval(tick, 100);
+    return () => clearInterval(id);
+  }, [timerRunning]);
+
+  const handleTimerStart = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    timerStartRef.current = Date.now();
+    setTimerRunning(true);
+  }, []);
+
+  const handleTimerStop = useCallback(() => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (timerStartRef.current !== null) {
+      timerBaseRef.current = timerBaseRef.current + (Date.now() - timerStartRef.current);
+      timerStartRef.current = null;
+    }
+    setTimerRunning(false);
+  }, []);
+
+  const handleTimerReset = useCallback(() => {
+    if (timerRunning) return;
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    timerStartRef.current = null;
+    timerBaseRef.current = 0;
+    setElapsedMs(0);
+  }, [timerRunning]);
+
+  const timerDisplay = useMemo(() => {
+    const totalSeconds = elapsedMs / 1000;
+    const minutes = Math.floor(totalSeconds / 60);
+    const secondsWhole = Math.floor(totalSeconds - minutes * 60);
+    const tenths = Math.floor((elapsedMs % 1000) / 100);
+    const singleDigitSecond = (secondsWhole % 10 + tenths === 0 ? secondsWhole % 10 : secondsWhole % 10);
+    return `${minutes}:${singleDigitSecond}`;
+  }, [elapsedMs]);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -555,6 +603,34 @@ export default function GameTrackingScreen() {
         </View>
       )}
 
+      <View style={styles.timerCard}>
+        <View style={styles.timerHeaderRow}>
+          <Text style={styles.timerLabel}>Game Timer</Text>
+          <TouchableOpacity
+            testID="timer-reset"
+            onPress={handleTimerReset}
+            disabled={timerRunning}
+            style={styles.timerResetBtn}
+            activeOpacity={0.7}
+          >
+            <RotateCcw size={12} color={timerRunning ? colors.textMuted : colors.textSecondary} />
+            <Text style={[styles.timerResetText, timerRunning && { color: colors.textMuted }]}>Reset</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.timerDisplay} testID="timer-display">{timerDisplay}</Text>
+        {!timerRunning ? (
+          <TouchableOpacity testID="timer-start" style={[styles.timerButton, { backgroundColor: colors.primary }]} onPress={handleTimerStart} activeOpacity={0.85}>
+            <Play size={18} color={colors.white} fill={colors.white} />
+            <Text style={styles.timerButtonText}>START</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity testID="timer-stop" style={[styles.timerButton, { backgroundColor: colors.danger }]} onPress={handleTimerStop} activeOpacity={0.85}>
+            <Square size={16} color={colors.white} fill={colors.white} />
+            <Text style={styles.timerButtonText}>STOP</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
       {showTabs ? (
         <View style={styles.tabBar}>
           <TouchableOpacity style={[styles.tab, activeTab === 'home' && styles.tabActive]} onPress={() => { void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setActiveTab('home'); }} activeOpacity={0.7}>
@@ -678,5 +754,13 @@ function createStyles(c: ThemeColors) {
     halfLengthOptionTextActive: { color: c.primary, fontWeight: '700' as const },
     suggestionItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
     suggestionText: { fontSize: fontSize.body, color: c.text, fontWeight: '500' as const },
+    timerCard: { marginHorizontal: 20, marginBottom: 12, backgroundColor: c.surface, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: c.border, alignItems: 'center' as const },
+    timerHeaderRow: { width: '100%' as const, flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const },
+    timerLabel: { fontSize: fontSize.body2, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 1 },
+    timerResetBtn: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4, paddingVertical: 4, paddingHorizontal: 6 },
+    timerResetText: { fontSize: fontSize.caption, color: c.textSecondary, fontWeight: '600' as const },
+    timerDisplay: { fontSize: 52, fontWeight: '800' as const, color: c.text, fontVariant: ['tabular-nums'] as const, marginVertical: 10, letterSpacing: 1 },
+    timerButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 8, paddingVertical: 12, paddingHorizontal: 32, borderRadius: 12, minWidth: 160 },
+    timerButtonText: { color: c.white, fontSize: fontSize.body, fontWeight: '800' as const, letterSpacing: 1 },
   });
 }
