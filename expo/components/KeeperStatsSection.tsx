@@ -191,10 +191,11 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         </View>
         <View style={styles.halfDivider} />
         <Text style={styles.subSectionTitle}>Penalties</Text>
+        <Text style={styles.oneVsOneHint}>PK saves and PK goals automatically count toward your totals — do not also enter them as regular saves or goals.</Text>
         <View style={styles.distributionGrid}>
           <View style={styles.distributionRow}>
-            <StatCounter label="PK Goals Against" value={half.penalties.penaltiesFaced} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesFaced', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesFaced', -1)} />
-            <StatCounter label="Penalties Saved" value={half.penalties.penaltiesSaved} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', -1)} accentColor={colors.primary} />
+            <StatCounter label="PKs Faced" value={half.penalties.penaltiesFaced} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesFaced', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesFaced', -1)} />
+            <StatCounter label="PKs Saved" value={half.penalties.penaltiesSaved} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', -1)} accentColor={colors.primary} disableIncrement={half.penalties.penaltiesSaved >= half.penalties.penaltiesFaced} />
           </View>
           <View style={styles.distributionRow}>
             <StatCounter label="Yellow Card" value={half.penalties.yellowCards} onIncrement={() => updateHalfPenalty(halfKey, 'yellowCards', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'yellowCards', -1)} accentColor={colors.warning} />
@@ -412,8 +413,9 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         <View style={styles.halfDivider} />
         <Text style={styles.subSectionTitle}>Total Penalties</Text>
         <View style={styles.totalDistRow}>
-          <View style={styles.totalDistItem}><Text style={styles.totalDistValue}>{totalPen.penaltiesFaced}</Text><Text style={styles.totalDistLabel}>PK Goals Against</Text></View>
-          <View style={styles.totalDistItem}><Text style={styles.totalDistValue}>{totalPen.penaltiesSaved}</Text><Text style={styles.totalDistLabel}>PK Saved</Text></View>
+          <View style={styles.totalDistItem}><Text style={styles.totalDistValue}>{totalPen.penaltiesFaced}</Text><Text style={styles.totalDistLabel}>PKs Faced</Text></View>
+          <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: colors.primary }]}>{totalPen.penaltiesSaved}</Text><Text style={styles.totalDistLabel}>PKs Saved</Text></View>
+          <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: colors.danger }]}>{Math.max(0, totalPen.penaltiesFaced - totalPen.penaltiesSaved)}</Text><Text style={styles.totalDistLabel}>PK Goals</Text></View>
           <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: colors.warning }]}>{totalPen.yellowCards}</Text><Text style={styles.totalDistLabel}>Yellow</Text></View>
           <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: colors.danger }]}>{totalPen.redCards}</Text><Text style={styles.totalDistLabel}>Red</Text></View>
         </View>

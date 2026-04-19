@@ -162,8 +162,9 @@ function KeeperDetailBlock({ keeper, label, color, colors, game }: { keeper: Kee
       <View style={[styles.distSection, { marginTop: 14 }]}>
         <Text style={styles.distTitle}>Penalties</Text>
         <View style={styles.distGrid}>
-          <View style={styles.distItem}><Text style={styles.distValue}>{totalPen.penaltiesFaced}</Text><Text style={styles.distLabel}>PK Goals Against</Text></View>
-          <View style={styles.distItem}><Text style={styles.distValue}>{totalPen.penaltiesSaved}</Text><Text style={styles.distLabel}>PK Saved</Text></View>
+          <View style={styles.distItem}><Text style={styles.distValue}>{totalPen.penaltiesFaced}</Text><Text style={styles.distLabel}>PKs Faced</Text></View>
+          <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.primary }]}>{totalPen.penaltiesSaved}</Text><Text style={styles.distLabel}>PKs Saved</Text></View>
+          <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.danger }]}>{Math.max(0, totalPen.penaltiesFaced - totalPen.penaltiesSaved)}</Text><Text style={styles.distLabel}>PK Goals</Text></View>
           <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.warning }]}>{totalPen.yellowCards}</Text><Text style={styles.distLabel}>Yellow</Text></View>
           <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.danger }]}>{totalPen.redCards}</Text><Text style={styles.distLabel}>Red</Text></View>
         </View>

@@ -259,6 +259,10 @@ export function getShotsFaced(saves: number, goalsAgainst: number): number {
   return saves + goalsAgainst;
 }
 
+export function getPkGoalsConceded(half: HalfStats): number {
+  return Math.max(0, (half.penalties.penaltiesFaced ?? 0) - (half.penalties.penaltiesSaved ?? 0));
+}
+
 export function getTotalSaves(keeper: KeeperData): number {
   const fh = keeper.firstHalf ?? defaultHalfStats;
   const sh = keeper.secondHalf ?? defaultHalfStats;
@@ -268,7 +272,7 @@ export function getTotalSaves(keeper: KeeperData): number {
 export function getTotalGoalsAgainst(keeper: KeeperData): number {
   const fh = keeper.firstHalf ?? defaultHalfStats;
   const sh = keeper.secondHalf ?? defaultHalfStats;
-  return fh.goalsAgainst + sh.goalsAgainst + fh.penalties.penaltiesFaced + sh.penalties.penaltiesFaced;
+  return fh.goalsAgainst + sh.goalsAgainst + getPkGoalsConceded(fh) + getPkGoalsConceded(sh);
 }
 
 export function getTotalShotsFaced(keeper: KeeperData): number {

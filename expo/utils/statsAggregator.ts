@@ -1,4 +1,4 @@
-import { SavedGame, KeeperData, DistributionStats, PenaltyStats, HalfStats, ShootoutStats, calculateSavePercentage, normalizeKeeper, resolveHalfLength, defaultHalfStats, DEFAULT_HALF_LENGTH } from '@/types/game';
+import { SavedGame, KeeperData, DistributionStats, PenaltyStats, HalfStats, ShootoutStats, calculateSavePercentage, normalizeKeeper, resolveHalfLength, defaultHalfStats, DEFAULT_HALF_LENGTH, getPkGoalsConceded } from '@/types/game';
 import { Team } from '@/types/game';
 
 export interface AggregatedStats {
@@ -104,7 +104,7 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
 
     if (profilePlaysFirstHalf) {
       gameSaves += fh.saves + fh.penalties.penaltiesSaved;
-      gameGA += fh.goalsAgainst + fh.penalties.penaltiesFaced;
+      gameGA += fh.goalsAgainst + getPkGoalsConceded(fh);
       addHalfDistribution(distribution, fh);
       addHalfPenalties(penalties, fh);
       oneVsOneFaced += fh.oneVsOneFaced ?? 0;
@@ -113,7 +113,7 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
 
     if (profilePlaysSecondHalf) {
       gameSaves += sh.saves + sh.penalties.penaltiesSaved;
-      gameGA += sh.goalsAgainst + sh.penalties.penaltiesFaced;
+      gameGA += sh.goalsAgainst + getPkGoalsConceded(sh);
       addHalfDistribution(distribution, sh);
       addHalfPenalties(penalties, sh);
       oneVsOneFaced += sh.oneVsOneFaced ?? 0;
