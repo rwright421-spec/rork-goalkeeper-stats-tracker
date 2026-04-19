@@ -603,28 +603,30 @@ export default function GameTrackingScreen() {
       )}
 
       <View style={styles.timerCard}>
-        <View style={styles.timerHeaderRow}>
-          <Text style={styles.timerLabel}>Game Timer</Text>
-          <TouchableOpacity
-            testID="timer-reset"
-            onPress={handleTimerReset}
-            disabled={timerRunning}
-            style={styles.timerResetBtn}
-            activeOpacity={0.7}
-          >
-            <RotateCcw size={12} color={timerRunning ? colors.textMuted : colors.textSecondary} />
-            <Text style={[styles.timerResetText, timerRunning && { color: colors.textMuted }]}>Reset</Text>
-          </TouchableOpacity>
+        <View style={styles.timerLeft}>
+          <View style={styles.timerHeaderRow}>
+            <Text style={styles.timerLabel}>Timer</Text>
+            <TouchableOpacity
+              testID="timer-reset"
+              onPress={handleTimerReset}
+              disabled={timerRunning}
+              style={styles.timerResetBtn}
+              activeOpacity={0.7}
+            >
+              <RotateCcw size={10} color={timerRunning ? colors.textMuted : colors.textSecondary} />
+              <Text style={[styles.timerResetText, timerRunning && { color: colors.textMuted }]}>Reset</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.timerDisplay} testID="timer-display">{timerDisplay}</Text>
         </View>
-        <Text style={styles.timerDisplay} testID="timer-display">{timerDisplay}</Text>
         {!timerRunning ? (
           <TouchableOpacity testID="timer-start" style={[styles.timerButton, { backgroundColor: colors.primary }]} onPress={handleTimerStart} activeOpacity={0.85}>
-            <Play size={18} color={colors.white} fill={colors.white} />
+            <Play size={14} color={colors.white} fill={colors.white} />
             <Text style={styles.timerButtonText}>START</Text>
           </TouchableOpacity>
         ) : (
           <TouchableOpacity testID="timer-stop" style={[styles.timerButton, { backgroundColor: colors.danger }]} onPress={handleTimerStop} activeOpacity={0.85}>
-            <Square size={16} color={colors.white} fill={colors.white} />
+            <Square size={12} color={colors.white} fill={colors.white} />
             <Text style={styles.timerButtonText}>STOP</Text>
           </TouchableOpacity>
         )}
@@ -753,13 +755,14 @@ function createStyles(c: ThemeColors) {
     halfLengthOptionTextActive: { color: c.primary, fontWeight: '700' as const },
     suggestionItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
     suggestionText: { fontSize: fontSize.body, color: c.text, fontWeight: '500' as const },
-    timerCard: { marginHorizontal: 20, marginBottom: 12, backgroundColor: c.surface, borderRadius: 14, padding: 16, borderWidth: 1, borderColor: c.border, alignItems: 'center' as const },
-    timerHeaderRow: { width: '100%' as const, flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const },
-    timerLabel: { fontSize: fontSize.body2, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 1 },
-    timerResetBtn: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4, paddingVertical: 4, paddingHorizontal: 6 },
+    timerCard: { marginHorizontal: 20, marginBottom: 12, backgroundColor: c.surface, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, borderWidth: 1, borderColor: c.border, flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, gap: 12 },
+    timerLeft: { flex: 1, flexDirection: 'column' as const, alignItems: 'flex-start' as const },
+    timerHeaderRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
+    timerLabel: { fontSize: fontSize.caption, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 1 },
+    timerResetBtn: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 3, paddingVertical: 2, paddingHorizontal: 4 },
     timerResetText: { fontSize: fontSize.caption, color: c.textSecondary, fontWeight: '600' as const },
-    timerDisplay: { fontSize: 52, fontWeight: '800' as const, color: c.text, fontVariant: ['tabular-nums'] as const, marginVertical: 10, letterSpacing: 1 },
-    timerButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 8, paddingVertical: 12, paddingHorizontal: 32, borderRadius: 12, minWidth: 160 },
-    timerButtonText: { color: c.white, fontSize: fontSize.body, fontWeight: '800' as const, letterSpacing: 1 },
+    timerDisplay: { fontSize: 28, fontWeight: '800' as const, color: c.text, fontVariant: ['tabular-nums'] as const, marginTop: 2, letterSpacing: 1 },
+    timerButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 10, minWidth: 96 },
+    timerButtonText: { color: c.white, fontSize: fontSize.body2, fontWeight: '800' as const, letterSpacing: 1 },
   });
 }
