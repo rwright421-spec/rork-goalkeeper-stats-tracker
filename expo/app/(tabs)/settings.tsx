@@ -487,6 +487,10 @@ export default function SettingsScreen() {
           </Text>
         </TouchableOpacity>
 
+        <Text style={styles.versionText} testID="app-version-text">
+          {`Version ${Constants.expoConfig?.version ?? 'unknown'}${Platform.OS === 'ios' && Constants.expoConfig?.ios?.buildNumber ? ` · Build ${Constants.expoConfig.ios.buildNumber}` : ''}${Platform.OS === 'android' && Constants.expoConfig?.android?.versionCode != null ? ` · Build ${Constants.expoConfig.android.versionCode}` : ''}`}
+        </Text>
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -535,5 +539,6 @@ function createStyles(c: ThemeColors) {
     themePreviewButtonText: { fontSize: fontSize.body2, fontWeight: '600' as const, color: c.primary },
     deleteAllButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 10, backgroundColor: c.danger, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 20 },
     deleteAllButtonText: { fontSize: fontSize.bodyLg, fontWeight: '700' as const, color: '#fff' },
+    versionText: { fontSize: fontSize.caption, color: c.textMuted, textAlign: 'center' as const, marginTop: 24, opacity: 0.7 },
   });
 }
