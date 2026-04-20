@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking, Platform, ActivityIndicator } from 'react-native';
-import { Check, Palette, Users, Trash2, MessageSquare, ExternalLink, Upload, Download, Database, RefreshCw, Eye, AlertTriangle } from 'lucide-react-native';
+import { Check, Palette, Users, Trash2, MessageSquare, ExternalLink, Upload, Download, Database, RefreshCw, Eye, AlertTriangle, Info, ChevronDown, ChevronUp, Copy } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -8,6 +8,8 @@ import * as Sharing from 'expo-sharing';
 import * as DocumentPicker from 'expo-document-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import * as Updates from 'expo-updates';
+import * as Clipboard from 'expo-clipboard';
 import { useTheme, useColors } from '@/contexts/ThemeContext';
 import { ThemeName, themeOptions, ThemeColors } from '@/constants/themes';
 import { useOpponents } from '@/contexts/OpponentContext';
@@ -31,7 +33,53 @@ export default function SettingsScreen() {
   const [isImporting, setIsImporting] = useState(false);
   const [isSyncingNow, setIsSyncingNow] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [buildInfoExpanded, setBuildInfoExpanded] = useState<boolean>(false);
+  const [copyFeedback, setCopyFeedback] = useState<boolean>(false);
   const router = useRouter();
+
+  const buildInfo = useMemo(() => {
+    const version = Constants.expoConfig?.version ?? 'unknown';
+    const buildNumber = Platform.OS === 'ios'
+      ? (Constants.expoConfig?.ios?.buildNumber ?? 'unknown')
+      : Platform.OS === 'android'
+        ? String(Constants.expoConfig?.android?.versionCode ?? 'unknown')
+        : 'n/a';
+    const rtv = Updates.runtimeVersion ?? 'unknown';
+    const chan = Updates.channel ?? 'unknown';
+    const updId = Updates.updateId ?? null;
+    const created = Updates.createdAt ?? null;
+    const extra = (Constants.expoConfig?.extra ?? {}) as { commitSha?: string };
+    const commitSha = extra.commitSha ?? 'not set';
+    return {
+      version,
+      buildNumber,
+      runtimeVersion: rtv,
+      channel: chan,
+      updateId: updId ? updId : 'Embedded (no OTA applied)',
+      createdAt: created ? created.toLocaleString() : 'Embedded',
+      commitSha,
+    };
+  }, []);
+
+  const handleCopyBuildInfo = useCallback(async () => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const text = [
+      `Version: ${buildInfo.version}`,
+      `Build: ${buildInfo.buildNumber}`,
+      `Runtime Version: ${buildInfo.runtimeVersion}`,
+      `Channel: ${buildInfo.channel}`,
+      `Update ID: ${buildInfo.updateId}`,
+      `Update Created: ${buildInfo.createdAt}`,
+      `Commit SHA: ${buildInfo.commitSha}`,
+    ].join('\n');
+    try {
+      await Clipboard.setStringAsync(text);
+      setCopyFeedback(true);
+      setTimeout(() => setCopyFeedback(false), 1500);
+    } catch (e) {
+      console.error('[Settings] Copy build info error:', e);
+    }
+  }, [buildInfo]);
 
   const handleThemeSelect = useCallback((key: ThemeName) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -491,6 +539,48 @@ export default function SettingsScreen() {
           {`Version ${Constants.expoConfig?.version ?? 'unknown'}${Platform.OS === 'ios' && Constants.expoConfig?.ios?.buildNumber ? ` · Build ${Constants.expoConfig.ios.buildNumber}` : ''}${Platform.OS === 'android' && Constants.expoConfig?.android?.versionCode != null ? ` · Build ${Constants.expoConfig.android.versionCode}` : ''}`}
         </Text>
 
+        <TouchableOpacity
+          testID="build-info-toggle"
+          style={styles.buildInfoHeader}
+          activeOpacity={0.7}
+          onPress={() => {
+            void Haptics.selectionAsync();
+            setBuildInfoExpanded(v => !v);
+          }}
+        >
+          <Info size={14} color={colors.textMuted} />
+          <Text style={styles.buildInfoHeaderText}>Build Info</Text>
+          {buildInfoExpanded ? (
+            <ChevronUp size={14} color={colors.textMuted} />
+          ) : (
+            <ChevronDown size={14} color={colors.textMuted} />
+          )}
+        </TouchableOpacity>
+
+        {buildInfoExpanded && (
+          <View style={styles.buildInfoCard} testID="build-info-card">
+            <BuildInfoRow label="Version" value={buildInfo.version} styles={styles} />
+            <BuildInfoRow label="Build" value={buildInfo.buildNumber} styles={styles} />
+            <BuildInfoRow label="Runtime" value={buildInfo.runtimeVersion} styles={styles} />
+            <BuildInfoRow label="Channel" value={buildInfo.channel} styles={styles} />
+            <BuildInfoRow label="Update ID" value={buildInfo.updateId} styles={styles} />
+            <BuildInfoRow label="Update Created" value={buildInfo.createdAt} styles={styles} />
+            <BuildInfoRow label="Commit SHA" value={buildInfo.commitSha} styles={styles} />
+
+            <TouchableOpacity
+              testID="copy-build-info-btn"
+              style={styles.copyBuildInfoButton}
+              activeOpacity={0.7}
+              onPress={handleCopyBuildInfo}
+            >
+              <Copy size={14} color={colors.primary} />
+              <Text style={styles.copyBuildInfoText}>
+                {copyFeedback ? 'Copied!' : 'Copy'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -540,5 +630,22 @@ function createStyles(c: ThemeColors) {
     deleteAllButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 10, backgroundColor: c.danger, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 20 },
     deleteAllButtonText: { fontSize: fontSize.bodyLg, fontWeight: '700' as const, color: '#fff' },
     versionText: { fontSize: fontSize.caption, color: c.textMuted, textAlign: 'center' as const, marginTop: 24, opacity: 0.7 },
+    buildInfoHeader: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, marginTop: 16, paddingVertical: 8 },
+    buildInfoHeaderText: { fontSize: fontSize.caption, fontWeight: '600' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 1 },
+    buildInfoCard: { backgroundColor: c.surface, borderRadius: 10, borderWidth: 1, borderColor: c.border, padding: 12, marginTop: 4 },
+    buildInfoRow: { flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'flex-start' as const, paddingVertical: 5, gap: 12 },
+    buildInfoLabel: { fontSize: fontSize.caption, color: c.textMuted, fontWeight: '500' as const, flexShrink: 0 },
+    buildInfoValue: { fontSize: fontSize.caption, color: c.textSecondary, fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }), flex: 1, textAlign: 'right' as const },
+    copyBuildInfoButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, marginTop: 10, paddingVertical: 8, borderRadius: 8, backgroundColor: c.primaryGlow, borderWidth: 1, borderColor: c.primary },
+    copyBuildInfoText: { fontSize: fontSize.caption, fontWeight: '600' as const, color: c.primary },
   });
+}
+
+function BuildInfoRow({ label, value, styles }: { label: string; value: string; styles: ReturnType<typeof createStyles> }) {
+  return (
+    <View style={styles.buildInfoRow}>
+      <Text style={styles.buildInfoLabel}>{label}</Text>
+      <Text style={styles.buildInfoValue} selectable numberOfLines={2}>{value}</Text>
+    </View>
+  );
 }
