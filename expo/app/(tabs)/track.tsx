@@ -18,6 +18,7 @@ import { SavedGame, deriveKeeperSelection } from '@/types/game';
 import SyncStatusBanner from '@/components/SyncStatusBanner';
 import { GameListSkeleton } from '@/components/LoadingSkeleton';
 import { fontSize } from '@/constants/typography';
+import { loadDraft, clearDraft, formatRelativeTime } from '@/utils/draftGame';
 
 export default function TrackScreen() {
   const router = useRouter();
@@ -56,10 +57,36 @@ export default function TrackScreen() {
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const openNewGameSheet = useCallback(() => {
+  const openNewGameSheet = useCallback(async () => {
     if (!isPro && isAtFreeLimit) {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       router.push('/paywall');
+      return;
+    }
+    const draft = await loadDraft();
+    if (draft) {
+      const label = `${draft.profileName ? draft.profileName + ' · ' : ''}${draft.setup.gameName || 'Unsaved game'} · ${formatRelativeTime(draft.savedAt)}`;
+      Alert.alert(
+        'Discard in-progress game?',
+        `You have an unsaved game in progress (${label}). Starting a new one will discard it.`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Resume',
+            onPress: () => { router.push('/game-tracking'); },
+          },
+          {
+            text: 'Discard & New',
+            style: 'destructive',
+            onPress: () => {
+              void clearDraft();
+              void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setShowNewGameSheet(true);
+              Animated.spring(sheetAnim, { toValue: 1, useNativeDriver: true, tension: 65, friction: 11 }).start();
+            },
+          },
+        ],
+      );
       return;
     }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -271,7 +298,7 @@ export default function TrackScreen() {
       <TouchableOpacity
         testID="new-game-button"
         style={styles.newGameButton}
-        onPress={openNewGameSheet}
+        onPress={() => { void openNewGameSheet(); }}
         activeOpacity={0.8}
       >
         <View style={styles.newGameInner}>

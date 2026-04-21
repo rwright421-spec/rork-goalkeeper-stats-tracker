@@ -1,6 +1,6 @@
 // Game Tracking - Live stat entry screen for game tracking
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, Switch, AppState, AppStateStatus } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Play, Square, RotateCcw } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -17,6 +17,7 @@ import KeeperStatsSection from '@/components/KeeperStatsSection';
 import KeyboardDoneBar, { KEYBOARD_DONE_BAR_ID } from '@/components/KeyboardDoneBar';
 import SwapStatsConfirmModal from '@/components/SwapStatsConfirmModal';
 import { fontSize } from '@/constants/typography';
+import { loadDraft, saveDraft, clearDraft, DraftPayload, formatRelativeTime } from '@/utils/draftGame';
 
 export default function GameTrackingScreen() {
   const router = useRouter();
@@ -37,7 +38,7 @@ export default function GameTrackingScreen() {
   const { isPro } = usePurchases();
   const isEditMode = !!params.gameId;
   const existingGame = isEditMode ? getGame(params.gameId!) : undefined;
-  const { activeProfile, profiles, createProfile } = useGoalkeepers();
+  const { activeProfile, profiles, createProfile, selectProfile } = useGoalkeepers();
   const { activeTeam, activeTeamId } = useTeams();
   const { addOpponent, getSuggestions } = useOpponents();
 
@@ -140,6 +141,10 @@ export default function GameTrackingScreen() {
   const [elapsedMs, setElapsedMs] = useState<number>(0);
   const timerStartRef = useRef<number | null>(null);
   const timerBaseRef = useRef<number>(0);
+
+  const [draftLoaded, setDraftLoaded] = useState<boolean>(isEditMode);
+  const [pendingDraft, setPendingDraft] = useState<DraftPayload | null>(null);
+  const skipDraftWriteRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (!timerRunning) return;
@@ -384,6 +389,130 @@ export default function GameTrackingScreen() {
 
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    if (isEditMode) return;
+    let mounted = true;
+    (async () => {
+      const draft = await loadDraft();
+      if (!mounted) return;
+      if (draft) {
+        setPendingDraft(draft);
+      } else {
+        setDraftLoaded(true);
+      }
+    })();
+    return () => { mounted = false; };
+  }, [isEditMode]);
+
+  const applyDraft = useCallback((draft: DraftPayload) => {
+    skipDraftWriteRef.current = true;
+    setEditEventName(draft.setup.eventName);
+    setEditDate(draft.setup.date);
+    setEditGameName(draft.setup.gameName);
+    setEditAgeGroup(draft.setup.ageGroup);
+    setIsHomeGame(draft.setup.isHome);
+    setEditHalfLengthMinutes(draft.setup.halfLengthMinutes);
+    setKeeperSelection(draft.setup.keeperSelection);
+    setHomeKeeper(draft.homeKeeper);
+    setAwayKeeper(draft.awayKeeper);
+    setActiveTab(draft.activeTab);
+    setHomeScoreOverride(draft.homeScoreOverride);
+    setAwayScoreOverride(draft.awayScoreOverride);
+    const t = draft.timer;
+    if (t.running && t.startedAt !== null) {
+      timerBaseRef.current = t.baseMs;
+      timerStartRef.current = Date.now();
+      const already = Date.now() - t.startedAt;
+      timerBaseRef.current = t.baseMs + Math.max(0, already);
+      timerStartRef.current = Date.now();
+      setElapsedMs(timerBaseRef.current);
+      setTimerRunning(true);
+    } else {
+      timerBaseRef.current = t.baseMs;
+      timerStartRef.current = null;
+      setElapsedMs(t.baseMs);
+      setTimerRunning(false);
+    }
+    if (draft.profileId && draft.profileId !== activeProfile?.id) {
+      try { selectProfile(draft.profileId); } catch (e) { console.log('[Draft] selectProfile failed:', e); }
+    }
+    setTimeout(() => { skipDraftWriteRef.current = false; }, 50);
+  }, [activeProfile, selectProfile]);
+
+  const handleResumeDraft = useCallback(() => {
+    if (!pendingDraft) return;
+    applyDraft(pendingDraft);
+    setPendingDraft(null);
+    setDraftLoaded(true);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, [pendingDraft, applyDraft]);
+
+  const handleDiscardDraft = useCallback(() => {
+    Alert.alert('Discard in-progress game?', 'Your previous unsaved game will be deleted.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Discard',
+        style: 'destructive',
+        onPress: () => {
+          void clearDraft();
+          setPendingDraft(null);
+          setDraftLoaded(true);
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        },
+      },
+    ]);
+  }, []);
+
+  const buildDraft = useCallback((): DraftPayload => {
+    const timerState = timerRunning && timerStartRef.current !== null
+      ? { running: true, baseMs: timerBaseRef.current, startedAt: timerStartRef.current }
+      : { running: false, baseMs: timerBaseRef.current, startedAt: null };
+    return {
+      version: 1 as const,
+      savedAt: Date.now(),
+      profileId: activeProfile?.id ?? null,
+      profileName: activeProfile?.name ?? null,
+      setup: {
+        eventName: editEventName,
+        date: editDate,
+        gameName: editGameName,
+        ageGroup: editAgeGroup,
+        isHome: isHomeGame,
+        halfLengthMinutes: editHalfLengthMinutes,
+        keeperSelection,
+        quickStart: isQuickStart,
+      },
+      homeKeeper,
+      awayKeeper,
+      activeTab,
+      homeScoreOverride,
+      awayScoreOverride,
+      timer: timerState,
+    };
+  }, [activeProfile, editEventName, editDate, editGameName, editAgeGroup, isHomeGame, editHalfLengthMinutes, keeperSelection, isQuickStart, homeKeeper, awayKeeper, activeTab, homeScoreOverride, awayScoreOverride, timerRunning]);
+
+  useEffect(() => {
+    if (isEditMode) return;
+    if (!draftLoaded) return;
+    if (pendingDraft) return;
+    if (skipDraftWriteRef.current) return;
+    const handle = setTimeout(() => {
+      void saveDraft(buildDraft());
+    }, 400);
+    return () => clearTimeout(handle);
+  }, [isEditMode, draftLoaded, pendingDraft, buildDraft]);
+
+  useEffect(() => {
+    if (isEditMode) return;
+    const sub = AppState.addEventListener('change', (next: AppStateStatus) => {
+      if (next === 'background' || next === 'inactive') {
+        if (!draftLoaded || pendingDraft) return;
+        void saveDraft(buildDraft());
+      }
+    });
+    return () => { sub.remove(); };
+  }, [isEditMode, draftLoaded, pendingDraft, buildDraft]);
+
   const handleSave = useCallback(async () => {
     Keyboard.dismiss();
     if (isSaving) return;
@@ -399,6 +528,7 @@ export default function GameTrackingScreen() {
         finalScore: computedFinalScore,
       };
       updateGame(updated);
+      void clearDraft();
       Alert.alert('Game Updated', 'Stats have been updated.', [{ text: 'OK', onPress: () => { router.replace('/(tabs)/dashboard'); } }]);
     } else {
       if (!isPro && isAtFreeLimit) {
@@ -443,6 +573,7 @@ export default function GameTrackingScreen() {
       };
 
       addGame(game);
+      void clearDraft();
       setIsSaving(false);
       const savedMsg = pendingSync
         ? 'Stats saved locally. Will sync with server when online.'
@@ -695,6 +826,27 @@ export default function GameTrackingScreen() {
         onKeepStats={onKeepStats}
         onCancel={onCancelSwap}
       />
+
+      {pendingDraft ? (
+        <View style={styles.resumeBanner} testID="resume-draft-banner">
+          <View style={styles.resumeBannerInner}>
+            <Text style={styles.resumeBannerTitle}>Resume previous game?</Text>
+            <Text style={styles.resumeBannerSubtitle}>
+              In-progress game from {formatRelativeTime(pendingDraft.savedAt)}
+              {pendingDraft.profileName ? ` · ${pendingDraft.profileName}` : ''}
+              {pendingDraft.setup.gameName ? ` · vs ${pendingDraft.setup.gameName}` : ''}
+            </Text>
+            <View style={styles.resumeBannerButtons}>
+              <TouchableOpacity testID="resume-draft-discard" style={styles.resumeBannerBtnSecondary} onPress={handleDiscardDraft} activeOpacity={0.8}>
+                <Text style={styles.resumeBannerBtnSecondaryText}>Start new</Text>
+              </TouchableOpacity>
+              <TouchableOpacity testID="resume-draft-resume" style={styles.resumeBannerBtnPrimary} onPress={handleResumeDraft} activeOpacity={0.85}>
+                <Text style={styles.resumeBannerBtnPrimaryText}>Resume</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -764,5 +916,14 @@ function createStyles(c: ThemeColors) {
     timerDisplay: { fontSize: 28, fontWeight: '800' as const, color: c.text, fontVariant: ['tabular-nums'] as const, marginTop: 2, letterSpacing: 1 },
     timerButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 10, minWidth: 96 },
     timerButtonText: { color: c.white, fontSize: fontSize.body2, fontWeight: '800' as const, letterSpacing: 1 },
+    resumeBanner: { position: 'absolute' as const, left: 0, right: 0, bottom: 0, padding: 16, backgroundColor: 'rgba(0,0,0,0.55)' },
+    resumeBannerInner: { backgroundColor: c.surface, borderRadius: 16, padding: 16, borderWidth: 1.5, borderColor: c.primary, gap: 8 },
+    resumeBannerTitle: { fontSize: fontSize.h4, fontWeight: '800' as const, color: c.text },
+    resumeBannerSubtitle: { fontSize: fontSize.caption, color: c.textSecondary, fontWeight: '500' as const, lineHeight: 18 },
+    resumeBannerButtons: { flexDirection: 'row' as const, gap: 10, marginTop: 6 },
+    resumeBannerBtnSecondary: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center' as const, backgroundColor: c.background, borderWidth: 1, borderColor: c.border },
+    resumeBannerBtnSecondaryText: { fontSize: fontSize.body, fontWeight: '700' as const, color: c.textSecondary },
+    resumeBannerBtnPrimary: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center' as const, backgroundColor: c.primaryDark },
+    resumeBannerBtnPrimaryText: { fontSize: fontSize.body, fontWeight: '800' as const, color: c.white },
   });
 }
