@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking, Platform, ActivityIndicator } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking, Platform, ActivityIndicator, Switch } from 'react-native';
 import { Check, Palette, Users, Trash2, MessageSquare, ExternalLink, Upload, Download, Database, RefreshCw, Eye, AlertTriangle, Info, ChevronDown, ChevronUp, Copy } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +19,10 @@ import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useGames } from '@/contexts/GameContext';
 import { useTeams } from '@/contexts/TeamContext';
 import { fontSize } from '@/constants/typography';
+import { usePurchases } from '@/contexts/PurchasesContext';
+import * as secureStorage from '@/utils/secureStorage';
+
+const DEV_MODE_REVEALED_KEY = 'gk_dev_mode_revealed';
 
 export default function SettingsScreen() {
   const { themeName, setTheme } = useTheme();
@@ -36,6 +40,41 @@ export default function SettingsScreen() {
   const [buildInfoExpanded, setBuildInfoExpanded] = useState<boolean>(false);
   const [copyFeedback, setCopyFeedback] = useState<boolean>(false);
   const router = useRouter();
+  const { devProOverride, setDevProOverride, rcIsPro } = usePurchases();
+  const [devModeRevealed, setDevModeRevealed] = useState<boolean>(false);
+  const buildInfoTapCountRef = useRef<number>(0);
+  const buildInfoTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await secureStorage.getRawString(DEV_MODE_REVEALED_KEY);
+        if (raw === '1') setDevModeRevealed(true);
+      } catch (e) {
+        console.log('[Settings] Failed to load dev mode flag:', e);
+      }
+    })();
+  }, []);
+
+  const handleBuildInfoHeaderTap = useCallback(() => {
+    void Haptics.selectionAsync();
+    setBuildInfoExpanded(prev => !prev);
+
+    buildInfoTapCountRef.current += 1;
+    if (buildInfoTapTimerRef.current) clearTimeout(buildInfoTapTimerRef.current);
+    buildInfoTapTimerRef.current = setTimeout(() => {
+      buildInfoTapCountRef.current = 0;
+    }, 3000);
+
+    if (buildInfoTapCountRef.current >= 5) {
+      buildInfoTapCountRef.current = 0;
+      setDevModeRevealed(true);
+      secureStorage.setRawString(DEV_MODE_REVEALED_KEY, '1').catch((e) => {
+        console.log('[Settings] Failed to persist dev mode flag:', e);
+      });
+      Alert.alert('Dev Mode Unlocked', 'Beta Pro Override is now available in Build Info.');
+    }
+  }, []);
 
   const buildInfo = useMemo(() => {
     const version = Constants.expoConfig?.version ?? 'unknown';
@@ -543,10 +582,7 @@ export default function SettingsScreen() {
           testID="build-info-toggle"
           style={styles.buildInfoHeader}
           activeOpacity={0.7}
-          onPress={() => {
-            void Haptics.selectionAsync();
-            setBuildInfoExpanded(v => !v);
-          }}
+          onPress={handleBuildInfoHeaderTap}
         >
           <Info size={14} color={colors.textMuted} />
           <Text style={styles.buildInfoHeaderText}>Build Info</Text>
@@ -578,6 +614,24 @@ export default function SettingsScreen() {
                 {copyFeedback ? 'Copied!' : 'Copy'}
               </Text>
             </TouchableOpacity>
+
+            {devModeRevealed && (
+              <View style={styles.devOverrideRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.devOverrideLabel}>Beta Pro Override</Text>
+                  <Text style={styles.devOverrideHint}>
+                    {rcIsPro
+                      ? 'You already have a real Pro entitlement.'
+                      : 'Simulates an active Pro entitlement on this device.'}
+                  </Text>
+                </View>
+                <Switch
+                  value={devProOverride}
+                  onValueChange={setDevProOverride}
+                  testID="dev-pro-override-toggle"
+                />
+              </View>
+            )}
           </View>
         )}
 
@@ -638,6 +692,25 @@ function createStyles(c: ThemeColors) {
     buildInfoValue: { fontSize: fontSize.caption, color: c.textSecondary, fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }), flex: 1, textAlign: 'right' as const },
     copyBuildInfoButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, marginTop: 10, paddingVertical: 8, borderRadius: 8, backgroundColor: c.primaryGlow, borderWidth: 1, borderColor: c.primary },
     copyBuildInfoText: { fontSize: fontSize.caption, fontWeight: '600' as const, color: c.primary },
+    devOverrideRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      gap: 12,
+      paddingTop: 12,
+      marginTop: 8,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    devOverrideLabel: {
+      fontSize: fontSize.body,
+      fontWeight: '600' as const,
+      color: c.text,
+    },
+    devOverrideHint: {
+      fontSize: fontSize.caption,
+      color: c.textMuted,
+      marginTop: 2,
+    },
   });
 }
 
