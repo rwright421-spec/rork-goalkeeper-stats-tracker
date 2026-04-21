@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Platform } from 'react-native';
 import createContextHook from '@nkzw/create-context-hook';
+import * as secureStorage from '@/utils/secureStorage';
 
 let Purchases: any = null;
 let rcConfigured = false;
 
 const ENTITLEMENT_ID = 'pro';
+const DEV_PRO_OVERRIDE_KEY = 'gk_dev_pro_override';
 
 function getRCApiKey(): string | null {
   if (Platform.OS === 'ios') return 'appl_tHhrbyQZcKyEfWVYDxxyxYaZGra';
@@ -31,20 +33,43 @@ async function configureRC() {
 }
 
 export const [PurchasesProvider, usePurchases] = createContextHook(() => {
-  const [isPro, setIsPro] = useState<boolean>(false);
+  const [rcIsPro, setRcIsPro] = useState<boolean>(false);
+  const [devProOverride, setDevProOverrideState] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRestoring, setIsRestoring] = useState<boolean>(false);
   const [currentOffering, setCurrentOffering] = useState<any>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const raw = await secureStorage.getRawString(DEV_PRO_OVERRIDE_KEY);
+        setDevProOverrideState(raw === '1');
+      } catch (e) {
+        console.log('[RevenueCat] Failed to load dev override:', e);
+      }
+    })();
+  }, []);
+
+  const setDevProOverride = useCallback(async (value: boolean) => {
+    setDevProOverrideState(value);
+    try {
+      await secureStorage.setRawString(DEV_PRO_OVERRIDE_KEY, value ? '1' : '0');
+    } catch (e) {
+      console.log('[RevenueCat] Failed to persist dev override:', e);
+    }
+  }, []);
+
+  const isPro = rcIsPro || devProOverride;
 
   const checkEntitlementFromInfo = useCallback((info: any) => {
     try {
       const entitlement = info?.entitlements?.active?.[ENTITLEMENT_ID];
       const hasPro = !!entitlement;
-      setIsPro(hasPro);
+      setRcIsPro(hasPro);
       return hasPro;
     } catch (e) {
       console.log('[RevenueCat] Error checking entitlements:', e);
-      setIsPro(false);
+      setRcIsPro(false);
       return false;
     }
   }, []);
@@ -146,6 +171,9 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
 
   return useMemo(() => ({
     isPro,
+    rcIsPro,
+    devProOverride,
+    setDevProOverride,
     isLoading,
     currentOffering,
     checkEntitlement: initAndFetchOfferings,
@@ -154,5 +182,5 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
     initAndFetchOfferings,
     purchasePackage,
     rcAvailable: rcConfigured,
-  }), [isPro, isLoading, currentOffering, restorePurchases, isRestoring, initAndFetchOfferings, purchasePackage]);
+  }), [isPro, rcIsPro, devProOverride, setDevProOverride, isLoading, currentOffering, restorePurchases, isRestoring, initAndFetchOfferings, purchasePackage]);
 });
