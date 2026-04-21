@@ -53,9 +53,13 @@ export interface DistributionStats {
   dropBacks: number;
 }
 
+// NOTE: PenaltyStats tracks REGULAR (in-game) penalty kicks only.
+// Shootout PKs are tracked separately in ShootoutStats and are intentionally
+// excluded from save %, shots on target, and game score calculations.
 export interface PenaltyStats {
-  penaltiesFaced: number;
   penaltiesSaved: number;
+  penaltyGoals: number;
+  penaltiesMissed: number;
   redCards: number;
   yellowCards: number;
 }
@@ -161,7 +165,7 @@ function createEmptyDistribution(): DistributionStats {
 }
 
 function createEmptyPenalties(): PenaltyStats {
-  return { penaltiesFaced: 0, penaltiesSaved: 0, redCards: 0, yellowCards: 0 };
+  return { penaltiesSaved: 0, penaltyGoals: 0, penaltiesMissed: 0, redCards: 0, yellowCards: 0 };
 }
 
 function createEmptyHalf(): HalfStats {
@@ -172,7 +176,7 @@ export const defaultHalfStats: HalfStats = Object.freeze({
   saves: 0,
   goalsAgainst: 0,
   distribution: Object.freeze({ handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 }),
-  penalties: Object.freeze({ penaltiesFaced: 0, penaltiesSaved: 0, redCards: 0, yellowCards: 0 }),
+  penalties: Object.freeze({ penaltiesSaved: 0, penaltyGoals: 0, penaltiesMissed: 0, redCards: 0, yellowCards: 0 }),
   oneVsOneFaced: 0,
   oneVsOneSaved: 0,
 }) as HalfStats;
@@ -208,13 +212,33 @@ function safeDistribution(dist?: Partial<DistributionStats>): DistributionStats 
   };
 }
 
-function safePenalties(pen?: Partial<PenaltyStats>): PenaltyStats {
+function safePenalties(pen?: Partial<PenaltyStats> & { penaltiesFaced?: number }): PenaltyStats {
+  const saved = pen?.penaltiesSaved ?? 0;
+  const hasNewFields = pen !== undefined && (pen.penaltyGoals !== undefined || pen.penaltiesMissed !== undefined);
+  let goals: number;
+  let missed: number;
+  if (hasNewFields) {
+    goals = pen?.penaltyGoals ?? 0;
+    missed = pen?.penaltiesMissed ?? 0;
+  } else {
+    const legacyFaced = pen?.penaltiesFaced ?? 0;
+    goals = Math.max(0, legacyFaced - saved);
+    missed = 0;
+  }
   return {
-    penaltiesFaced: pen?.penaltiesFaced ?? 0,
-    penaltiesSaved: pen?.penaltiesSaved ?? 0,
+    penaltiesSaved: saved,
+    penaltyGoals: goals,
+    penaltiesMissed: missed,
     redCards: pen?.redCards ?? 0,
     yellowCards: pen?.yellowCards ?? 0,
   };
+}
+
+export function isLegacyPenaltyData(pen?: Partial<PenaltyStats> & { penaltiesFaced?: number }): boolean {
+  if (!pen) return false;
+  const hasNewFields = pen.penaltyGoals !== undefined || pen.penaltiesMissed !== undefined;
+  const hasLegacyFaced = pen.penaltiesFaced !== undefined && pen.penaltiesFaced > 0;
+  return !hasNewFields && hasLegacyFaced;
 }
 
 export function safeShootout(shootout?: Partial<ShootoutStats>): ShootoutStats {
@@ -260,7 +284,26 @@ export function getShotsFaced(saves: number, goalsAgainst: number): number {
 }
 
 export function getPkGoalsConceded(half: HalfStats): number {
-  return Math.max(0, (half.penalties.penaltiesFaced ?? 0) - (half.penalties.penaltiesSaved ?? 0));
+  return half.penalties.penaltyGoals ?? 0;
+}
+
+export function getTotalPenaltiesFaced(keeper: KeeperData): number {
+  const fh = keeper.firstHalf ?? defaultHalfStats;
+  const sh = keeper.secondHalf ?? defaultHalfStats;
+  return (
+    fh.penalties.penaltiesSaved + fh.penalties.penaltyGoals + fh.penalties.penaltiesMissed +
+    sh.penalties.penaltiesSaved + sh.penalties.penaltyGoals + sh.penalties.penaltiesMissed
+  );
+}
+
+export function getPkSavePercentage(keeper: KeeperData): number | null {
+  const fh = keeper.firstHalf ?? defaultHalfStats;
+  const sh = keeper.secondHalf ?? defaultHalfStats;
+  const saved = fh.penalties.penaltiesSaved + sh.penalties.penaltiesSaved;
+  const goals = fh.penalties.penaltyGoals + sh.penalties.penaltyGoals;
+  const onTarget = saved + goals;
+  if (onTarget === 0) return null;
+  return Math.round((saved / onTarget) * 100);
 }
 
 export function getTotalSaves(keeper: KeeperData): number {
@@ -299,8 +342,9 @@ export function getTotalPenalties(keeper: KeeperData): PenaltyStats {
   const fh = keeper.firstHalf ?? defaultHalfStats;
   const sh = keeper.secondHalf ?? defaultHalfStats;
   return {
-    penaltiesFaced: fh.penalties.penaltiesFaced + sh.penalties.penaltiesFaced,
     penaltiesSaved: fh.penalties.penaltiesSaved + sh.penalties.penaltiesSaved,
+    penaltyGoals: fh.penalties.penaltyGoals + sh.penalties.penaltyGoals,
+    penaltiesMissed: fh.penalties.penaltiesMissed + sh.penalties.penaltiesMissed,
     redCards: fh.penalties.redCards + sh.penalties.redCards,
     yellowCards: fh.penalties.yellowCards + sh.penalties.yellowCards,
   };

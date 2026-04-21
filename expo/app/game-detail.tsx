@@ -8,7 +8,7 @@ import { Share2, FileText, FileSpreadsheet, Calendar, Trophy, Pencil, MoreVertic
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { useGames } from '@/contexts/GameContext';
-import { KeeperData, SavedGame, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, resolveHalfLength } from '@/types/game';
+import { KeeperData, SavedGame, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, resolveHalfLength, getPkSavePercentage, isLegacyPenaltyData } from '@/types/game';
 import { formatGameAsText, formatGameAsCSV } from '@/utils/export';
 import MoveGameModal from '@/components/MoveGameModal';
 import { fontSize } from '@/constants/typography';
@@ -162,12 +162,27 @@ function KeeperDetailBlock({ keeper, label, color, colors, game }: { keeper: Kee
       <View style={[styles.distSection, { marginTop: 14 }]}>
         <Text style={styles.distTitle}>Penalties</Text>
         <View style={styles.distGrid}>
-          <View style={styles.distItem}><Text style={styles.distValue}>{totalPen.penaltiesFaced}</Text><Text style={styles.distLabel}>PKs Faced</Text></View>
-          <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.primary }]}>{totalPen.penaltiesSaved}</Text><Text style={styles.distLabel}>PKs Saved</Text></View>
-          <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.danger }]}>{Math.max(0, totalPen.penaltiesFaced - totalPen.penaltiesSaved)}</Text><Text style={styles.distLabel}>PK Goals</Text></View>
+          <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.primary }]}>{totalPen.penaltiesSaved}</Text><Text style={styles.distLabel}>PK Saved</Text></View>
+          <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.danger }]}>{totalPen.penaltyGoals}</Text><Text style={styles.distLabel}>PK Goal</Text></View>
+          <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.textMuted }]}>{totalPen.penaltiesMissed}</Text><Text style={styles.distLabel}>PK Missed</Text></View>
           <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.warning }]}>{totalPen.yellowCards}</Text><Text style={styles.distLabel}>Yellow</Text></View>
           <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.danger }]}>{totalPen.redCards}</Text><Text style={styles.distLabel}>Red</Text></View>
         </View>
+        {(() => {
+          const pkPct = getPkSavePercentage(keeper);
+          if (pkPct === null) return null;
+          const onTarget = totalPen.penaltiesSaved + totalPen.penaltyGoals;
+          return (
+            <Text style={{ fontSize: fontSize.sm, color: colors.textSecondary, fontWeight: '600' as const, textAlign: 'center' as const, marginTop: 10 }}>
+              PK Save %: {pkPct}% ({totalPen.penaltiesSaved} of {onTarget} on target)
+            </Text>
+          );
+        })()}
+        {(isLegacyPenaltyData(keeper.firstHalf?.penalties as any) || isLegacyPenaltyData(keeper.secondHalf?.penalties as any)) && (
+          <Text style={{ fontSize: fontSize.xs, color: colors.textMuted, fontStyle: 'italic' as const, textAlign: 'center' as const, marginTop: 10 }}>
+            Penalty data was recorded before the Missed/Goal distinction was added. Edit if needed.
+          </Text>
+        )}
       </View>
 
       {keeper.shootout && (keeper.shootout.saves > 0 || keeper.shootout.goalsAgainst > 0) ? (

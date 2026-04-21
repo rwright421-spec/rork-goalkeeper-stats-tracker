@@ -22,12 +22,35 @@ const DistributionStatsSchema: z.ZodType<DistributionStats> = z.object({
   dropBacks: stat,
 });
 
-const PenaltyStatsSchema: z.ZodType<PenaltyStats> = z.object({
-  penaltiesFaced: stat,
+const PenaltyStatsSchema: z.ZodType<PenaltyStats> = z.preprocess((val) => {
+  if (!val || typeof val !== 'object') return val;
+  const v = val as Record<string, unknown>;
+  const hasNew = v.penaltyGoals !== undefined || v.penaltiesMissed !== undefined;
+  if (hasNew) {
+    return {
+      penaltiesSaved: v.penaltiesSaved ?? 0,
+      penaltyGoals: v.penaltyGoals ?? 0,
+      penaltiesMissed: v.penaltiesMissed ?? 0,
+      redCards: v.redCards ?? 0,
+      yellowCards: v.yellowCards ?? 0,
+    };
+  }
+  const faced = typeof v.penaltiesFaced === 'number' ? v.penaltiesFaced : 0;
+  const saved = typeof v.penaltiesSaved === 'number' ? v.penaltiesSaved : 0;
+  return {
+    penaltiesSaved: saved,
+    penaltyGoals: Math.max(0, faced - saved),
+    penaltiesMissed: 0,
+    redCards: v.redCards ?? 0,
+    yellowCards: v.yellowCards ?? 0,
+  };
+}, z.object({
   penaltiesSaved: stat,
+  penaltyGoals: stat,
+  penaltiesMissed: stat,
   redCards: stat,
   yellowCards: stat,
-});
+}));
 
 const HalfStatsSchema: z.ZodType<HalfStats> = z.object({
   saves: stat,
@@ -40,8 +63,9 @@ const HalfStatsSchema: z.ZodType<HalfStats> = z.object({
     dropBacks: 0,
   }),
   penalties: PenaltyStatsSchema.default({
-    penaltiesFaced: 0,
     penaltiesSaved: 0,
+    penaltyGoals: 0,
+    penaltiesMissed: 0,
     redCards: 0,
     yellowCards: 0,
   }),
@@ -66,7 +90,7 @@ const KeeperDataSchema: z.ZodType<KeeperData> = z.object({
     saves: 0,
     goalsAgainst: 0,
     distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 },
-    penalties: { penaltiesFaced: 0, penaltiesSaved: 0, redCards: 0, yellowCards: 0 },
+    penalties: { penaltiesSaved: 0, penaltyGoals: 0, penaltiesMissed: 0, redCards: 0, yellowCards: 0 },
     oneVsOneFaced: 0,
     oneVsOneSaved: 0,
   }),
@@ -74,7 +98,7 @@ const KeeperDataSchema: z.ZodType<KeeperData> = z.object({
     saves: 0,
     goalsAgainst: 0,
     distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 },
-    penalties: { penaltiesFaced: 0, penaltiesSaved: 0, redCards: 0, yellowCards: 0 },
+    penalties: { penaltiesSaved: 0, penaltyGoals: 0, penaltiesMissed: 0, redCards: 0, yellowCards: 0 },
     oneVsOneFaced: 0,
     oneVsOneSaved: 0,
   }),

@@ -62,8 +62,9 @@ Total Distribution:
   Drop Backs: ${getTotalDistribution(keeper).dropBacks}
 
 Penalties:
-  Penalties Faced: ${totalPen.penaltiesFaced}
-  Penalties Saved: ${totalPen.penaltiesSaved}
+  PK Saved: ${totalPen.penaltiesSaved}
+  PK Goal: ${totalPen.penaltyGoals}
+  PK Missed: ${totalPen.penaltiesMissed}
   Yellow Cards: ${totalPen.yellowCards}
   Red Cards: ${totalPen.redCards}`;
 
@@ -123,7 +124,7 @@ function formatKeeperCSVRows(keeper: KeeperData, label: string): string {
   const pen = getTotalPenalties(keeper);
   const escapedNotes = (keeper.notes || '').replace(/"/g, '""');
   const so = keeper.shootout ?? { saves: 0, goalsAgainst: 0 };
-  return `${label},${keeper.name},${keeper.year},${keeper.teamName},${keeper.secondHalfName},${keeper.secondHalfYear},${keeper.secondHalfTeamName},${fh.saves},${fh.goalsAgainst},${h1Pct !== null ? `${h1Pct}%` : '—'},${sh.saves},${sh.goalsAgainst},${h2Pct !== null ? `${h2Pct}%` : '—'},${totalSaves},${totalGA},${totalSF},${overallPct !== null ? `${overallPct}%` : '—'},${dist.handledCrosses},${dist.punts},${dist.throwouts},${dist.drives},${dist.dropBacks},${pen.penaltiesFaced},${pen.penaltiesSaved},${pen.yellowCards},${pen.redCards},${so.saves},${so.goalsAgainst},${so.saves + so.goalsAgainst},"${escapedNotes}"`;
+  return `${label},${keeper.name},${keeper.year},${keeper.teamName},${keeper.secondHalfName},${keeper.secondHalfYear},${keeper.secondHalfTeamName},${fh.saves},${fh.goalsAgainst},${h1Pct !== null ? `${h1Pct}%` : '—'},${sh.saves},${sh.goalsAgainst},${h2Pct !== null ? `${h2Pct}%` : '—'},${totalSaves},${totalGA},${totalSF},${overallPct !== null ? `${overallPct}%` : '—'},${dist.handledCrosses},${dist.punts},${dist.throwouts},${dist.drives},${dist.dropBacks},${pen.penaltiesSaved},${pen.penaltyGoals},${pen.penaltiesMissed},${pen.yellowCards},${pen.redCards},${so.saves},${so.goalsAgainst},${so.saves + so.goalsAgainst},"${escapedNotes}"`;
 }
 
 export function formatStatsAsText(keeperName: string, groupMode: string, groups: GroupedStats[]): string {
@@ -159,8 +160,9 @@ Distribution:
   Drop Backs: ${stats.distribution.dropBacks}
 
 Penalties:
-  Penalties Faced: ${stats.penalties.penaltiesFaced}
-  Penalties Saved: ${stats.penalties.penaltiesSaved}
+  PK Saved: ${stats.penalties.penaltiesSaved}
+  PK Goal: ${stats.penalties.penaltyGoals}
+  PK Missed: ${stats.penalties.penaltiesMissed}
   Yellow Cards: ${stats.penalties.yellowCards}
   Red Cards: ${stats.penalties.redCards}`;
 
@@ -178,12 +180,12 @@ Shootout:
 
 export function formatStatsAsCSV(keeperName: string, groupMode: string, groups: GroupedStats[]): string {
   let csv = `Keeper,View\n"${keeperName}","${groupMode}"\n\n`;
-  csv += `Group,Sublabel,Games,Save%,Clean Sheets,Total Saves,Goals Against,Shots on Target,Avg Saves/Game,Avg GA/Game,Crosses/Int,Punts,Throwouts / Rollouts,Drives,Drop Backs,PK Faced,PK Saved,Yellow Cards,Red Cards,SO Saves,SO GA,SO Shots\n`;
+  csv += `Group,Sublabel,Games,Save%,Clean Sheets,Total Saves,Goals Against,Shots on Target,Avg Saves/Game,Avg GA/Game,Crosses/Int,Punts,Throwouts / Rollouts,Drives,Drop Backs,PK Saved,PK Goal,PK Missed,Yellow Cards,Red Cards,SO Saves,SO GA,SO Shots\n`;
 
   for (const group of groups) {
     const s = group.stats;
     const so = s.shootout ?? { saves: 0, goalsAgainst: 0 };
-    csv += `"${group.label}","${group.sublabel || ''}",${s.gamesPlayed},${s.savePercentage !== null ? `${s.savePercentage}%` : '—'},${s.cleanSheets},${s.totalSaves},${s.totalGoalsAgainst},${s.totalShotsFaced},${s.avgSavesPerGame},${s.avgGoalsAgainstPerGame},${s.distribution.handledCrosses},${s.distribution.punts},${s.distribution.throwouts},${s.distribution.drives},${s.distribution.dropBacks},${s.penalties.penaltiesFaced},${s.penalties.penaltiesSaved},${s.penalties.yellowCards},${s.penalties.redCards},${so.saves},${so.goalsAgainst},${so.saves + so.goalsAgainst}\n`;
+    csv += `"${group.label}","${group.sublabel || ''}",${s.gamesPlayed},${s.savePercentage !== null ? `${s.savePercentage}%` : '—'},${s.cleanSheets},${s.totalSaves},${s.totalGoalsAgainst},${s.totalShotsFaced},${s.avgSavesPerGame},${s.avgGoalsAgainstPerGame},${s.distribution.handledCrosses},${s.distribution.punts},${s.distribution.throwouts},${s.distribution.drives},${s.distribution.dropBacks},${s.penalties.penaltiesSaved},${s.penalties.penaltyGoals},${s.penalties.penaltiesMissed},${s.penalties.yellowCards},${s.penalties.redCards},${so.saves},${so.goalsAgainst},${so.saves + so.goalsAgainst}\n`;
   }
 
   return csv;
@@ -192,7 +194,7 @@ export function formatStatsAsCSV(keeperName: string, groupMode: string, groups: 
 export function formatGameAsCSV(game: SavedGame): string {
   let csv = `Competition,Date,Opponent,Keeper Type\n`;
   csv += `"${game.setup.eventName}","${game.setup.date}","${game.setup.gameName}","${game.setup.keeperSelection}"\n\n`;
-  csv += `Side,Name,Year,Team,2H Name,2H Year,2H Team,H1 Saves,H1 GA,H1 Save%,H2 Saves,H2 GA,H2 Save%,Total Saves,Total GA,Shots on Target,Overall Save%,Crosses/Int,Punts,Throwouts / Rollouts,Drives,Drop Backs,PK Faced,PK Saved,Yellow Cards,Red Cards,SO Saves,SO GA,SO Shots,Notes\n`;
+  csv += `Side,Name,Year,Team,2H Name,2H Year,2H Team,H1 Saves,H1 GA,H1 Save%,H2 Saves,H2 GA,H2 Save%,Total Saves,Total GA,Shots on Target,Overall Save%,Crosses/Int,Punts,Throwouts / Rollouts,Drives,Drop Backs,PK Saved,PK Goal,PK Missed,Yellow Cards,Red Cards,SO Saves,SO GA,SO Shots,Notes\n`;
 
   if (game.homeKeeper) {
     csv += formatKeeperCSVRows(game.homeKeeper, 'Home') + '\n';

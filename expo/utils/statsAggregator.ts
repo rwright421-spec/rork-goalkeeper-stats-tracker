@@ -18,6 +18,8 @@ export interface AggregatedStats {
   oneVsOneSaveRate: number | null;
   totalEstimatedMinutes: number;
   gaa: number | null;
+  pkSavePercentage: number | null;
+  pkOnTarget: number;
 }
 
 function emptyDistribution(): DistributionStats {
@@ -25,7 +27,7 @@ function emptyDistribution(): DistributionStats {
 }
 
 function emptyPenalties(): PenaltyStats {
-  return { penaltiesFaced: 0, penaltiesSaved: 0, redCards: 0, yellowCards: 0 };
+  return { penaltiesSaved: 0, penaltyGoals: 0, penaltiesMissed: 0, redCards: 0, yellowCards: 0 };
 }
 
 function emptyShootout(): ShootoutStats {
@@ -41,8 +43,9 @@ function addHalfDistribution(target: DistributionStats, half: HalfStats): void {
 }
 
 function addHalfPenalties(target: PenaltyStats, half: HalfStats): void {
-  target.penaltiesFaced += half.penalties.penaltiesFaced;
   target.penaltiesSaved += half.penalties.penaltiesSaved;
+  target.penaltyGoals += half.penalties.penaltyGoals;
+  target.penaltiesMissed += half.penalties.penaltiesMissed;
   target.redCards += half.penalties.redCards;
   target.yellowCards += half.penalties.yellowCards;
 }
@@ -131,6 +134,9 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
     if (gameGA === 0) cleanSheets++;
   }
 
+  const pkOnTarget = penalties.penaltiesSaved + penalties.penaltyGoals;
+  const pkSavePercentage = pkOnTarget > 0 ? Math.round((penalties.penaltiesSaved / pkOnTarget) * 100) : null;
+
   return {
     gamesPlayed,
     totalSaves,
@@ -148,6 +154,8 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
     oneVsOneSaveRate: oneVsOneFaced > 0 ? Math.round((oneVsOneSaved / oneVsOneFaced) * 100) : null,
     totalEstimatedMinutes,
     gaa: totalEstimatedMinutes > 0 ? Math.round((totalGoalsAgainst / totalEstimatedMinutes) * 90 * 100) / 100 : null,
+    pkSavePercentage,
+    pkOnTarget,
   };
 }
 

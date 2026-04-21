@@ -6,7 +6,7 @@ import SavePercentageBadge from '@/components/SavePercentageBadge';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { fontSize } from '@/constants/typography';
-import { KeeperData, DistributionStats, PenaltyStats, GoalkeeperProfile, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getShotsFaced, getTotalShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, getHalfLengthForAgeGroup, defaultHalfStats, AGE_GROUP_OPTIONS, deriveHalvesPlayed } from '@/types/game';
+import { KeeperData, DistributionStats, PenaltyStats, GoalkeeperProfile, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getShotsFaced, getTotalShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, getHalfLengthForAgeGroup, defaultHalfStats, AGE_GROUP_OPTIONS, deriveHalvesPlayed, getPkSavePercentage, getTotalPenaltiesFaced } from '@/types/game';
 import KeeperSelectorSheet, { KeeperSelectorButton, KeeperSelectionState } from '@/components/KeeperSelectorSheet';
 
 interface KeeperStatsSectionProps {
@@ -191,12 +191,22 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         </View>
         <View style={styles.halfDivider} />
         <Text style={styles.subSectionTitle}>Penalties</Text>
-        <Text style={styles.oneVsOneHint}>PK saves and PK goals automatically count toward your totals — do not also enter them as regular saves or goals.</Text>
         <View style={styles.distributionGrid}>
           <View style={styles.distributionRow}>
-            <StatCounter label="PKs Faced" value={half.penalties.penaltiesFaced} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesFaced', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesFaced', -1)} />
-            <StatCounter label="PKs Saved" value={half.penalties.penaltiesSaved} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', -1)} accentColor={colors.primary} disableIncrement={half.penalties.penaltiesSaved >= half.penalties.penaltiesFaced} />
+            <StatCounter label="PK Saved" value={half.penalties.penaltiesSaved} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', -1)} accentColor={colors.primary} />
+            <StatCounter label="PK Goal" value={half.penalties.penaltyGoals} onIncrement={() => updateHalfPenalty(halfKey, 'penaltyGoals', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltyGoals', -1)} accentColor={colors.danger} />
+            <StatCounter label="PK Missed" value={half.penalties.penaltiesMissed} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesMissed', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesMissed', -1)} accentColor={colors.textMuted} />
           </View>
+          {(() => {
+            const saved = half.penalties.penaltiesSaved;
+            const goals = half.penalties.penaltyGoals;
+            const onTarget = saved + goals;
+            if (onTarget === 0) return null;
+            const pct = Math.round((saved / onTarget) * 100);
+            return (
+              <Text style={styles.pkSavePctLine}>PK Save %: {pct}% ({saved} of {onTarget} on target)</Text>
+            );
+          })()}
           <View style={styles.distributionRow}>
             <StatCounter label="Yellow Card" value={half.penalties.yellowCards} onIncrement={() => updateHalfPenalty(halfKey, 'yellowCards', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'yellowCards', -1)} accentColor={colors.warning} />
             <StatCounter label="Red Card" value={half.penalties.redCards} onIncrement={() => updateHalfPenalty(halfKey, 'redCards', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'redCards', -1)} accentColor={colors.danger} />
@@ -413,12 +423,20 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         <View style={styles.halfDivider} />
         <Text style={styles.subSectionTitle}>Total Penalties</Text>
         <View style={styles.totalDistRow}>
-          <View style={styles.totalDistItem}><Text style={styles.totalDistValue}>{totalPen.penaltiesFaced}</Text><Text style={styles.totalDistLabel}>PKs Faced</Text></View>
-          <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: colors.primary }]}>{totalPen.penaltiesSaved}</Text><Text style={styles.totalDistLabel}>PKs Saved</Text></View>
-          <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: colors.danger }]}>{Math.max(0, totalPen.penaltiesFaced - totalPen.penaltiesSaved)}</Text><Text style={styles.totalDistLabel}>PK Goals</Text></View>
+          <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: colors.primary }]}>{totalPen.penaltiesSaved}</Text><Text style={styles.totalDistLabel}>PK Saved</Text></View>
+          <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: colors.danger }]}>{totalPen.penaltyGoals}</Text><Text style={styles.totalDistLabel}>PK Goal</Text></View>
+          <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: colors.textMuted }]}>{totalPen.penaltiesMissed}</Text><Text style={styles.totalDistLabel}>PK Missed</Text></View>
           <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: colors.warning }]}>{totalPen.yellowCards}</Text><Text style={styles.totalDistLabel}>Yellow</Text></View>
           <View style={styles.totalDistItem}><Text style={[styles.totalDistValue, { color: colors.danger }]}>{totalPen.redCards}</Text><Text style={styles.totalDistLabel}>Red</Text></View>
         </View>
+        {(() => {
+          const pkPct = getPkSavePercentage(keeper);
+          if (pkPct === null) return null;
+          const onTarget = totalPen.penaltiesSaved + totalPen.penaltyGoals;
+          return (
+            <Text style={styles.pkSavePctLine}>PK Save %: {pkPct}% ({totalPen.penaltiesSaved} of {onTarget} on target)</Text>
+          );
+        })()}
       </View>
       {profiles && !isOpponentKeeper && (
         <>
@@ -506,5 +524,6 @@ function createStyles(c: ThemeColors) {
     halvesPlayedValue: { fontSize: fontSize.display3, fontWeight: '800' as const, color: c.primary, marginBottom: 4 },
     halvesPlayedHint: { fontSize: fontSize.xs, color: c.textMuted, fontStyle: 'italic' as const },
     halvesPlayedSubHint: { fontSize: fontSize.xs, color: c.textMuted, marginTop: 2 },
+    pkSavePctLine: { fontSize: fontSize.sm, color: c.textSecondary, fontWeight: '600' as const, textAlign: 'center' as const, marginTop: 4 },
   });
 }

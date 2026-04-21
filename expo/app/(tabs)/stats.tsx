@@ -252,6 +252,13 @@ function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expan
             <Text style={[s.statValue, { color: '#F59E0B' }]}>{stats.oneVsOneSaveRate !== null ? `${stats.oneVsOneSaveRate}%` : '—'}</Text>
           </View>
         )}
+        {stats.pkSavePercentage !== null && (
+          <View style={s.statRow}>
+            <View style={[s.statDot, { backgroundColor: '#14B8A6' }]} />
+            <Text style={s.statLabel}>PK Save %</Text>
+            <Text style={[s.statValue, { color: '#14B8A6' }]}>{stats.pkSavePercentage}% ({stats.penalties.penaltiesSaved} of {stats.pkOnTarget})</Text>
+          </View>
+        )}
         {stats.gaa !== null && stats.gamesPlayed > 0 && (
           <View style={s.statRow}>
             <View style={[s.statDot, { backgroundColor: '#EC4899' }]} />
@@ -320,15 +327,23 @@ function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expan
             <View style={s.distGrid}>
               <View style={s.distRow}>
                 <View style={s.distItem}>
-                  <Text style={s.distValue}>{stats.penalties.penaltiesFaced}</Text>
-                  <Text style={s.distLabel}>PK Goals Against</Text>
-                </View>
-                <View style={s.distItem}>
-                  <Text style={s.distValue}>{stats.penalties.penaltiesSaved}</Text>
+                  <Text style={[s.distValue, { color: colors.primary }]}>{stats.penalties.penaltiesSaved}</Text>
                   <Text style={s.distLabel}>PK Saved</Text>
                 </View>
-                <View style={s.distItem} />
+                <View style={s.distItem}>
+                  <Text style={[s.distValue, { color: colors.danger }]}>{stats.penalties.penaltyGoals}</Text>
+                  <Text style={s.distLabel}>PK Goal</Text>
+                </View>
+                <View style={s.distItem}>
+                  <Text style={[s.distValue, { color: colors.textMuted }]}>{stats.penalties.penaltiesMissed}</Text>
+                  <Text style={s.distLabel}>PK Missed</Text>
+                </View>
               </View>
+              {stats.pkSavePercentage !== null && (
+                <Text style={{ fontSize: fontSize.sm, color: colors.textSecondary, fontWeight: '600' as const, textAlign: 'center' as const }}>
+                  PK Save %: {stats.pkSavePercentage}% ({stats.penalties.penaltiesSaved} of {stats.pkOnTarget} on target)
+                </Text>
+              )}
               <View style={s.distRow}>
                 <View style={s.distItem}>
                   <Text style={[s.distValue, { color: colors.warning }]}>{stats.penalties.yellowCards}</Text>
@@ -1206,7 +1221,7 @@ export default function GoalkeeperStatsScreen() {
                       <Text style={styles.customResultsTitle}>Selected Stats</Text>
                       <Text style={styles.customResultsCount}>{selectedGameIds.size} game{selectedGameIds.size !== 1 ? 's' : ''}</Text>
                     </View>
-                    <StatsBlock stats={groupedStats[0]?.stats ?? { gamesPlayed: 0, totalSaves: 0, totalGoalsAgainst: 0, totalShotsFaced: 0, savePercentage: null, cleanSheets: 0, distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 }, penalties: { penaltiesFaced: 0, penaltiesSaved: 0, redCards: 0, yellowCards: 0 }, shootout: { saves: 0, goalsAgainst: 0 }, avgSavesPerGame: 0, avgGoalsAgainstPerGame: 0, oneVsOneFaced: 0, oneVsOneSaved: 0, oneVsOneSaveRate: null, totalEstimatedMinutes: 0, gaa: null }} colors={colors} />
+                    <StatsBlock stats={groupedStats[0]?.stats ?? { gamesPlayed: 0, totalSaves: 0, totalGoalsAgainst: 0, totalShotsFaced: 0, savePercentage: null, cleanSheets: 0, distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 }, penalties: { penaltiesSaved: 0, penaltyGoals: 0, penaltiesMissed: 0, redCards: 0, yellowCards: 0 }, shootout: { saves: 0, goalsAgainst: 0 }, avgSavesPerGame: 0, avgGoalsAgainstPerGame: 0, oneVsOneFaced: 0, oneVsOneSaved: 0, oneVsOneSaveRate: null, totalEstimatedMinutes: 0, gaa: null, pkSavePercentage: null, pkOnTarget: 0 }} colors={colors} />
                   </View>
                 )}
               </View>

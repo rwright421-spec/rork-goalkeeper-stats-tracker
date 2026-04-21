@@ -256,10 +256,10 @@ export default function GameTrackingScreen() {
     const nums = [
       fh.saves, fh.goalsAgainst, fh.oneVsOneFaced, fh.oneVsOneSaved,
       fh.distribution.handledCrosses, fh.distribution.punts, fh.distribution.throwouts, fh.distribution.drives, fh.distribution.dropBacks,
-      fh.penalties.penaltiesFaced, fh.penalties.penaltiesSaved, fh.penalties.redCards, fh.penalties.yellowCards,
+      fh.penalties.penaltiesSaved, fh.penalties.penaltyGoals, fh.penalties.penaltiesMissed, fh.penalties.redCards, fh.penalties.yellowCards,
       sh.saves, sh.goalsAgainst, sh.oneVsOneFaced, sh.oneVsOneSaved,
       sh.distribution.handledCrosses, sh.distribution.punts, sh.distribution.throwouts, sh.distribution.drives, sh.distribution.dropBacks,
-      sh.penalties.penaltiesFaced, sh.penalties.penaltiesSaved, sh.penalties.redCards, sh.penalties.yellowCards,
+      sh.penalties.penaltiesSaved, sh.penalties.penaltyGoals, sh.penalties.penaltiesMissed, sh.penalties.redCards, sh.penalties.yellowCards,
       k.shootout?.saves ?? 0, k.shootout?.goalsAgainst ?? 0,
     ];
     if (nums.some((n) => (n ?? 0) > 0)) return true;
