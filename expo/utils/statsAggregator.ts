@@ -15,7 +15,11 @@ export interface AggregatedStats {
   avgGoalsAgainstPerGame: number;
   oneVsOneFaced: number;
   oneVsOneSaved: number;
+  oneVsOneGoals: number;
+  oneVsOneMissed: number;
   oneVsOneSaveRate: number | null;
+  oneVsOneSavePercentage: number | null;
+  oneVsOneOnTarget: number;
   totalEstimatedMinutes: number;
   gaa: number | null;
   pkSavePercentage: number | null;
@@ -73,8 +77,9 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
   const penalties = emptyPenalties();
   const shootout = emptyShootout();
 
-  let oneVsOneFaced = 0;
   let oneVsOneSaved = 0;
+  let oneVsOneGoals = 0;
+  let oneVsOneMissed = 0;
   let gamesPlayed = 0;
   let totalEstimatedMinutes = 0;
 
@@ -106,21 +111,23 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
     const sh = keeper.secondHalf ?? defaultHalfStats;
 
     if (profilePlaysFirstHalf) {
-      gameSaves += fh.saves + fh.penalties.penaltiesSaved;
-      gameGA += fh.goalsAgainst + getPkGoalsConceded(fh);
+      gameSaves += fh.saves + fh.penalties.penaltiesSaved + (fh.oneVsOneSaved ?? 0);
+      gameGA += fh.goalsAgainst + getPkGoalsConceded(fh) + (fh.oneVsOneGoals ?? 0);
       addHalfDistribution(distribution, fh);
       addHalfPenalties(penalties, fh);
-      oneVsOneFaced += fh.oneVsOneFaced ?? 0;
       oneVsOneSaved += fh.oneVsOneSaved ?? 0;
+      oneVsOneGoals += fh.oneVsOneGoals ?? 0;
+      oneVsOneMissed += fh.oneVsOneMissed ?? 0;
     }
 
     if (profilePlaysSecondHalf) {
-      gameSaves += sh.saves + sh.penalties.penaltiesSaved;
-      gameGA += sh.goalsAgainst + getPkGoalsConceded(sh);
+      gameSaves += sh.saves + sh.penalties.penaltiesSaved + (sh.oneVsOneSaved ?? 0);
+      gameGA += sh.goalsAgainst + getPkGoalsConceded(sh) + (sh.oneVsOneGoals ?? 0);
       addHalfDistribution(distribution, sh);
       addHalfPenalties(penalties, sh);
-      oneVsOneFaced += sh.oneVsOneFaced ?? 0;
       oneVsOneSaved += sh.oneVsOneSaved ?? 0;
+      oneVsOneGoals += sh.oneVsOneGoals ?? 0;
+      oneVsOneMissed += sh.oneVsOneMissed ?? 0;
     }
 
     if (keeper.shootout) {
@@ -136,6 +143,9 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
 
   const pkOnTarget = penalties.penaltiesSaved + penalties.penaltyGoals;
   const pkSavePercentage = pkOnTarget > 0 ? Math.round((penalties.penaltiesSaved / pkOnTarget) * 100) : null;
+  const oneVsOneOnTarget = oneVsOneSaved + oneVsOneGoals;
+  const oneVsOneFaced = oneVsOneOnTarget + oneVsOneMissed;
+  const oneVsOneSavePercentage = oneVsOneOnTarget > 0 ? Math.round((oneVsOneSaved / oneVsOneOnTarget) * 100) : null;
 
   return {
     gamesPlayed,
@@ -151,7 +161,11 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
     avgGoalsAgainstPerGame: gamesPlayed > 0 ? Math.round((totalGoalsAgainst / gamesPlayed) * 10) / 10 : 0,
     oneVsOneFaced,
     oneVsOneSaved,
+    oneVsOneGoals,
+    oneVsOneMissed,
     oneVsOneSaveRate: oneVsOneFaced > 0 ? Math.round((oneVsOneSaved / oneVsOneFaced) * 100) : null,
+    oneVsOneSavePercentage,
+    oneVsOneOnTarget,
     totalEstimatedMinutes,
     gaa: totalEstimatedMinutes > 0 ? Math.round((totalGoalsAgainst / totalEstimatedMinutes) * 90 * 100) / 100 : null,
     pkSavePercentage,

@@ -8,7 +8,7 @@ import { Share2, FileText, FileSpreadsheet, Calendar, Trophy, Pencil, MoreVertic
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { useGames } from '@/contexts/GameContext';
-import { KeeperData, SavedGame, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getOneVsOneSaveRate, resolveHalfLength, getPkSavePercentage, isLegacyPenaltyData } from '@/types/game';
+import { KeeperData, SavedGame, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getTotalOneVsOneGoals, getTotalOneVsOneMissed, getOneVsOneSavePercentage, resolveHalfLength, getPkSavePercentage, isLegacyPenaltyData, isLegacyOneVsOneKeeperData } from '@/types/game';
 import { formatGameAsText, formatGameAsCSV } from '@/utils/export';
 import MoveGameModal from '@/components/MoveGameModal';
 import { fontSize } from '@/constants/typography';
@@ -88,10 +88,26 @@ function KeeperDetailBlock({ keeper, label, color, colors, game }: { keeper: Kee
         <View style={styles.distSection}>
           <Text style={styles.distTitle}>1v1 Situations</Text>
           <View style={styles.distGrid}>
-            <View style={styles.distItem}><Text style={styles.distValue}>{getTotalOneVsOneFaced(keeper)}</Text><Text style={styles.distLabel}>1v1 Faced</Text></View>
             <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.primary }]}>{getTotalOneVsOneSaved(keeper)}</Text><Text style={styles.distLabel}>1v1 Saved</Text></View>
-            <View style={styles.distItem}><Text style={[styles.distValue, { color: '#F59E0B' }]}>{(() => { const rate = getOneVsOneSaveRate(getTotalOneVsOneFaced(keeper), getTotalOneVsOneSaved(keeper)); return rate !== null ? `${rate}%` : '—'; })()}</Text><Text style={styles.distLabel}>1v1 Save Rate</Text></View>
+            <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.danger }]}>{getTotalOneVsOneGoals(keeper)}</Text><Text style={styles.distLabel}>1v1 Goal</Text></View>
+            <View style={styles.distItem}><Text style={[styles.distValue, { color: colors.textMuted }]}>{getTotalOneVsOneMissed(keeper)}</Text><Text style={styles.distLabel}>1v1 Missed</Text></View>
           </View>
+          {(() => {
+            const pct = getOneVsOneSavePercentage(keeper);
+            if (pct === null) return null;
+            const saved = getTotalOneVsOneSaved(keeper);
+            const goals = getTotalOneVsOneGoals(keeper);
+            return (
+              <Text style={{ fontSize: fontSize.sm, color: colors.textSecondary, fontWeight: '600' as const, textAlign: 'center' as const, marginTop: 10 }}>
+                1v1 Save %: {pct}% ({saved} of {saved + goals} on target)
+              </Text>
+            );
+          })()}
+          {isLegacyOneVsOneKeeperData(keeper) && (
+            <Text style={{ fontSize: fontSize.xs, color: colors.textMuted, fontStyle: 'italic' as const, textAlign: 'center' as const, marginTop: 10 }}>
+              1v1 data was recorded before the Missed outcome was added. Edit to re-classify if any 1v1s went wide or over.
+            </Text>
+          )}
         </View>
       )}
 

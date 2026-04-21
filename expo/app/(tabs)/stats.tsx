@@ -245,11 +245,11 @@ function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expan
           <Text style={s.statLabel}>Shots on Target</Text>
           <Text style={[s.statValue, { color: '#3B82F6' }]}>{stats.totalShotsFaced}</Text>
         </View>
-        {stats.oneVsOneFaced > 0 && (
+        {stats.oneVsOneSavePercentage !== null && (
           <View style={s.statRow}>
             <View style={[s.statDot, { backgroundColor: '#F59E0B' }]} />
-            <Text style={s.statLabel}>1v1 Save Rate</Text>
-            <Text style={[s.statValue, { color: '#F59E0B' }]}>{stats.oneVsOneSaveRate !== null ? `${stats.oneVsOneSaveRate}%` : '—'}</Text>
+            <Text style={s.statLabel}>1v1 Save %</Text>
+            <Text style={[s.statValue, { color: '#F59E0B' }]}>{stats.oneVsOneSavePercentage}% ({stats.oneVsOneSaved} of {stats.oneVsOneOnTarget})</Text>
           </View>
         )}
         {stats.pkSavePercentage !== null && (
@@ -1221,7 +1221,7 @@ export default function GoalkeeperStatsScreen() {
                       <Text style={styles.customResultsTitle}>Selected Stats</Text>
                       <Text style={styles.customResultsCount}>{selectedGameIds.size} game{selectedGameIds.size !== 1 ? 's' : ''}</Text>
                     </View>
-                    <StatsBlock stats={groupedStats[0]?.stats ?? { gamesPlayed: 0, totalSaves: 0, totalGoalsAgainst: 0, totalShotsFaced: 0, savePercentage: null, cleanSheets: 0, distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 }, penalties: { penaltiesSaved: 0, penaltyGoals: 0, penaltiesMissed: 0, redCards: 0, yellowCards: 0 }, shootout: { saves: 0, goalsAgainst: 0 }, avgSavesPerGame: 0, avgGoalsAgainstPerGame: 0, oneVsOneFaced: 0, oneVsOneSaved: 0, oneVsOneSaveRate: null, totalEstimatedMinutes: 0, gaa: null, pkSavePercentage: null, pkOnTarget: 0 }} colors={colors} />
+                    <StatsBlock stats={groupedStats[0]?.stats ?? { gamesPlayed: 0, totalSaves: 0, totalGoalsAgainst: 0, totalShotsFaced: 0, savePercentage: null, cleanSheets: 0, distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 }, penalties: { penaltiesSaved: 0, penaltyGoals: 0, penaltiesMissed: 0, redCards: 0, yellowCards: 0 }, shootout: { saves: 0, goalsAgainst: 0 }, avgSavesPerGame: 0, avgGoalsAgainstPerGame: 0, oneVsOneFaced: 0, oneVsOneSaved: 0, oneVsOneGoals: 0, oneVsOneMissed: 0, oneVsOneSaveRate: null, oneVsOneSavePercentage: null, oneVsOneOnTarget: 0, totalEstimatedMinutes: 0, gaa: null, pkSavePercentage: null, pkOnTarget: 0 }} colors={colors} />
                   </View>
                 )}
               </View>

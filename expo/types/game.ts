@@ -69,8 +69,9 @@ export interface HalfStats {
   goalsAgainst: number;
   distribution: DistributionStats;
   penalties: PenaltyStats;
-  oneVsOneFaced: number;
   oneVsOneSaved: number;
+  oneVsOneGoals: number;
+  oneVsOneMissed: number;
 }
 
 export interface ShootoutStats {
@@ -169,7 +170,7 @@ function createEmptyPenalties(): PenaltyStats {
 }
 
 function createEmptyHalf(): HalfStats {
-  return { saves: 0, goalsAgainst: 0, distribution: createEmptyDistribution(), penalties: createEmptyPenalties(), oneVsOneFaced: 0, oneVsOneSaved: 0 };
+  return { saves: 0, goalsAgainst: 0, distribution: createEmptyDistribution(), penalties: createEmptyPenalties(), oneVsOneSaved: 0, oneVsOneGoals: 0, oneVsOneMissed: 0 };
 }
 
 export const defaultHalfStats: HalfStats = Object.freeze({
@@ -177,8 +178,9 @@ export const defaultHalfStats: HalfStats = Object.freeze({
   goalsAgainst: 0,
   distribution: Object.freeze({ handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 }),
   penalties: Object.freeze({ penaltiesSaved: 0, penaltyGoals: 0, penaltiesMissed: 0, redCards: 0, yellowCards: 0 }),
-  oneVsOneFaced: 0,
   oneVsOneSaved: 0,
+  oneVsOneGoals: 0,
+  oneVsOneMissed: 0,
 }) as HalfStats;
 
 export function createEmptyKeeperData(): KeeperData {
@@ -248,14 +250,52 @@ export function safeShootout(shootout?: Partial<ShootoutStats>): ShootoutStats {
   };
 }
 
-export function normalizeHalf(half?: Partial<HalfStats>): HalfStats {
+export function isLegacyOneVsOneHalfInput(half?: Partial<HalfStats> & { oneVsOneFaced?: number }): boolean {
+  if (!half) return false;
+  const hasMissed = (half as HalfStats).oneVsOneMissed !== undefined;
+  const hasGoals = (half as HalfStats).oneVsOneGoals !== undefined;
+  if (hasMissed || hasGoals) return false;
+  const legacyFaced = (half as { oneVsOneFaced?: number }).oneVsOneFaced ?? 0;
+  const legacySaved = half.oneVsOneSaved ?? 0;
+  return legacyFaced > 0 || legacySaved > 0;
+}
+
+export function isLegacyOneVsOneKeeperData(keeper?: Partial<KeeperData>): boolean {
+  if (!keeper) return false;
+  return isLegacyOneVsOneHalfInput(keeper.firstHalf as any) || isLegacyOneVsOneHalfInput(keeper.secondHalf as any);
+}
+
+export function normalizeHalf(half?: Partial<HalfStats> & { oneVsOneFaced?: number }): HalfStats {
+  const rawSaves = half?.saves ?? 0;
+  const rawGoals = half?.goalsAgainst ?? 0;
+  const hasNewOneVsOne = (half as HalfStats)?.oneVsOneMissed !== undefined || (half as HalfStats)?.oneVsOneGoals !== undefined;
+  let oneVsOneSaved = half?.oneVsOneSaved ?? 0;
+  let oneVsOneGoals = 0;
+  let oneVsOneMissed = 0;
+  let saves = rawSaves;
+  let goalsAgainst = rawGoals;
+  if (hasNewOneVsOne) {
+    oneVsOneSaved = (half as HalfStats).oneVsOneSaved ?? 0;
+    oneVsOneGoals = (half as HalfStats).oneVsOneGoals ?? 0;
+    oneVsOneMissed = (half as HalfStats).oneVsOneMissed ?? 0;
+  } else {
+    const legacyFaced = (half as { oneVsOneFaced?: number } | undefined)?.oneVsOneFaced ?? 0;
+    const legacySaved = half?.oneVsOneSaved ?? 0;
+    const legacyGoals = Math.max(0, legacyFaced - legacySaved);
+    oneVsOneSaved = legacySaved;
+    oneVsOneGoals = legacyGoals;
+    oneVsOneMissed = 0;
+    saves = Math.max(0, rawSaves - legacySaved);
+    goalsAgainst = Math.max(0, rawGoals - legacyGoals);
+  }
   return {
-    saves: half?.saves ?? 0,
-    goalsAgainst: half?.goalsAgainst ?? 0,
+    saves: Math.max(0, saves),
+    goalsAgainst: Math.max(0, goalsAgainst),
     distribution: safeDistribution(half?.distribution),
     penalties: safePenalties((half as HalfStats)?.penalties),
-    oneVsOneFaced: half?.oneVsOneFaced ?? 0,
-    oneVsOneSaved: half?.oneVsOneSaved ?? 0,
+    oneVsOneSaved: Math.max(0, oneVsOneSaved),
+    oneVsOneGoals: Math.max(0, oneVsOneGoals),
+    oneVsOneMissed: Math.max(0, oneVsOneMissed),
   };
 }
 
@@ -309,13 +349,21 @@ export function getPkSavePercentage(keeper: KeeperData): number | null {
 export function getTotalSaves(keeper: KeeperData): number {
   const fh = keeper.firstHalf ?? defaultHalfStats;
   const sh = keeper.secondHalf ?? defaultHalfStats;
-  return fh.saves + sh.saves + fh.penalties.penaltiesSaved + sh.penalties.penaltiesSaved;
+  return (
+    fh.saves + sh.saves +
+    fh.penalties.penaltiesSaved + sh.penalties.penaltiesSaved +
+    fh.oneVsOneSaved + sh.oneVsOneSaved
+  );
 }
 
 export function getTotalGoalsAgainst(keeper: KeeperData): number {
   const fh = keeper.firstHalf ?? defaultHalfStats;
   const sh = keeper.secondHalf ?? defaultHalfStats;
-  return fh.goalsAgainst + sh.goalsAgainst + getPkGoalsConceded(fh) + getPkGoalsConceded(sh);
+  return (
+    fh.goalsAgainst + sh.goalsAgainst +
+    getPkGoalsConceded(fh) + getPkGoalsConceded(sh) +
+    fh.oneVsOneGoals + sh.oneVsOneGoals
+  );
 }
 
 export function getTotalShotsFaced(keeper: KeeperData): number {
@@ -357,7 +405,10 @@ export function getShootoutShotsFaced(shootout: ShootoutStats): number {
 export function getTotalOneVsOneFaced(keeper: KeeperData): number {
   const fh = keeper.firstHalf ?? defaultHalfStats;
   const sh = keeper.secondHalf ?? defaultHalfStats;
-  return fh.oneVsOneFaced + sh.oneVsOneFaced;
+  return (
+    fh.oneVsOneSaved + fh.oneVsOneGoals + fh.oneVsOneMissed +
+    sh.oneVsOneSaved + sh.oneVsOneGoals + sh.oneVsOneMissed
+  );
 }
 
 export function getTotalOneVsOneSaved(keeper: KeeperData): number {
@@ -366,6 +417,27 @@ export function getTotalOneVsOneSaved(keeper: KeeperData): number {
   return fh.oneVsOneSaved + sh.oneVsOneSaved;
 }
 
+export function getTotalOneVsOneGoals(keeper: KeeperData): number {
+  const fh = keeper.firstHalf ?? defaultHalfStats;
+  const sh = keeper.secondHalf ?? defaultHalfStats;
+  return fh.oneVsOneGoals + sh.oneVsOneGoals;
+}
+
+export function getTotalOneVsOneMissed(keeper: KeeperData): number {
+  const fh = keeper.firstHalf ?? defaultHalfStats;
+  const sh = keeper.secondHalf ?? defaultHalfStats;
+  return fh.oneVsOneMissed + sh.oneVsOneMissed;
+}
+
+export function getOneVsOneSavePercentage(keeper: KeeperData): number | null {
+  const saved = getTotalOneVsOneSaved(keeper);
+  const goals = getTotalOneVsOneGoals(keeper);
+  const onTarget = saved + goals;
+  if (onTarget === 0) return null;
+  return Math.round((saved / onTarget) * 100);
+}
+
+// Deprecated: kept for any residual call sites. Prefer getOneVsOneSavePercentage.
 export function getOneVsOneSaveRate(faced: number, saved: number): number | null {
   if (faced === 0) return null;
   return Math.round((saved / faced) * 100);

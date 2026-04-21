@@ -52,7 +52,32 @@ const PenaltyStatsSchema: z.ZodType<PenaltyStats> = z.preprocess((val) => {
   yellowCards: stat,
 }));
 
-const HalfStatsSchema: z.ZodType<HalfStats> = z.object({
+const HalfStatsSchema: z.ZodType<HalfStats> = z.preprocess((val) => {
+  if (!val || typeof val !== 'object') return val;
+  const v = val as Record<string, unknown>;
+  const hasNewOneVsOne = v.oneVsOneGoals !== undefined || v.oneVsOneMissed !== undefined;
+  if (hasNewOneVsOne) {
+    return {
+      ...v,
+      oneVsOneSaved: v.oneVsOneSaved ?? 0,
+      oneVsOneGoals: v.oneVsOneGoals ?? 0,
+      oneVsOneMissed: v.oneVsOneMissed ?? 0,
+    };
+  }
+  const rawSaves = typeof v.saves === 'number' ? v.saves : 0;
+  const rawGoals = typeof v.goalsAgainst === 'number' ? v.goalsAgainst : 0;
+  const legacyFaced = typeof v.oneVsOneFaced === 'number' ? v.oneVsOneFaced : 0;
+  const legacySaved = typeof v.oneVsOneSaved === 'number' ? v.oneVsOneSaved : 0;
+  const legacyGoals = Math.max(0, legacyFaced - legacySaved);
+  return {
+    ...v,
+    saves: Math.max(0, rawSaves - legacySaved),
+    goalsAgainst: Math.max(0, rawGoals - legacyGoals),
+    oneVsOneSaved: Math.max(0, legacySaved),
+    oneVsOneGoals: legacyGoals,
+    oneVsOneMissed: 0,
+  };
+}, z.object({
   saves: stat,
   goalsAgainst: stat,
   distribution: DistributionStatsSchema.default({
@@ -69,9 +94,10 @@ const HalfStatsSchema: z.ZodType<HalfStats> = z.object({
     redCards: 0,
     yellowCards: 0,
   }),
-  oneVsOneFaced: stat,
   oneVsOneSaved: stat,
-});
+  oneVsOneGoals: stat,
+  oneVsOneMissed: stat,
+}));
 
 const ShootoutStatsSchema: z.ZodType<ShootoutStats> = z.object({
   saves: stat,
@@ -91,16 +117,18 @@ const KeeperDataSchema: z.ZodType<KeeperData> = z.object({
     goalsAgainst: 0,
     distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 },
     penalties: { penaltiesSaved: 0, penaltyGoals: 0, penaltiesMissed: 0, redCards: 0, yellowCards: 0 },
-    oneVsOneFaced: 0,
     oneVsOneSaved: 0,
+    oneVsOneGoals: 0,
+    oneVsOneMissed: 0,
   }),
   secondHalf: HalfStatsSchema.default({
     saves: 0,
     goalsAgainst: 0,
     distribution: { handledCrosses: 0, punts: 0, throwouts: 0, drives: 0, dropBacks: 0 },
     penalties: { penaltiesSaved: 0, penaltyGoals: 0, penaltiesMissed: 0, redCards: 0, yellowCards: 0 },
-    oneVsOneFaced: 0,
     oneVsOneSaved: 0,
+    oneVsOneGoals: 0,
+    oneVsOneMissed: 0,
   }),
   shootout: ShootoutStatsSchema.optional(),
   keeperProfileId: z.string().nullable().optional().default(null),
