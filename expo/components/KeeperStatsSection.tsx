@@ -178,16 +178,27 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         <View style={styles.halfDivider} />
         <Text style={styles.subSectionTitle}>Distribution</Text>
         <View style={styles.distributionGrid}>
-          <View style={styles.distributionRow}>
-            <StatCounter label="Crosses / Int." value={half.distribution.handledCrosses} onIncrement={() => updateHalfDistribution(halfKey, 'handledCrosses', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'handledCrosses', -1)} />
-            <StatCounter label="Punts" value={half.distribution.punts} onIncrement={() => updateHalfDistribution(halfKey, 'punts', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'punts', -1)} />
+          <View style={styles.distributionGridRow}>
+            <View style={styles.distributionCell}>
+              <StatCounter label="Crosses / Int." value={half.distribution.handledCrosses} onIncrement={() => updateHalfDistribution(halfKey, 'handledCrosses', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'handledCrosses', -1)} labelMinHeight={34} alignLabelTop />
+            </View>
+            <View style={styles.distributionCell}>
+              <StatCounter label="Punts" value={half.distribution.punts} onIncrement={() => updateHalfDistribution(halfKey, 'punts', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'punts', -1)} labelMinHeight={34} alignLabelTop />
+            </View>
           </View>
-          <View style={styles.distributionRow}>
-            <StatCounter label="Throwouts / Rollouts" value={half.distribution.throwouts} onIncrement={() => updateHalfDistribution(halfKey, 'throwouts', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'throwouts', -1)} />
-            <StatCounter label="Drives" value={half.distribution.drives} onIncrement={() => updateHalfDistribution(halfKey, 'drives', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'drives', -1)} />
+          <View style={styles.distributionGridRow}>
+            <View style={styles.distributionCell}>
+              <StatCounter label="Throwouts / Rollouts" value={half.distribution.throwouts} onIncrement={() => updateHalfDistribution(halfKey, 'throwouts', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'throwouts', -1)} labelMinHeight={34} alignLabelTop />
+            </View>
+            <View style={styles.distributionCell}>
+              <StatCounter label="Drives" value={half.distribution.drives} onIncrement={() => updateHalfDistribution(halfKey, 'drives', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'drives', -1)} labelMinHeight={34} alignLabelTop />
+            </View>
           </View>
-          <View style={styles.distributionRow}>
-            <StatCounter label="Drop Backs" value={half.distribution.dropBacks} onIncrement={() => updateHalfDistribution(halfKey, 'dropBacks', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'dropBacks', -1)} />
+          <View style={styles.distributionGridRow}>
+            <View style={styles.distributionCell}>
+              <StatCounter label="Drop Backs" value={half.distribution.dropBacks} onIncrement={() => updateHalfDistribution(halfKey, 'dropBacks', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'dropBacks', -1)} labelMinHeight={34} alignLabelTop />
+            </View>
+            <View style={styles.distributionCellEmpty} />
           </View>
         </View>
         <View style={styles.halfDivider} />
@@ -198,10 +209,16 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
           </TouchableOpacity>
         </View>
         <View style={styles.distributionGrid}>
-          <View style={styles.distributionRow}>
-            <StatCounter label="1v1 Saved" value={half.oneVsOneSaved} onIncrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneSaved', 1)} onDecrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneSaved', -1)} accentColor={colors.primary} />
-            <StatCounter label="1v1 Goal" value={half.oneVsOneGoals} onIncrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneGoals', 1)} onDecrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneGoals', -1)} accentColor={colors.danger} />
-            <StatCounter label="1v1 Missed" value={half.oneVsOneMissed} onIncrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneMissed', 1)} onDecrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneMissed', -1)} accentColor={colors.textMuted} />
+          <View style={styles.tripleCounterRow}>
+            <View style={styles.tripleCounterCell}>
+              <StatCounter size="compact" label="1v1 Saved" value={half.oneVsOneSaved} onIncrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneSaved', 1)} onDecrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneSaved', -1)} accentColor={colors.primary} labelMinHeight={28} alignLabelTop />
+            </View>
+            <View style={styles.tripleCounterCell}>
+              <StatCounter size="compact" label="1v1 Goal" value={half.oneVsOneGoals} onIncrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneGoals', 1)} onDecrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneGoals', -1)} accentColor={colors.danger} labelMinHeight={28} alignLabelTop />
+            </View>
+            <View style={styles.tripleCounterCell}>
+              <StatCounter size="compact" label="1v1 Missed" value={half.oneVsOneMissed} onIncrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneMissed', 1)} onDecrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneMissed', -1)} accentColor={colors.textMuted} labelMinHeight={28} alignLabelTop />
+            </View>
           </View>
           {(() => {
             const saved = half.oneVsOneSaved;
@@ -217,10 +234,16 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         <View style={styles.halfDivider} />
         <Text style={styles.subSectionTitle}>Penalties</Text>
         <View style={styles.distributionGrid}>
-          <View style={styles.distributionRow}>
-            <StatCounter label="PK Saved" value={half.penalties.penaltiesSaved} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', -1)} accentColor={colors.primary} />
-            <StatCounter label="PK Goal" value={half.penalties.penaltyGoals} onIncrement={() => updateHalfPenalty(halfKey, 'penaltyGoals', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltyGoals', -1)} accentColor={colors.danger} />
-            <StatCounter label="PK Missed" value={half.penalties.penaltiesMissed} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesMissed', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesMissed', -1)} accentColor={colors.textMuted} />
+          <View style={styles.tripleCounterRow}>
+            <View style={styles.tripleCounterCell}>
+              <StatCounter size="compact" label="PK Saved" value={half.penalties.penaltiesSaved} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', -1)} accentColor={colors.primary} labelMinHeight={28} alignLabelTop />
+            </View>
+            <View style={styles.tripleCounterCell}>
+              <StatCounter size="compact" label="PK Goal" value={half.penalties.penaltyGoals} onIncrement={() => updateHalfPenalty(halfKey, 'penaltyGoals', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltyGoals', -1)} accentColor={colors.danger} labelMinHeight={28} alignLabelTop />
+            </View>
+            <View style={styles.tripleCounterCell}>
+              <StatCounter size="compact" label="PK Missed" value={half.penalties.penaltiesMissed} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesMissed', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesMissed', -1)} accentColor={colors.textMuted} labelMinHeight={28} alignLabelTop />
+            </View>
           </View>
           {(() => {
             const saved = half.penalties.penaltiesSaved;
@@ -524,6 +547,11 @@ function createStyles(c: ThemeColors) {
     halfDivider: { height: 1, backgroundColor: c.border, marginVertical: 14 },
     distributionGrid: { gap: 16 },
     distributionRow: { flexDirection: 'row', justifyContent: 'space-around' },
+    distributionGridRow: { flexDirection: 'row' as const, gap: 12, alignItems: 'flex-start' as const },
+    distributionCell: { flex: 1, minWidth: 0 },
+    distributionCellEmpty: { flex: 1 },
+    tripleCounterRow: { flexDirection: 'row' as const, gap: 8, alignItems: 'flex-start' as const },
+    tripleCounterCell: { flex: 1, minWidth: 0 },
     totalSection: { backgroundColor: c.surfaceLight, borderRadius: 12, padding: 16, borderWidth: 1, borderColor: c.primary, marginBottom: 12 },
     totalStatsRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 4 },
     totalStatItem: { alignItems: 'center' },
