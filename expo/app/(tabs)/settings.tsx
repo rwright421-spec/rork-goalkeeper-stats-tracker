@@ -42,7 +42,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { devProOverride, setDevProOverride, rcIsPro } = usePurchases();
   const [devModeRevealed, setDevModeRevealed] = useState<boolean>(false);
-  const buildInfoTapCountRef = useRef<number>(0);
+  const [buildInfoTapCount, setBuildInfoTapCount] = useState<number>(0);
   const buildInfoTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -60,20 +60,25 @@ export default function SettingsScreen() {
     void Haptics.selectionAsync();
     setBuildInfoExpanded(prev => !prev);
 
-    buildInfoTapCountRef.current += 1;
-    if (buildInfoTapTimerRef.current) clearTimeout(buildInfoTapTimerRef.current);
-    buildInfoTapTimerRef.current = setTimeout(() => {
-      buildInfoTapCountRef.current = 0;
-    }, 3000);
+    setBuildInfoTapCount(prev => {
+      const next = prev + 1;
 
-    if (buildInfoTapCountRef.current >= 5) {
-      buildInfoTapCountRef.current = 0;
-      setDevModeRevealed(true);
-      secureStorage.setRawString(DEV_MODE_REVEALED_KEY, '1').catch((e) => {
-        console.log('[Settings] Failed to persist dev mode flag:', e);
-      });
-      Alert.alert('Dev Mode Unlocked', 'Beta Pro Override is now available in Build Info.');
-    }
+      if (buildInfoTapTimerRef.current) clearTimeout(buildInfoTapTimerRef.current);
+      buildInfoTapTimerRef.current = setTimeout(() => {
+        setBuildInfoTapCount(0);
+      }, 3000);
+
+      if (next >= 5) {
+        setDevModeRevealed(true);
+        secureStorage.setRawString(DEV_MODE_REVEALED_KEY, '1').catch((e) => {
+          console.log('[Settings] Failed to persist dev mode flag:', e);
+        });
+        Alert.alert('Dev Mode Unlocked', 'Beta Pro Override is now available in Build Info.');
+        return 0;
+      }
+
+      return next;
+    });
   }, []);
 
   const buildInfo = useMemo(() => {
@@ -585,7 +590,9 @@ export default function SettingsScreen() {
           onPress={handleBuildInfoHeaderTap}
         >
           <Info size={14} color={colors.textMuted} />
-          <Text style={styles.buildInfoHeaderText}>Build Info</Text>
+          <Text style={styles.buildInfoHeaderText}>
+            {buildInfoTapCount > 0 ? `Build Info (${buildInfoTapCount}/5)` : 'Build Info'}
+          </Text>
           {buildInfoExpanded ? (
             <ChevronUp size={14} color={colors.textMuted} />
           ) : (
