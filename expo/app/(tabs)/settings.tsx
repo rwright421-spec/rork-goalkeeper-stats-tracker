@@ -40,7 +40,20 @@ export default function SettingsScreen() {
   const [buildInfoExpanded, setBuildInfoExpanded] = useState<boolean>(false);
   const [copyFeedback, setCopyFeedback] = useState<boolean>(false);
   const router = useRouter();
-  const { devProOverride, setDevProOverride, rcIsPro } = usePurchases();
+  const {
+    devProOverride,
+    setDevProOverride,
+    rcIsPro,
+    isPro,
+    isLoading: rcIsLoading,
+    rcAvailable,
+    rcLastError,
+    rcCurrentOfferingId,
+    rcOfferingCount,
+    rcPackageIds,
+    rcAppUserId,
+    initAndFetchOfferings,
+  } = usePurchases();
   const [devModeRevealed, setDevModeRevealed] = useState<boolean>(false);
   const [buildInfoTapCount, setBuildInfoTapCount] = useState<number>(0);
   const buildInfoTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -124,6 +137,28 @@ export default function SettingsScreen() {
       console.error('[Settings] Copy build info error:', e);
     }
   }, [buildInfo]);
+
+  const copyRcDiagnostics = useCallback(() => {
+    const lines = [
+      `RC Configured: ${rcAvailable ? 'Yes' : 'No'}`,
+      `RC Loading: ${rcIsLoading ? 'Yes' : 'No'}`,
+      `Effective Pro: ${isPro ? 'Yes' : 'No'}`,
+      `  • Real Entitlement: ${rcIsPro ? 'Active' : 'Inactive'}`,
+      `  • Dev Override: ${devProOverride ? 'ON' : 'OFF'}`,
+      `App User ID: ${rcAppUserId ?? '(none)'}`,
+      `Offerings (all): ${rcOfferingCount}`,
+      `Current Offering: ${rcCurrentOfferingId ?? '(none)'}`,
+      `Packages: ${rcPackageIds.length > 0 ? rcPackageIds.join(', ') : '(none)'}`,
+      `Last Error: ${rcLastError ?? 'None'}`,
+    ];
+    const text = lines.join('\n');
+    Clipboard.setStringAsync(text);
+    Alert.alert('Copied', 'RevenueCat diagnostics copied to clipboard.');
+  }, [rcAvailable, rcIsLoading, isPro, rcIsPro, devProOverride, rcAppUserId, rcOfferingCount, rcCurrentOfferingId, rcPackageIds, rcLastError]);
+
+  const handleRcRefresh = useCallback(async () => {
+    await initAndFetchOfferings(true);
+  }, [initAndFetchOfferings]);
 
   const handleThemeSelect = useCallback((key: ThemeName) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -622,6 +657,44 @@ export default function SettingsScreen() {
               </Text>
             </TouchableOpacity>
 
+            <View style={styles.rcDiagnosticsSection}>
+              <View style={styles.rcDiagnosticsHeader}>
+                <Text style={styles.rcDiagnosticsTitle}>RevenueCat</Text>
+                <View style={styles.rcDiagnosticsButtons}>
+                  <TouchableOpacity
+                    testID="rc-refresh"
+                    onPress={handleRcRefresh}
+                    style={styles.rcDiagnosticsButton}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.rcDiagnosticsButtonText}>Refresh</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    testID="rc-copy"
+                    onPress={copyRcDiagnostics}
+                    style={styles.rcDiagnosticsButton}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.rcDiagnosticsButtonText}>Copy</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              <BuildInfoRow label="Configured" value={rcAvailable ? 'Yes' : 'No'} styles={styles} />
+              <BuildInfoRow label="Loading" value={rcIsLoading ? 'Yes' : 'No'} styles={styles} />
+              <BuildInfoRow label="Effective Pro" value={isPro ? 'Yes' : 'No'} styles={styles} />
+              <BuildInfoRow label="Real Entitlement" value={rcIsPro ? 'Active' : 'Inactive'} styles={styles} />
+              <BuildInfoRow label="Dev Override" value={devProOverride ? 'ON' : 'OFF'} styles={styles} />
+              <BuildInfoRow label="App User ID" value={rcAppUserId ?? '(none)'} styles={styles} />
+              <BuildInfoRow label="Offerings" value={String(rcOfferingCount)} styles={styles} />
+              <BuildInfoRow label="Current Offering" value={rcCurrentOfferingId ?? '(none)'} styles={styles} />
+              <BuildInfoRow
+                label="Packages"
+                value={rcPackageIds.length > 0 ? rcPackageIds.join(', ') : '(none)'}
+                styles={styles}
+              />
+              <BuildInfoRow label="Last Error" value={rcLastError ?? 'None'} styles={styles} />
+            </View>
+
             {devModeRevealed && (
               <View style={styles.devOverrideRow}>
                 <View style={{ flex: 1 }}>
@@ -699,6 +772,40 @@ function createStyles(c: ThemeColors) {
     buildInfoValue: { fontSize: fontSize.caption, color: c.textSecondary, fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: 'monospace' }), flex: 1, textAlign: 'right' as const },
     copyBuildInfoButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, marginTop: 10, paddingVertical: 8, borderRadius: 8, backgroundColor: c.primaryGlow, borderWidth: 1, borderColor: c.primary },
     copyBuildInfoText: { fontSize: fontSize.caption, fontWeight: '600' as const, color: c.primary },
+    rcDiagnosticsSection: {
+      marginTop: 12,
+      paddingTop: 12,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    rcDiagnosticsHeader: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'space-between' as const,
+      marginBottom: 8,
+    },
+    rcDiagnosticsTitle: {
+      fontSize: fontSize.body,
+      fontWeight: '700' as const,
+      color: c.text,
+    },
+    rcDiagnosticsButtons: {
+      flexDirection: 'row' as const,
+      gap: 8,
+    },
+    rcDiagnosticsButton: {
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 6,
+      backgroundColor: c.surface,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+    },
+    rcDiagnosticsButtonText: {
+      fontSize: fontSize.caption,
+      color: c.textSecondary,
+      fontWeight: '600' as const,
+    },
     devOverrideRow: {
       flexDirection: 'row' as const,
       alignItems: 'center' as const,
