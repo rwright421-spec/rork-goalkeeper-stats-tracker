@@ -5,6 +5,7 @@ import * as secureStorage from '@/utils/secureStorage';
 
 let Purchases: any = null;
 let rcConfigured = false;
+let rcConfigureError: string | null = null;
 
 const ENTITLEMENT_ID = 'pro';
 const DEV_PRO_OVERRIDE_KEY = 'gk_dev_pro_override';
@@ -18,6 +19,7 @@ async function configureRC() {
   if (rcConfigured || Platform.OS === 'web') return;
   const apiKey = getRCApiKey();
   if (!apiKey) {
+    rcConfigureError = 'No API key configured';
     console.log('[RevenueCat] No API key configured, skipping initialization');
     return;
   }
@@ -26,8 +28,10 @@ async function configureRC() {
     Purchases = mod.default;
     Purchases.configure({ apiKey });
     rcConfigured = true;
+    rcConfigureError = null;
     console.log('[RevenueCat] Configured successfully');
-  } catch (e) {
+  } catch (e: any) {
+    rcConfigureError = e?.message ?? String(e);
     console.log('[RevenueCat] Configuration failed:', e);
   }
 }
@@ -38,6 +42,11 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRestoring, setIsRestoring] = useState<boolean>(false);
   const [currentOffering, setCurrentOffering] = useState<any>(null);
+  const [rcLastError, setRcLastError] = useState<string | null>(null);
+  const [rcCurrentOfferingId, setRcCurrentOfferingId] = useState<string | null>(null);
+  const [rcOfferingCount, setRcOfferingCount] = useState<number>(0);
+  const [rcPackageIds, setRcPackageIds] = useState<string[]>([]);
+  const [rcAppUserId, setRcAppUserId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -82,37 +91,56 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
 
     try {
       setIsLoading(true);
+      setRcLastError(null);
       await configureRC();
 
       if (!Purchases || !rcConfigured) {
-        console.log('[RevenueCat] Not configured, skipping fetch. Purchases:', !!Purchases, 'rcConfigured:', rcConfigured);
+        const msg = rcConfigureError ?? 'SDK not configured';
+        setRcLastError(msg);
+        console.log('[RevenueCat] Not configured, skipping fetch.', msg);
         return null;
       }
 
-      console.log('[RevenueCat] Fetching customer info...');
+      try {
+        const appUserId = await Purchases.getAppUserID();
+        setRcAppUserId(appUserId ?? null);
+      } catch (e: any) {
+        console.log('[RevenueCat] Error fetching appUserId:', e);
+      }
+
       try {
         const customerInfo = await Purchases.getCustomerInfo();
         checkEntitlementFromInfo(customerInfo);
-      } catch (infoErr) {
+      } catch (infoErr: any) {
+        const msg = infoErr?.message ?? String(infoErr);
+        setRcLastError(`getCustomerInfo: ${msg}`);
         console.log('[RevenueCat] Error fetching customer info:', infoErr);
       }
 
-      console.log('[RevenueCat] Fetching offerings...');
       try {
         const offerings = await Purchases.getOfferings();
-        console.log('[RevenueCat] Offerings result:', offerings?.current ? 'Found current offering' : 'No current offering', 'Available packages:', offerings?.current?.availablePackages?.length ?? 0);
+        const allCount = Object.keys(offerings?.all ?? {}).length;
+        setRcOfferingCount(allCount);
+        setRcCurrentOfferingId(offerings?.current?.identifier ?? null);
+        const pkgIds: string[] = offerings?.current?.availablePackages?.map(
+          (p: any) => p?.product?.identifier
+        ).filter(Boolean) ?? [];
+        setRcPackageIds(pkgIds);
         if (offerings?.current) {
-          console.log('[RevenueCat] Package IDs:', offerings.current.availablePackages?.map((p: any) => p?.product?.identifier));
           setCurrentOffering(offerings.current);
         } else {
-          console.log('[RevenueCat] No current offering found. All offerings:', JSON.stringify(Object.keys(offerings?.all ?? {})));
+          setRcLastError(prev => prev ?? `No current offering (offerings.all has ${allCount} entries)`);
         }
         return offerings?.current ?? null;
-      } catch (offerErr) {
+      } catch (offerErr: any) {
+        const msg = offerErr?.message ?? String(offerErr);
+        setRcLastError(`getOfferings: ${msg}`);
         console.log('[RevenueCat] Error fetching offerings:', offerErr);
         return null;
       }
-    } catch (e) {
+    } catch (e: any) {
+      const msg = e?.message ?? String(e);
+      setRcLastError(`init: ${msg}`);
       console.log('[RevenueCat] Error in initAndFetchOfferings:', e);
       return null;
     } finally {
@@ -182,5 +210,10 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
     initAndFetchOfferings,
     purchasePackage,
     rcAvailable: rcConfigured,
-  }), [isPro, rcIsPro, devProOverride, setDevProOverride, isLoading, currentOffering, restorePurchases, isRestoring, initAndFetchOfferings, purchasePackage]);
+    rcLastError,
+    rcCurrentOfferingId,
+    rcOfferingCount,
+    rcPackageIds,
+    rcAppUserId,
+  }), [isPro, rcIsPro, devProOverride, setDevProOverride, isLoading, currentOffering, restorePurchases, isRestoring, initAndFetchOfferings, purchasePackage, rcLastError, rcCurrentOfferingId, rcOfferingCount, rcPackageIds, rcAppUserId]);
 });
