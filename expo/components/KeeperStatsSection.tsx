@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
-import { ChevronDown, ChevronUp, Info } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
+import { ChevronDown, ChevronUp, Info, Plus, Minus } from 'lucide-react-native';
 import StatCounter from '@/components/StatCounter';
 import SavePercentageBadge from '@/components/SavePercentageBadge';
 import { useColors } from '@/contexts/ThemeContext';
@@ -135,6 +136,52 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
     onUpdate({ ...keeper, [half]: { ...h, [stat]: newVal } });
   }, [keeper, onUpdate]);
 
+  type IncidentKind = 'save' | 'goal' | 'oneVsOneSave' | 'oneVsOneGoal' | 'pkSave' | 'pkGoal';
+
+  const getIncidentCount = useCallback((half: HalfStats, kind: IncidentKind): number => {
+    switch (kind) {
+      case 'save': return half.saves;
+      case 'goal': return half.goalsAgainst;
+      case 'oneVsOneSave': return half.oneVsOneSaved;
+      case 'oneVsOneGoal': return half.oneVsOneGoals;
+      case 'pkSave': return half.penalties.penaltiesSaved;
+      case 'pkGoal': return half.penalties.penaltyGoals;
+    }
+  }, []);
+
+  const logIncident = useCallback((halfKey: 'firstHalf' | 'secondHalf', kind: IncidentKind, delta: 1 | -1) => {
+    const h = (keeper[halfKey] ?? defaultHalfStats) as HalfStats;
+    const current = getIncidentCount(h, kind);
+    if (delta === -1 && current === 0) {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      return;
+    }
+    void Haptics.impactAsync(delta === 1 ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light);
+    const next = Math.max(0, current + delta);
+    let updatedHalf: HalfStats = h;
+    switch (kind) {
+      case 'save':
+        updatedHalf = { ...h, saves: next };
+        break;
+      case 'goal':
+        updatedHalf = { ...h, goalsAgainst: next };
+        break;
+      case 'oneVsOneSave':
+        updatedHalf = { ...h, oneVsOneSaved: next };
+        break;
+      case 'oneVsOneGoal':
+        updatedHalf = { ...h, oneVsOneGoals: next };
+        break;
+      case 'pkSave':
+        updatedHalf = { ...h, penalties: { ...h.penalties, penaltiesSaved: next } };
+        break;
+      case 'pkGoal':
+        updatedHalf = { ...h, penalties: { ...h.penalties, penaltyGoals: next } };
+        break;
+    }
+    onUpdate({ ...keeper, [halfKey]: updatedHalf });
+  }, [keeper, onUpdate, getIncidentCount]);
+
   const showOneVsOneInfo = useCallback(() => {
     Alert.alert(
       '1v1 Chances',
@@ -155,25 +202,90 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
   const totalOneVsOneMissed = getTotalOneVsOneMissed(keeper);
   const oneVsOneSavePct = getOneVsOneSavePercentage(keeper);
 
+  const renderIncidentButton = useCallback((
+    halfKey: 'firstHalf' | 'secondHalf',
+    kind: IncidentKind,
+    label: string,
+    count: number,
+    tier: 'primary' | 'secondary' | 'tertiary',
+    tone: 'save' | 'goal',
+  ) => {
+    const tierStyle = tier === 'primary' ? styles.incidentBtnPrimary : tier === 'secondary' ? styles.incidentBtnSecondary : styles.incidentBtnTertiary;
+    const labelStyle = tier === 'primary' ? styles.incidentLabelPrimary : styles.incidentLabelSecondary;
+    const countStyle = tier === 'primary' ? styles.incidentCountPrimary : styles.incidentCountSecondary;
+    const toneColor = tone === 'save' ? colors.primary : colors.danger;
+    const toneBg = tone === 'save' ? colors.primaryGlow : colors.dangerGlow;
+    return (
+      <View style={[styles.incidentBtn, tierStyle, { borderColor: toneColor + '55', backgroundColor: toneBg }]}>
+        <TouchableOpacity
+          testID={`${halfKey}-${kind}-increment`}
+          onPress={() => logIncident(halfKey, kind, 1)}
+          activeOpacity={0.7}
+          style={styles.incidentBody}
+        >
+          <Text style={[labelStyle, { color: toneColor }]} numberOfLines={1}>{label}</Text>
+          <Text style={[countStyle, { color: toneColor }]}>{count}</Text>
+        </TouchableOpacity>
+        <View style={styles.incidentActionsRow}>
+          <TouchableOpacity
+            testID={`${halfKey}-${kind}-decrement`}
+            onPress={() => logIncident(halfKey, kind, -1)}
+            activeOpacity={0.6}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[styles.incidentIconBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          >
+            <Minus size={tier === 'primary' ? 16 : 14} color={count === 0 ? colors.textMuted : colors.danger} strokeWidth={2.5} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            testID={`${halfKey}-${kind}-increment-plus`}
+            onPress={() => logIncident(halfKey, kind, 1)}
+            activeOpacity={0.6}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            style={[styles.incidentIconBtn, { backgroundColor: toneColor, borderColor: toneColor }]}
+          >
+            <Plus size={tier === 'primary' ? 16 : 14} color={colors.white} strokeWidth={2.8} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }, [logIncident, colors, styles]);
+
   const renderHalfSection = useCallback((halfKey: 'firstHalf' | 'secondHalf', title: string) => {
     const half = keeper[halfKey] ?? defaultHalfStats;
     const halfShotsFaced = getShotsFaced(half.saves, half.goalsAgainst);
+    const halfOneVsOneFaced = half.oneVsOneSaved + half.oneVsOneGoals + half.oneVsOneMissed;
+    const halfOneVsOneOnTarget = half.oneVsOneSaved + half.oneVsOneGoals;
+    const halfOneVsOnePct = halfOneVsOneOnTarget > 0 ? Math.round((half.oneVsOneSaved / halfOneVsOneOnTarget) * 100) : null;
+    const halfPkFaced = half.penalties.penaltiesSaved + half.penalties.penaltyGoals + half.penalties.penaltiesMissed;
+    const halfPkOnTarget = half.penalties.penaltiesSaved + half.penalties.penaltyGoals;
+    const halfPkPct = halfPkOnTarget > 0 ? Math.round((half.penalties.penaltiesSaved / halfPkOnTarget) * 100) : null;
     return (
       <View style={styles.halfSection}>
         <Text style={styles.sectionTitle}>{title}</Text>
-        <View style={styles.statBlock}>
-          <StatCounter label="Saves" value={half.saves} onIncrement={() => updateHalf(halfKey, 'saves', 1)} onDecrement={() => updateHalf(halfKey, 'saves', -1)} accentColor={colors.primary} />
+        <Text style={styles.logShotTitle}>Log a Shot</Text>
+        <View style={styles.incidentGrid}>
+          <View style={styles.incidentRow}>
+            {renderIncidentButton(halfKey, 'save', 'Save', half.saves, 'primary', 'save')}
+            {renderIncidentButton(halfKey, 'goal', 'Goal', half.goalsAgainst, 'primary', 'goal')}
+          </View>
+          <View style={styles.incidentRow}>
+            {renderIncidentButton(halfKey, 'oneVsOneSave', '1v1 Save', half.oneVsOneSaved, 'secondary', 'save')}
+            {renderIncidentButton(halfKey, 'oneVsOneGoal', '1v1 Goal', half.oneVsOneGoals, 'secondary', 'goal')}
+          </View>
+          <View style={styles.incidentRow}>
+            {renderIncidentButton(halfKey, 'pkSave', 'PK Save', half.penalties.penaltiesSaved, 'tertiary', 'save')}
+            {renderIncidentButton(halfKey, 'pkGoal', 'PK Goal', half.penalties.penaltyGoals, 'tertiary', 'goal')}
+          </View>
         </View>
-        <View style={styles.statBlock}>
-          <StatCounter label="Goals Against" value={half.goalsAgainst} onIncrement={() => updateHalf(halfKey, 'goalsAgainst', 1)} onDecrement={() => updateHalf(halfKey, 'goalsAgainst', -1)} accentColor={colors.danger} />
-        </View>
-        <Text style={styles.oneVsOneHint}>Track 1v1 chances and PKs in their own sections below — don&apos;t add them to regular saves or goals.</Text>
         <View style={styles.shotsFacedRow}>
           <Text style={styles.shotsFacedLabel}>Shots on Target</Text>
-          <Text style={styles.shotsFacedValue}>{halfShotsFaced}</Text>
+          <Text style={styles.shotsFacedValue}>{halfShotsFaced + halfOneVsOneOnTarget + halfPkOnTarget}</Text>
         </View>
         <View style={styles.savePercentageRow}>
-          <SavePercentageBadge saves={half.saves} goalsAgainst={half.goalsAgainst} />
+          <SavePercentageBadge
+            saves={half.saves + half.oneVsOneSaved + half.penalties.penaltiesSaved}
+            goalsAgainst={half.goalsAgainst + half.oneVsOneGoals + half.penalties.penaltyGoals}
+          />
         </View>
         <View style={styles.halfDivider} />
         <Text style={styles.subSectionTitle}>Distribution</Text>
@@ -208,61 +320,25 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
             <Info size={14} color={colors.textMuted} />
           </TouchableOpacity>
         </View>
-        <View style={styles.distributionGrid}>
-          <View style={styles.tripleCounterRow}>
-            <View style={styles.tripleCounterCell}>
-              <StatCounter size="compact" label="1v1 Saved" value={half.oneVsOneSaved} onIncrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneSaved', 1)} onDecrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneSaved', -1)} accentColor={colors.primary} labelMinHeight={28} alignLabelTop />
-            </View>
-            <View style={styles.tripleCounterCell}>
-              <StatCounter size="compact" label="1v1 Goal" value={half.oneVsOneGoals} onIncrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneGoals', 1)} onDecrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneGoals', -1)} accentColor={colors.danger} labelMinHeight={28} alignLabelTop />
-            </View>
-            <View style={styles.tripleCounterCell}>
-              <StatCounter size="compact" label="1v1 Missed" value={half.oneVsOneMissed} onIncrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneMissed', 1)} onDecrement={() => updateHalfOneVsOne(halfKey, 'oneVsOneMissed', -1)} accentColor={colors.textMuted} labelMinHeight={28} alignLabelTop />
-            </View>
-          </View>
-          {(() => {
-            const saved = half.oneVsOneSaved;
-            const goals = half.oneVsOneGoals;
-            const onTarget = saved + goals;
-            if (onTarget === 0) return null;
-            const pct = Math.round((saved / onTarget) * 100);
-            return (
-              <Text style={styles.pkSavePctLine}>1v1 Save %: {pct}% ({saved} of {onTarget} on target)</Text>
-            );
-          })()}
-        </View>
+        <Text style={styles.summaryLine} testID={`${halfKey}-1v1-summary`}>
+          {halfOneVsOneFaced === 0
+            ? 'No 1v1 chances logged yet'
+            : `Faced: ${halfOneVsOneFaced} · Saved: ${half.oneVsOneSaved} · Save rate: ${halfOneVsOnePct === null ? '—' : `${halfOneVsOnePct}%`}`}
+        </Text>
         <View style={styles.halfDivider} />
         <Text style={styles.subSectionTitle}>Penalties</Text>
-        <View style={styles.distributionGrid}>
-          <View style={styles.tripleCounterRow}>
-            <View style={styles.tripleCounterCell}>
-              <StatCounter size="compact" label="PK Saved" value={half.penalties.penaltiesSaved} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesSaved', -1)} accentColor={colors.primary} labelMinHeight={28} alignLabelTop />
-            </View>
-            <View style={styles.tripleCounterCell}>
-              <StatCounter size="compact" label="PK Goal" value={half.penalties.penaltyGoals} onIncrement={() => updateHalfPenalty(halfKey, 'penaltyGoals', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltyGoals', -1)} accentColor={colors.danger} labelMinHeight={28} alignLabelTop />
-            </View>
-            <View style={styles.tripleCounterCell}>
-              <StatCounter size="compact" label="PK Missed" value={half.penalties.penaltiesMissed} onIncrement={() => updateHalfPenalty(halfKey, 'penaltiesMissed', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'penaltiesMissed', -1)} accentColor={colors.textMuted} labelMinHeight={28} alignLabelTop />
-            </View>
-          </View>
-          {(() => {
-            const saved = half.penalties.penaltiesSaved;
-            const goals = half.penalties.penaltyGoals;
-            const onTarget = saved + goals;
-            if (onTarget === 0) return null;
-            const pct = Math.round((saved / onTarget) * 100);
-            return (
-              <Text style={styles.pkSavePctLine}>PK Save %: {pct}% ({saved} of {onTarget} on target)</Text>
-            );
-          })()}
-          <View style={styles.distributionRow}>
-            <StatCounter label="Yellow Card" value={half.penalties.yellowCards} onIncrement={() => updateHalfPenalty(halfKey, 'yellowCards', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'yellowCards', -1)} accentColor={colors.warning} />
-            <StatCounter label="Red Card" value={half.penalties.redCards} onIncrement={() => updateHalfPenalty(halfKey, 'redCards', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'redCards', -1)} accentColor={colors.danger} />
-          </View>
+        <Text style={styles.summaryLine} testID={`${halfKey}-pk-summary`}>
+          {halfPkFaced === 0
+            ? 'No PKs logged yet'
+            : `Faced: ${halfPkFaced} · Saved: ${half.penalties.penaltiesSaved} · Save rate: ${halfPkPct === null ? '—' : `${halfPkPct}%`}`}
+        </Text>
+        <View style={styles.distributionRow}>
+          <StatCounter label="Yellow Card" value={half.penalties.yellowCards} onIncrement={() => updateHalfPenalty(halfKey, 'yellowCards', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'yellowCards', -1)} accentColor={colors.warning} />
+          <StatCounter label="Red Card" value={half.penalties.redCards} onIncrement={() => updateHalfPenalty(halfKey, 'redCards', 1)} onDecrement={() => updateHalfPenalty(halfKey, 'redCards', -1)} accentColor={colors.danger} />
         </View>
       </View>
     );
-  }, [keeper, updateHalf, updateHalfDistribution, updateHalfPenalty, updateHalfOneVsOne, styles, colors]);
+  }, [keeper, updateHalfDistribution, updateHalfPenalty, styles, colors, renderIncidentButton, showOneVsOneInfo]);
 
   return (
     <View style={styles.container}>
@@ -583,5 +659,20 @@ function createStyles(c: ThemeColors) {
     pkSavePctLine: { fontSize: fontSize.sm, color: c.textSecondary, fontWeight: '600' as const, textAlign: 'center' as const, marginTop: 4 },
     sectionHeaderRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, marginBottom: 14 },
     subSectionTitleInline: { fontSize: fontSize.caption, fontWeight: '600' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 0.8, textAlign: 'center' as const },
+    logShotTitle: { fontSize: fontSize.caption, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 1, textAlign: 'center' as const, marginBottom: 10 },
+    incidentGrid: { gap: 10, marginBottom: 14 },
+    incidentRow: { flexDirection: 'row' as const, gap: 10 },
+    incidentBtn: { flex: 1, borderRadius: 12, borderWidth: 1, overflow: 'hidden' as const },
+    incidentBtnPrimary: { paddingVertical: 14, paddingHorizontal: 14 },
+    incidentBtnSecondary: { paddingVertical: 10, paddingHorizontal: 12, opacity: 0.95 },
+    incidentBtnTertiary: { paddingVertical: 10, paddingHorizontal: 12, opacity: 0.95 },
+    incidentBody: { alignItems: 'center' as const, marginBottom: 8 },
+    incidentLabelPrimary: { fontSize: fontSize.body, fontWeight: '800' as const, letterSpacing: 0.5, textTransform: 'uppercase' as const },
+    incidentLabelSecondary: { fontSize: fontSize.sm, fontWeight: '700' as const, letterSpacing: 0.4, textTransform: 'uppercase' as const },
+    incidentCountPrimary: { fontSize: fontSize.display3, fontWeight: '800' as const, marginTop: 2 },
+    incidentCountSecondary: { fontSize: fontSize.h2, fontWeight: '800' as const, marginTop: 2 },
+    incidentActionsRow: { flexDirection: 'row' as const, justifyContent: 'center' as const, alignItems: 'center' as const, gap: 14 },
+    incidentIconBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center' as const, justifyContent: 'center' as const, borderWidth: 1 },
+    summaryLine: { fontSize: fontSize.body, color: c.textSecondary, fontWeight: '600' as const, textAlign: 'center' as const, marginBottom: 12, paddingHorizontal: 8 },
   });
 }
