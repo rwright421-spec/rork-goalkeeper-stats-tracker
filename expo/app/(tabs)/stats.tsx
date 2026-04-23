@@ -358,6 +358,50 @@ function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expan
             </View>
           </View>
 
+          {stats.oneVsOneFaced > 0 && (
+            <View style={s.distSection}>
+              <Text style={s.distTitle}>1v1 Situations</Text>
+              <View style={s.distGrid}>
+                <View style={s.distRow}>
+                  <View style={s.distItem}>
+                    <Text style={s.distValue}>{stats.oneVsOneFaced}</Text>
+                    <Text style={s.distLabel}>Faced</Text>
+                  </View>
+                  <View style={s.distItem}>
+                    <Text style={[s.distValue, { color: colors.primary }]}>{stats.oneVsOneSaved}</Text>
+                    <Text style={s.distLabel}>Saved</Text>
+                  </View>
+                  <View style={s.distItem}>
+                    <Text style={[s.distValue, { color: '#F59E0B' }]}>{stats.oneVsOneSaveRate !== null ? `${stats.oneVsOneSaveRate}%` : '—'}</Text>
+                    <Text style={s.distLabel}>Save Rate</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
+
+          {stats.pkFaced > 0 && (
+            <View style={s.distSection}>
+              <Text style={s.distTitle}>Penalty Kicks</Text>
+              <View style={s.distGrid}>
+                <View style={s.distRow}>
+                  <View style={s.distItem}>
+                    <Text style={s.distValue}>{stats.pkFaced}</Text>
+                    <Text style={s.distLabel}>Faced</Text>
+                  </View>
+                  <View style={s.distItem}>
+                    <Text style={[s.distValue, { color: colors.primary }]}>{stats.penalties.penaltiesSaved}</Text>
+                    <Text style={s.distLabel}>Saved</Text>
+                  </View>
+                  <View style={s.distItem}>
+                    <Text style={[s.distValue, { color: '#14B8A6' }]}>{stats.pkSaveRate !== null ? `${stats.pkSaveRate}%` : '—'}</Text>
+                    <Text style={s.distLabel}>Save Rate</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          )}
+
           {(stats.shootout.saves > 0 || stats.shootout.goalsAgainst > 0) && (
             <View style={s.distSection}>
               <Text style={s.distTitle}>Shootout</Text>
