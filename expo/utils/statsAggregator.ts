@@ -24,6 +24,8 @@ export interface AggregatedStats {
   gaa: number | null;
   pkSavePercentage: number | null;
   pkOnTarget: number;
+  pkFaced: number;
+  pkSaveRate: number | null;
 }
 
 function emptyDistribution(): DistributionStats {
@@ -143,6 +145,8 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
 
   const pkOnTarget = penalties.penaltiesSaved + penalties.penaltyGoals;
   const pkSavePercentage = pkOnTarget > 0 ? Math.round((penalties.penaltiesSaved / pkOnTarget) * 100) : null;
+  const pkFaced = pkOnTarget + penalties.penaltiesMissed;
+  const pkSaveRate = pkFaced > 0 ? Math.round((penalties.penaltiesSaved / pkFaced) * 100) : null;
   const oneVsOneOnTarget = oneVsOneSaved + oneVsOneGoals;
   const oneVsOneFaced = oneVsOneOnTarget + oneVsOneMissed;
   const oneVsOneSavePercentage = oneVsOneOnTarget > 0 ? Math.round((oneVsOneSaved / oneVsOneOnTarget) * 100) : null;
@@ -170,6 +174,8 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
     gaa: totalEstimatedMinutes > 0 ? Math.round((totalGoalsAgainst / totalEstimatedMinutes) * 90 * 100) / 100 : null,
     pkSavePercentage,
     pkOnTarget,
+    pkFaced,
+    pkSaveRate,
   };
 }
 
