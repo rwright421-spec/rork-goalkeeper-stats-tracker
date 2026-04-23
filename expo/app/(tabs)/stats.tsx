@@ -196,12 +196,21 @@ function createBlockStyles(c: ThemeColors) {
       marginTop: 3,
       textAlign: 'center' as const,
     },
+    ropExplainer: {
+      fontSize: fontSize.xs,
+      color: c.textMuted,
+      fontStyle: 'italic' as const,
+      textAlign: 'center' as const,
+      marginTop: -4,
+      marginBottom: 2,
+    },
   });
 }
 
 function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expanded?: boolean; colors: ThemeColors }) {
   const s = useMemo(() => createBlockStyles(colors), [colors]);
-  const savePctColor = stats.savePercentage === null ? colors.textMuted : stats.savePercentage >= 75 ? colors.primary : stats.savePercentage >= 50 ? colors.accent : colors.danger;
+  const savePctColor = stats.allSavePercentage === null ? colors.textMuted : stats.allSavePercentage >= 75 ? colors.primary : stats.allSavePercentage >= 50 ? colors.accent : colors.danger;
+  const ropPctColor = stats.runOfPlaySavePercentage === null ? colors.textMuted : stats.runOfPlaySavePercentage >= 75 ? colors.primary : stats.runOfPlaySavePercentage >= 50 ? colors.accent : colors.danger;
 
   return (
     <View style={s.container}>
@@ -214,13 +223,6 @@ function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expan
           colors={colors}
         />
         <StatCard
-          label="Save %"
-          value={stats.savePercentage !== null ? `${stats.savePercentage}%` : '—'}
-          color={savePctColor}
-          icon={<Target size={18} color={savePctColor} />}
-          colors={colors}
-        />
-        <StatCard
           label="Clean Sheets"
           value={stats.cleanSheets}
           color="#8B5CF6"
@@ -228,6 +230,24 @@ function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expan
           colors={colors}
         />
       </View>
+
+      <View style={s.topRow}>
+        <StatCard
+          label="All Save %"
+          value={stats.allSavePercentage !== null ? `${stats.allSavePercentage}%` : '—'}
+          color={savePctColor}
+          icon={<Target size={18} color={savePctColor} />}
+          colors={colors}
+        />
+        <StatCard
+          label="RoP Save %"
+          value={stats.runOfPlaySavePercentage !== null ? `${stats.runOfPlaySavePercentage}%` : '—'}
+          color={ropPctColor}
+          icon={<Target size={18} color={ropPctColor} />}
+          colors={colors}
+        />
+      </View>
+      <Text style={s.ropExplainer}>RoP excludes penalties — shows save % from open play.</Text>
 
       <View style={s.row}>
         <View style={s.statRow}>

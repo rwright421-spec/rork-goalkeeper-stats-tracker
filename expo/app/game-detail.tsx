@@ -8,7 +8,7 @@ import { Share2, FileText, FileSpreadsheet, Calendar, Trophy, Pencil, MoreVertic
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { useGames } from '@/contexts/GameContext';
-import { KeeperData, SavedGame, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getTotalOneVsOneGoals, getTotalOneVsOneMissed, getOneVsOneSavePercentage, resolveHalfLength, getPkSavePercentage, isLegacyPenaltyData, isLegacyOneVsOneKeeperData } from '@/types/game';
+import { KeeperData, SavedGame, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getTotalOneVsOneGoals, getTotalOneVsOneMissed, getOneVsOneSavePercentage, resolveHalfLength, getPkSavePercentage, isLegacyPenaltyData, isLegacyOneVsOneKeeperData, getAllSavePercentage, getRunOfPlaySavePercentage } from '@/types/game';
 import { formatGameAsText, formatGameAsCSV } from '@/utils/export';
 import MoveGameModal from '@/components/MoveGameModal';
 import { fontSize } from '@/constants/typography';
@@ -17,7 +17,8 @@ function KeeperDetailBlock({ keeper, label, color, colors, game }: { keeper: Kee
   const totalSaves = getTotalSaves(keeper);
   const totalGA = getTotalGoalsAgainst(keeper);
   const totalSF = getTotalShotsFaced(keeper);
-  const overallPct = getOverallSavePercentage(keeper);
+  const allPct = getAllSavePercentage(keeper);
+  const ropPct = getRunOfPlaySavePercentage(keeper);
   const h1Pct = calculateSavePercentage(keeper.firstHalf.saves, keeper.firstHalf.goalsAgainst);
   const h2Pct = calculateSavePercentage(keeper.secondHalf.saves, keeper.secondHalf.goalsAgainst);
   const totalPen = getTotalPenalties(keeper);
@@ -78,11 +79,19 @@ function KeeperDetailBlock({ keeper, label, color, colors, game }: { keeper: Kee
           <Text style={[styles.overallValue, { color: '#3B82F6' }]}>{totalSF}</Text>
           <Text style={styles.overallLabel}>Shots on Target</Text>
         </View>
+      </View>
+
+      <View style={styles.overallRow}>
         <View style={styles.overallStat}>
-          <Text style={[styles.overallValue, { color: overallPct === null ? colors.textMuted : overallPct >= 50 ? colors.primary : colors.warning }]}>{overallPct !== null ? `${overallPct}%` : '—'}</Text>
-          <Text style={styles.overallLabel}>Save %</Text>
+          <Text style={[styles.overallValue, { color: allPct === null ? colors.textMuted : allPct >= 50 ? colors.primary : colors.warning }]}>{allPct !== null ? `${allPct}%` : '—'}</Text>
+          <Text style={styles.overallLabel}>All Save %</Text>
+        </View>
+        <View style={[styles.overallStat, styles.overallStatSecondary]}>
+          <Text style={[styles.overallValue, { color: ropPct === null ? colors.textMuted : ropPct >= 50 ? colors.primary : colors.warning }]}>{ropPct !== null ? `${ropPct}%` : '—'}</Text>
+          <Text style={styles.overallLabel}>RoP Save %</Text>
         </View>
       </View>
+      <Text style={styles.ropExplainer}>RoP excludes penalties — shows save % from open play.</Text>
 
       {getTotalOneVsOneFaced(keeper) > 0 && (
         <View style={styles.distSection}>
@@ -377,6 +386,8 @@ function createDetailStyles(c: ThemeColors) {
     infoValue: { fontSize: fontSize.bodyLg, fontWeight: '600' as const, color: c.text },
     overallRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },
     overallStat: { flex: 1, backgroundColor: c.surface, borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: c.border },
+    overallStatSecondary: { backgroundColor: c.surfaceLight, borderStyle: 'dashed' as const },
+    ropExplainer: { fontSize: fontSize.xs, color: c.textMuted, fontStyle: 'italic' as const, textAlign: 'center' as const, marginTop: -6, marginBottom: 14 },
     overallValue: { fontSize: fontSize.h1, fontWeight: '800' as const },
     overallLabel: { fontSize: fontSize.xs, fontWeight: '600' as const, color: c.textMuted, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
     halvesRow: { flexDirection: 'row', gap: 10, marginBottom: 14 },

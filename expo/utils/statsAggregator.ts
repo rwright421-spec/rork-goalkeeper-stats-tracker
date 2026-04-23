@@ -26,6 +26,8 @@ export interface AggregatedStats {
   pkOnTarget: number;
   pkFaced: number;
   pkSaveRate: number | null;
+  allSavePercentage: number | null;
+  runOfPlaySavePercentage: number | null;
 }
 
 function emptyDistribution(): DistributionStats {
@@ -145,6 +147,11 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
 
   const pkOnTarget = penalties.penaltiesSaved + penalties.penaltyGoals;
   const pkSavePercentage = pkOnTarget > 0 ? Math.round((penalties.penaltiesSaved / pkOnTarget) * 100) : null;
+  const totalShots = totalSaves + totalGoalsAgainst;
+  const allSavePercentage = totalShots > 0 ? Math.round((totalSaves / totalShots) * 100) : null;
+  const ropShots = totalShots - pkOnTarget;
+  const ropSaves = totalSaves - penalties.penaltiesSaved;
+  const runOfPlaySavePercentage = ropShots > 0 ? Math.round((ropSaves / ropShots) * 100) : null;
   const pkFaced = pkOnTarget + penalties.penaltiesMissed;
   const pkSaveRate = pkFaced > 0 ? Math.round((penalties.penaltiesSaved / pkFaced) * 100) : null;
   const oneVsOneOnTarget = oneVsOneSaved + oneVsOneGoals;
@@ -176,6 +183,8 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
     pkOnTarget,
     pkFaced,
     pkSaveRate,
+    allSavePercentage,
+    runOfPlaySavePercentage,
   };
 }
 
