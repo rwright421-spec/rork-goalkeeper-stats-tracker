@@ -159,6 +159,7 @@ export interface SavedGame {
   finalScore?: FinalScore;
   createdAt: string;
   pendingSync?: boolean;
+  includeShootoutPKs?: boolean;
 }
 
 function createEmptyDistribution(): DistributionStats {

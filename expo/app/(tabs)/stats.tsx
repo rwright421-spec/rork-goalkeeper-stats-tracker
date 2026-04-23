@@ -25,6 +25,8 @@ import {
   groupByOpponent,
 } from '@/utils/statsAggregator';
 import { formatStatsAsText, formatStatsAsCSV } from '@/utils/export';
+import StatInfoBubble from '@/components/StatInfoBubble';
+import { getAgeBand, AgeBand } from '@/constants/ageBands';
 
 const PRIMARY_MODES: { key: GroupMode; label: string }[] = [
   { key: 'career', label: 'Career' },
@@ -77,7 +79,7 @@ function createStatCardStyles(c: ThemeColors) {
   });
 }
 
-function StatCard({ label, value, color, icon, colors }: { label: string; value: string | number; color: string; icon?: React.ReactNode; colors: ThemeColors }) {
+function StatCard({ label, value, color, icon, colors, statKey, ageBand }: { label: string; value: string | number; color: string; icon?: React.ReactNode; colors: ThemeColors; statKey?: string; ageBand?: AgeBand }) {
   const s = useMemo(() => createStatCardStyles(colors), [colors]);
   return (
     <View style={s.card}>
@@ -85,7 +87,10 @@ function StatCard({ label, value, color, icon, colors }: { label: string; value:
         {icon}
       </View>
       <Text style={[s.value, { color }]}>{value}</Text>
-      <Text style={s.label}>{label}</Text>
+      <View style={{ flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 }}>
+        <Text style={s.label}>{label}</Text>
+        {statKey ? <StatInfoBubble statKey={statKey} ageBand={ageBand} size={12} /> : null}
+      </View>
     </View>
   );
 }
@@ -207,7 +212,7 @@ function createBlockStyles(c: ThemeColors) {
   });
 }
 
-function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expanded?: boolean; colors: ThemeColors }) {
+function StatsBlock({ stats, expanded, colors, ageBand }: { stats: AggregatedStats; expanded?: boolean; colors: ThemeColors; ageBand: AgeBand }) {
   const s = useMemo(() => createBlockStyles(colors), [colors]);
   const savePctColor = stats.allSavePercentage === null ? colors.textMuted : stats.allSavePercentage >= 75 ? colors.primary : stats.allSavePercentage >= 50 ? colors.accent : colors.danger;
   const ropPctColor = stats.runOfPlaySavePercentage === null ? colors.textMuted : stats.runOfPlaySavePercentage >= 75 ? colors.primary : stats.runOfPlaySavePercentage >= 50 ? colors.accent : colors.danger;
@@ -228,6 +233,8 @@ function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expan
           color="#8B5CF6"
           icon={<Award size={18} color="#8B5CF6" />}
           colors={colors}
+          statKey="cleanSheet"
+          ageBand={ageBand}
         />
       </View>
 
@@ -238,6 +245,8 @@ function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expan
           color={savePctColor}
           icon={<Target size={18} color={savePctColor} />}
           colors={colors}
+          statKey="savePercentage"
+          ageBand={ageBand}
         />
         <StatCard
           label="RoP Save %"
@@ -245,6 +254,8 @@ function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expan
           color={ropPctColor}
           icon={<Target size={18} color={ropPctColor} />}
           colors={colors}
+          statKey="ropSavePercentage"
+          ageBand={ageBand}
         />
       </View>
       <Text style={s.ropExplainer}>RoP excludes penalties — shows save % from open play.</Text>
@@ -253,22 +264,26 @@ function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expan
         <View style={s.statRow}>
           <View style={[s.statDot, { backgroundColor: colors.primary }]} />
           <Text style={s.statLabel}>Total Saves</Text>
+          <StatInfoBubble statKey="saves" ageBand={ageBand} />
           <Text style={[s.statValue, { color: colors.primary }]}>{stats.totalSaves}</Text>
         </View>
         <View style={s.statRow}>
           <View style={[s.statDot, { backgroundColor: colors.danger }]} />
           <Text style={s.statLabel}>Goals Against</Text>
+          <StatInfoBubble statKey="goalsAllowed" ageBand={ageBand} />
           <Text style={[s.statValue, { color: colors.danger }]}>{stats.totalGoalsAgainst}</Text>
         </View>
         <View style={s.statRow}>
           <View style={[s.statDot, { backgroundColor: '#3B82F6' }]} />
           <Text style={s.statLabel}>Shots on Target</Text>
+          <StatInfoBubble statKey="shotsOnTarget" ageBand={ageBand} />
           <Text style={[s.statValue, { color: '#3B82F6' }]}>{stats.totalShotsFaced}</Text>
         </View>
         {stats.oneVsOneSavePercentage !== null && (
           <View style={s.statRow}>
             <View style={[s.statDot, { backgroundColor: '#F59E0B' }]} />
             <Text style={s.statLabel}>1v1 Save %</Text>
+            <StatInfoBubble statKey="oneVsOneSaveRate" ageBand={ageBand} />
             <Text style={[s.statValue, { color: '#F59E0B' }]}>{stats.oneVsOneSavePercentage}% ({stats.oneVsOneSaved} of {stats.oneVsOneOnTarget})</Text>
           </View>
         )}
@@ -276,6 +291,7 @@ function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expan
           <View style={s.statRow}>
             <View style={[s.statDot, { backgroundColor: '#14B8A6' }]} />
             <Text style={s.statLabel}>PK Save %</Text>
+            <StatInfoBubble statKey="pkSaveRate" ageBand={ageBand} />
             <Text style={[s.statValue, { color: '#14B8A6' }]}>{stats.pkSavePercentage}% ({stats.penalties.penaltiesSaved} of {stats.pkOnTarget})</Text>
           </View>
         )}
@@ -283,6 +299,7 @@ function StatsBlock({ stats, expanded, colors }: { stats: AggregatedStats; expan
           <View style={s.statRow}>
             <View style={[s.statDot, { backgroundColor: '#EC4899' }]} />
             <Text style={s.statLabel}>GAA</Text>
+            <StatInfoBubble statKey="gaa" ageBand={ageBand} />
             <Text style={[s.statValue, { color: '#EC4899' }]}>{stats.gaa.toFixed(2)}</Text>
           </View>
         )}

@@ -592,6 +592,10 @@ export default function SettingsScreen() {
           <Text style={styles.privacyLinkText}>Privacy Policy</Text>
         </TouchableOpacity>
 
+        <Text style={styles.statAttributionText} testID="stat-attribution">
+          Stat definitions follow US Soccer Federation coaching guidance and NCAA Statisticians’ Manual counting rules.
+        </Text>
+
         <View style={[styles.sectionHeader, { marginTop: 36 }]}>
           <AlertTriangle size={16} color={colors.danger} />
           <Text style={[styles.sectionHeaderText, { color: colors.danger }]}>Danger Zone</Text>
@@ -759,6 +763,7 @@ function createStyles(c: ThemeColors) {
     feedbackButtonText: { fontSize: fontSize.bodyLg, fontWeight: '600' as const, color: c.text },
     privacyLink: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, marginTop: 16 },
     privacyLinkText: { fontSize: fontSize.body2, color: c.textMuted, textDecorationLine: 'underline' as const },
+    statAttributionText: { fontSize: fontSize.caption, color: c.textMuted, fontStyle: 'italic' as const, textAlign: 'center' as const, marginTop: 12, paddingHorizontal: 20, lineHeight: 18 },
     themePreviewButton: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, backgroundColor: c.primaryGlow, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 14, marginTop: 12, alignSelf: 'flex-start' as const, borderWidth: 1, borderColor: c.primary },
     themePreviewButtonText: { fontSize: fontSize.body2, fontWeight: '600' as const, color: c.primary },
     deleteAllButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 10, backgroundColor: c.danger, borderRadius: 12, paddingVertical: 14, paddingHorizontal: 20 },

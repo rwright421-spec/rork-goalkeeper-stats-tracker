@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { ChevronDown, ChevronUp, Info, Plus, Minus } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, Plus, Minus } from 'lucide-react-native';
 import StatCounter from '@/components/StatCounter';
 import SavePercentageBadge from '@/components/SavePercentageBadge';
 import { useColors } from '@/contexts/ThemeContext';
@@ -9,6 +9,8 @@ import { ThemeColors } from '@/constants/themes';
 import { fontSize } from '@/constants/typography';
 import { KeeperData, DistributionStats, PenaltyStats, HalfStats, GoalkeeperProfile, getTotalSaves, getTotalGoalsAgainst, getOverallSavePercentage, getTotalDistribution, getTotalPenalties, getShotsFaced, getTotalShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getTotalOneVsOneGoals, getTotalOneVsOneMissed, getOneVsOneSavePercentage, getHalfLengthForAgeGroup, defaultHalfStats, AGE_GROUP_OPTIONS, deriveHalvesPlayed, getPkSavePercentage } from '@/types/game';
 import KeeperSelectorSheet, { KeeperSelectorButton, KeeperSelectionState } from '@/components/KeeperSelectorSheet';
+import StatInfoBubble from '@/components/StatInfoBubble';
+import { getAgeBand } from '@/constants/ageBands';
 
 interface KeeperStatsSectionProps {
   label: 'HOME' | 'AWAY';
@@ -37,6 +39,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
   const [firstHalfSelectorOpen, setFirstHalfSelectorOpen] = useState(false);
   const [secondHalfSelectorOpen, setSecondHalfSelectorOpen] = useState(false);
   const styles = useMemo(() => createStyles(colors), [colors]);
+  const ageBand = useMemo(() => getAgeBand(keeper.year || ageGroup || ''), [keeper.year, ageGroup]);
 
   const firstHalfSelection = useMemo((): KeeperSelectionState => {
     if (keeper.keeperIsLinked && keeper.keeperProfileId) {
@@ -182,14 +185,6 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
     onUpdate({ ...keeper, [halfKey]: updatedHalf });
   }, [keeper, onUpdate, getIncidentCount]);
 
-  const showOneVsOneInfo = useCallback(() => {
-    Alert.alert(
-      '1v1 Chances',
-      "A 1v1 chance is a shot taken when the attacker has only the keeper to beat, from a position where a goal is expected. If the attacker wasn't actually in a scoring position, count the save as a regular save, not a 1v1.",
-      [{ text: 'Got it' }],
-    );
-  }, []);
-
   const totalSaves = getTotalSaves(keeper);
   const totalGA = getTotalGoalsAgainst(keeper);
   const totalShotsFaced = getTotalShotsFaced(keeper);
@@ -262,7 +257,10 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
     return (
       <View style={styles.halfSection}>
         <Text style={styles.sectionTitle}>{title}</Text>
-        <Text style={styles.logShotTitle}>Log a Shot</Text>
+        <View style={styles.logShotTitleRow}>
+          <Text style={styles.logShotTitle}>Log a Shot</Text>
+          <StatInfoBubble statKey="shotsOnTarget" ageBand={ageBand} />
+        </View>
         <View style={styles.incidentGrid}>
           <View style={styles.incidentRow}>
             {renderIncidentButton(halfKey, 'save', 'Save', half.saves, 'primary', 'save')}
@@ -280,15 +278,20 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         <View style={styles.shotsFacedRow}>
           <Text style={styles.shotsFacedLabel}>Shots on Target</Text>
           <Text style={styles.shotsFacedValue}>{halfShotsFaced + halfOneVsOneOnTarget + halfPkOnTarget}</Text>
+          <StatInfoBubble statKey="shotsOnTarget" ageBand={ageBand} />
         </View>
         <View style={styles.savePercentageRow}>
           <SavePercentageBadge
             saves={half.saves + half.oneVsOneSaved + half.penalties.penaltiesSaved}
             goalsAgainst={half.goalsAgainst + half.oneVsOneGoals + half.penalties.penaltyGoals}
           />
+          <StatInfoBubble statKey="savePercentage" ageBand={ageBand} />
         </View>
         <View style={styles.halfDivider} />
-        <Text style={styles.subSectionTitle}>Distribution</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.subSectionTitleInline}>Distribution</Text>
+          <StatInfoBubble statKey="distributionAccuracy" ageBand={ageBand} />
+        </View>
         <View style={styles.distributionGrid}>
           <View style={styles.distributionGridRow}>
             <View style={styles.distributionCell}>
@@ -316,9 +319,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         <View style={styles.halfDivider} />
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.subSectionTitleInline}>1v1 Situations</Text>
-          <TouchableOpacity onPress={showOneVsOneInfo} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} testID={`${halfKey}-1v1-info`}>
-            <Info size={14} color={colors.textMuted} />
-          </TouchableOpacity>
+          <StatInfoBubble statKey="oneVsOneFaced" ageBand={ageBand} />
         </View>
         <Text style={styles.summaryLine} testID={`${halfKey}-1v1-summary`}>
           {halfOneVsOneFaced === 0
@@ -326,7 +327,10 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
             : `Faced: ${halfOneVsOneFaced} · Saved: ${half.oneVsOneSaved} · Save rate: ${halfOneVsOnePct === null ? '—' : `${halfOneVsOnePct}%`}`}
         </Text>
         <View style={styles.halfDivider} />
-        <Text style={styles.subSectionTitle}>Penalties</Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.subSectionTitleInline}>Penalties</Text>
+          <StatInfoBubble statKey="penaltiesFaced" ageBand={ageBand} />
+        </View>
         <Text style={styles.summaryLine} testID={`${halfKey}-pk-summary`}>
           {halfPkFaced === 0
             ? 'No PKs logged yet'
@@ -338,7 +342,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         </View>
       </View>
     );
-  }, [keeper, updateHalfDistribution, updateHalfPenalty, styles, colors, renderIncidentButton, showOneVsOneInfo]);
+  }, [keeper, updateHalfDistribution, updateHalfPenalty, styles, colors, renderIncidentButton, ageBand]);
 
   return (
     <View style={styles.container}>
@@ -659,7 +663,8 @@ function createStyles(c: ThemeColors) {
     pkSavePctLine: { fontSize: fontSize.sm, color: c.textSecondary, fontWeight: '600' as const, textAlign: 'center' as const, marginTop: 4 },
     sectionHeaderRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, marginBottom: 14 },
     subSectionTitleInline: { fontSize: fontSize.caption, fontWeight: '600' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 0.8, textAlign: 'center' as const },
-    logShotTitle: { fontSize: fontSize.caption, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 1, textAlign: 'center' as const, marginBottom: 10 },
+    logShotTitle: { fontSize: fontSize.caption, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 1, textAlign: 'center' as const },
+    logShotTitleRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, marginBottom: 10 },
     incidentGrid: { gap: 10, marginBottom: 14 },
     incidentRow: { flexDirection: 'row' as const, gap: 10 },
     incidentBtn: { flex: 1, borderRadius: 12, borderWidth: 1, overflow: 'hidden' as const },

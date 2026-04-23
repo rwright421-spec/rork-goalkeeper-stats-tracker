@@ -388,6 +388,7 @@ export default function GameTrackingScreen() {
   }, [isBoth, hasHome, homeGoalsAgainst, awayGoalsAgainst, homeScoreOverride, awayScoreOverride, homeShootoutGA, awayShootoutGA]);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [includeShootoutPKs, setIncludeShootoutPKs] = useState<boolean>(() => existingGame?.includeShootoutPKs ?? false);
 
   useEffect(() => {
     if (isEditMode) return;
@@ -526,6 +527,7 @@ export default function GameTrackingScreen() {
         homeKeeper: hasHome ? { ...homeKeeper, halvesPlayed: existingGame.homeKeeper?.halvesPlayed ?? deriveHalvesPlayed(homeKeeper) } : undefined,
         awayKeeper: hasAway ? { ...awayKeeper, halvesPlayed: existingGame.awayKeeper?.halvesPlayed ?? deriveHalvesPlayed(awayKeeper) } : undefined,
         finalScore: computedFinalScore,
+        includeShootoutPKs,
       };
       updateGame(updated);
       void clearDraft();
@@ -569,6 +571,7 @@ export default function GameTrackingScreen() {
         awayKeeper: hasAway ? { ...awayKeeper, halvesPlayed: deriveHalvesPlayed(awayKeeper) } : undefined,
         finalScore: computedFinalScore,
         createdAt: new Date().toISOString(),
+        includeShootoutPKs,
         ...(pendingSync ? { pendingSync: true } : {}),
       };
 
@@ -580,7 +583,7 @@ export default function GameTrackingScreen() {
         : 'Stats have been saved to Prior Games.';
       Alert.alert('Game Saved', savedMsg, [{ text: 'OK', onPress: () => { router.replace('/(tabs)/dashboard'); } }]);
     }
-  }, [isSaving, isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent, isPro, isAtFreeLimit, totalGameCount, isHomeGame, editHalfLengthMinutes]);
+  }, [isSaving, isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent, isPro, isAtFreeLimit, totalGameCount, isHomeGame, editHalfLengthMinutes, includeShootoutPKs]);
 
   const headerSubtitle = useMemo(() => {
     if (isEditMode) return `${editEventName} · ${editDate}`;
@@ -814,6 +817,25 @@ export default function GameTrackingScreen() {
           )}
         </View>
 
+        {((hasHome && (homeKeeper.firstHalf.penalties.penaltiesSaved + homeKeeper.firstHalf.penalties.penaltyGoals + homeKeeper.firstHalf.penalties.penaltiesMissed + homeKeeper.secondHalf.penalties.penaltiesSaved + homeKeeper.secondHalf.penalties.penaltyGoals + homeKeeper.secondHalf.penalties.penaltiesMissed) > 0) || (hasAway && (awayKeeper.firstHalf.penalties.penaltiesSaved + awayKeeper.firstHalf.penalties.penaltyGoals + awayKeeper.firstHalf.penalties.penaltiesMissed + awayKeeper.secondHalf.penalties.penaltiesSaved + awayKeeper.secondHalf.penalties.penaltyGoals + awayKeeper.secondHalf.penalties.penaltiesMissed) > 0)) ? (
+          <View style={styles.shootoutToggleCard} testID="include-shootout-toggle-card">
+            <View style={styles.shootoutToggleTextWrap}>
+              <Text style={styles.shootoutToggleLabel}>Include penalty shootout in PK stats?</Text>
+              <Text style={styles.shootoutToggleHint}>Off by default — matches NCAA / recruiting convention. Turn on if this game went to a shootout and you want those PKs counted.</Text>
+            </View>
+            <Switch
+              testID="include-shootout-switch"
+              value={includeShootoutPKs}
+              onValueChange={(val) => {
+                void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                setIncludeShootoutPKs(val);
+              }}
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.white}
+            />
+          </View>
+        ) : null}
+
         <TouchableOpacity testID="save-game-button" style={styles.saveButton} onPress={handleSave} activeOpacity={0.8}>
           <Save size={20} color={colors.white} />
           <Text style={styles.saveText}>Save Game</Text>
@@ -877,6 +899,10 @@ function createStyles(c: ThemeColors) {
     scoreDash: { fontSize: fontSize.display2, fontWeight: '300' as const, color: c.textMuted },
     scoreHint: { fontSize: fontSize.sm, color: c.textMuted, textAlign: 'center', marginTop: 12, fontStyle: 'italic' },
     saveButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: c.primaryDark, borderRadius: 14, paddingVertical: 16, marginTop: 8 },
+    shootoutToggleCard: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, gap: 12, backgroundColor: c.surface, borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: c.border },
+    shootoutToggleTextWrap: { flex: 1 },
+    shootoutToggleLabel: { fontSize: fontSize.body, fontWeight: '700' as const, color: c.text },
+    shootoutToggleHint: { fontSize: fontSize.caption, color: c.textMuted, marginTop: 4, lineHeight: 16 },
     saveText: { color: c.white, fontSize: fontSize.h4, fontWeight: '700' as const },
     keyboardToolbar: { flexDirection: 'row' as const, justifyContent: 'flex-end' as const, alignItems: 'center' as const, backgroundColor: c.surface, borderTopWidth: 1, borderTopColor: c.border, paddingHorizontal: 16, paddingVertical: 8 },
     keyboardDoneButton: { paddingHorizontal: 12, paddingVertical: 6 },
