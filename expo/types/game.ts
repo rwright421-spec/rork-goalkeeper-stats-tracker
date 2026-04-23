@@ -437,6 +437,30 @@ export function getOneVsOneSavePercentage(keeper: KeeperData): number | null {
   return Math.round((saved / onTarget) * 100);
 }
 
+export function getTotalPenaltiesSaved(keeper: KeeperData): number {
+  const fh = keeper.firstHalf ?? defaultHalfStats;
+  const sh = keeper.secondHalf ?? defaultHalfStats;
+  return fh.penalties.penaltiesSaved + sh.penalties.penaltiesSaved;
+}
+
+export function getAllSavePercentage(keeper: KeeperData): number | null {
+  const shots = getTotalShotsFaced(keeper);
+  if (shots === 0) return null;
+  return Math.round((getTotalSaves(keeper) / shots) * 100);
+}
+
+export function getRunOfPlaySavePercentage(keeper: KeeperData): number | null {
+  const totalShots = getTotalShotsFaced(keeper);
+  const pkOnTarget = getTotalPenaltiesSaved(keeper) + (
+    (keeper.firstHalf ?? defaultHalfStats).penalties.penaltyGoals +
+    (keeper.secondHalf ?? defaultHalfStats).penalties.penaltyGoals
+  );
+  const shots = totalShots - pkOnTarget;
+  if (shots <= 0) return null;
+  const saves = getTotalSaves(keeper) - getTotalPenaltiesSaved(keeper);
+  return Math.round((saves / shots) * 100);
+}
+
 // Deprecated: kept for any residual call sites. Prefer getOneVsOneSavePercentage.
 export function getOneVsOneSaveRate(faced: number, saved: number): number | null {
   if (faced === 0) return null;
