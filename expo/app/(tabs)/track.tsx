@@ -40,6 +40,7 @@ export default function TrackScreen() {
   const [quickTrackBoth, setQuickTrackBoth] = useState<boolean>(false);
   const sheetAnim = useRef(new Animated.Value(0)).current;
   const quickStartAnim = useRef(new Animated.Value(0)).current;
+  const isClosingRef = useRef<boolean>(false);
 
   const handleSwitchGoalkeeper = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -95,7 +96,9 @@ export default function TrackScreen() {
   }, [sheetAnim, isPro, isAtFreeLimit, router]);
 
   const closeNewGameSheet = useCallback(() => {
-    Animated.timing(sheetAnim, { toValue: 0, useNativeDriver: true, duration: 200 }).start(() => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+    const forceCleanup = () => {
       setShowNewGameSheet(false);
       setShowQuickStart(false);
       setQuickOpponent('');
@@ -103,6 +106,12 @@ export default function TrackScreen() {
       setShowQuickSuggestions(false);
       setQuickIsHome(true);
       setQuickTrackBoth(false);
+      isClosingRef.current = false;
+    };
+    const safety = setTimeout(forceCleanup, 400);
+    Animated.timing(sheetAnim, { toValue: 0, useNativeDriver: true, duration: 200 }).start(() => {
+      clearTimeout(safety);
+      forceCleanup();
     });
   }, [sheetAnim]);
 

@@ -245,6 +245,18 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
     );
   }, [logIncident, colors, styles]);
 
+  const [log1v1Expanded, setLog1v1Expanded] = useState<{ firstHalf: boolean; secondHalf: boolean }>({ firstHalf: false, secondHalf: false });
+  const [logPkExpanded, setLogPkExpanded] = useState<{ firstHalf: boolean; secondHalf: boolean }>({ firstHalf: false, secondHalf: false });
+
+  const toggleLog1v1 = useCallback((halfKey: 'firstHalf' | 'secondHalf') => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLog1v1Expanded(prev => ({ ...prev, [halfKey]: !prev[halfKey] }));
+  }, []);
+  const toggleLogPk = useCallback((halfKey: 'firstHalf' | 'secondHalf') => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLogPkExpanded(prev => ({ ...prev, [halfKey]: !prev[halfKey] }));
+  }, []);
+
   const renderHalfSection = useCallback((halfKey: 'firstHalf' | 'secondHalf', title: string) => {
     const half = keeper[halfKey] ?? defaultHalfStats;
     const halfShotsFaced = getShotsFaced(half.saves, half.goalsAgainst);
@@ -254,6 +266,14 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
     const halfPkFaced = half.penalties.penaltiesSaved + half.penalties.penaltyGoals + half.penalties.penaltiesMissed;
     const halfPkOnTarget = half.penalties.penaltiesSaved + half.penalties.penaltyGoals;
     const halfPkPct = halfPkOnTarget > 0 ? Math.round((half.penalties.penaltiesSaved / halfPkOnTarget) * 100) : null;
+    const is1v1Expanded = log1v1Expanded[halfKey];
+    const isPkExpanded = logPkExpanded[halfKey];
+    const oneVsOneSummary = (half.oneVsOneSaved > 0 || half.oneVsOneGoals > 0)
+      ? `${half.oneVsOneSaved} Saved · ${half.oneVsOneGoals} Goal`
+      : '';
+    const pkSummary = (half.penalties.penaltiesSaved > 0 || half.penalties.penaltyGoals > 0)
+      ? `${half.penalties.penaltiesSaved} Saved · ${half.penalties.penaltyGoals} Goal`
+      : '';
     return (
       <View style={styles.halfSection}>
         <Text style={styles.sectionTitle}>{title}</Text>
@@ -266,14 +286,42 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
             {renderIncidentButton(halfKey, 'save', 'Save', half.saves, 'primary', 'save')}
             {renderIncidentButton(halfKey, 'goal', 'Goal', half.goalsAgainst, 'primary', 'goal')}
           </View>
-          <View style={styles.incidentRow}>
-            {renderIncidentButton(halfKey, 'oneVsOneSave', '1v1 Save', half.oneVsOneSaved, 'secondary', 'save')}
-            {renderIncidentButton(halfKey, 'oneVsOneGoal', '1v1 Goal', half.oneVsOneGoals, 'secondary', 'goal')}
-          </View>
-          <View style={styles.incidentRow}>
-            {renderIncidentButton(halfKey, 'pkSave', 'PK Save', half.penalties.penaltiesSaved, 'tertiary', 'save')}
-            {renderIncidentButton(halfKey, 'pkGoal', 'PK Goal', half.penalties.penaltyGoals, 'tertiary', 'goal')}
-          </View>
+          <TouchableOpacity
+            testID={`${halfKey}-log-1v1-toggle`}
+            onPress={() => toggleLog1v1(halfKey)}
+            activeOpacity={0.7}
+            style={styles.collapseHeader}
+          >
+            <Text style={styles.collapseHeaderTitle}>1v1 Situations</Text>
+            <View style={styles.collapseHeaderRight}>
+              {oneVsOneSummary ? <Text style={styles.collapseHeaderSummary} numberOfLines={1}>{oneVsOneSummary}</Text> : null}
+              {is1v1Expanded ? <ChevronUp size={16} color={colors.textMuted} /> : <ChevronDown size={16} color={colors.textMuted} />}
+            </View>
+          </TouchableOpacity>
+          {is1v1Expanded && (
+            <View style={styles.incidentRow}>
+              {renderIncidentButton(halfKey, 'oneVsOneSave', '1v1 Save', half.oneVsOneSaved, 'secondary', 'save')}
+              {renderIncidentButton(halfKey, 'oneVsOneGoal', '1v1 Goal', half.oneVsOneGoals, 'secondary', 'goal')}
+            </View>
+          )}
+          <TouchableOpacity
+            testID={`${halfKey}-log-pk-toggle`}
+            onPress={() => toggleLogPk(halfKey)}
+            activeOpacity={0.7}
+            style={styles.collapseHeader}
+          >
+            <Text style={styles.collapseHeaderTitle}>Penalties</Text>
+            <View style={styles.collapseHeaderRight}>
+              {pkSummary ? <Text style={styles.collapseHeaderSummary} numberOfLines={1}>{pkSummary}</Text> : null}
+              {isPkExpanded ? <ChevronUp size={16} color={colors.textMuted} /> : <ChevronDown size={16} color={colors.textMuted} />}
+            </View>
+          </TouchableOpacity>
+          {isPkExpanded && (
+            <View style={styles.incidentRow}>
+              {renderIncidentButton(halfKey, 'pkSave', 'PK Save', half.penalties.penaltiesSaved, 'tertiary', 'save')}
+              {renderIncidentButton(halfKey, 'pkGoal', 'PK Goal', half.penalties.penaltyGoals, 'tertiary', 'goal')}
+            </View>
+          )}
         </View>
         <View style={styles.shotsFacedRow}>
           <Text style={styles.shotsFacedLabel}>Shots on Target</Text>
@@ -342,7 +390,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         </View>
       </View>
     );
-  }, [keeper, updateHalfDistribution, updateHalfPenalty, styles, colors, renderIncidentButton, ageBand]);
+  }, [keeper, updateHalfDistribution, updateHalfPenalty, styles, colors, renderIncidentButton, ageBand, log1v1Expanded, logPkExpanded, toggleLog1v1, toggleLogPk]);
 
   return (
     <View style={styles.container}>
@@ -679,5 +727,9 @@ function createStyles(c: ThemeColors) {
     incidentActionsRow: { flexDirection: 'row' as const, justifyContent: 'center' as const, alignItems: 'center' as const, gap: 14 },
     incidentIconBtn: { width: 32, height: 32, borderRadius: 16, alignItems: 'center' as const, justifyContent: 'center' as const, borderWidth: 1 },
     summaryLine: { fontSize: fontSize.body, color: c.textSecondary, fontWeight: '600' as const, textAlign: 'center' as const, marginBottom: 12, paddingHorizontal: 8 },
+    collapseHeader: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, paddingVertical: 8, paddingHorizontal: 4 },
+    collapseHeaderTitle: { fontSize: fontSize.caption, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 0.8 },
+    collapseHeaderRight: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, flexShrink: 1 },
+    collapseHeaderSummary: { fontSize: fontSize.caption, color: c.textSecondary, fontWeight: '500' as const, maxWidth: 160 },
   });
 }

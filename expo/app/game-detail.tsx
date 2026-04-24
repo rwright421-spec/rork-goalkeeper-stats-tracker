@@ -1,7 +1,7 @@
 // Game Detail - Detailed view of saved game statistics
 import React, { useMemo, useCallback, useState } from 'react';
 
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share, Platform, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Share2, FileText, FileSpreadsheet, Calendar, Trophy, Pencil, MoreVertical, ArrowRightLeft } from 'lucide-react-native';
 
@@ -255,10 +255,18 @@ export default function GameDetailScreen() {
     router.push({ pathname: '/game-tracking', params: { gameId: game.id, eventName: game.setup.eventName, date: game.setup.date, gameName: game.setup.gameName, keeperSelection: game.setup.keeperSelection } });
   }, [game, router]);
 
+  const goBackSafely = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/dashboard');
+    }
+  }, [router]);
+
   const handleMoveComplete = useCallback(() => {
     setShowMoveModal(false);
-    router.back();
-  }, [router]);
+    goBackSafely();
+  }, [goBackSafely]);
 
   const handleShareCSV = useCallback(async () => {
     if (!game) return;
@@ -305,17 +313,24 @@ export default function GameDetailScreen() {
         ),
       }} />
       {showMenu && (
-        <View style={styles.headerMenu}>
-          <TouchableOpacity
-            testID="game-detail-move-btn"
-            style={styles.headerMenuItem}
-            onPress={() => { setShowMenu(false); setShowMoveModal(true); }}
-            activeOpacity={0.7}
-          >
-            <ArrowRightLeft size={16} color={colors.primary} />
-            <Text style={styles.headerMenuText}>Move to Another Goalkeeper</Text>
-          </TouchableOpacity>
-        </View>
+        <>
+          <Pressable
+            testID="game-detail-menu-overlay"
+            style={StyleSheet.absoluteFillObject}
+            onPress={() => setShowMenu(false)}
+          />
+          <View style={styles.headerMenu}>
+            <TouchableOpacity
+              testID="game-detail-move-btn"
+              style={styles.headerMenuItem}
+              onPress={() => { setShowMenu(false); setShowMoveModal(true); }}
+              activeOpacity={0.7}
+            >
+              <ArrowRightLeft size={16} color={colors.primary} />
+              <Text style={styles.headerMenuText}>Move to Another Goalkeeper</Text>
+            </TouchableOpacity>
+          </View>
+        </>
       )}
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>

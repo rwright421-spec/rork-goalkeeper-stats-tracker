@@ -38,10 +38,18 @@ export default function PaywallScreen() {
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
+  const goBackSafely = useCallback(() => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/dashboard');
+    }
+  }, [router]);
+
   const handleClose = useCallback(() => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.back();
-  }, [router]);
+    goBackSafely();
+  }, [goBackSafely]);
 
   const handleSelectPlan = useCallback((plan: PlanType) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -83,12 +91,12 @@ export default function PaywallScreen() {
     try {
       const success = await purchasePackage(pkg);
       if (success) {
-        router.back();
+        goBackSafely();
       }
     } finally {
       setIsPurchasing(false);
     }
-  }, [currentOffering, selectedPlan, purchasePackage, router]);
+  }, [currentOffering, selectedPlan, purchasePackage, goBackSafely, initAndFetchOfferings]);
 
   const handleRestore = useCallback(async () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
