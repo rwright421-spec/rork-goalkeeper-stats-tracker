@@ -8,6 +8,18 @@ export type StatInfo = {
 };
 
 export const STAT_INFO: Record<string, StatInfo> = {
+  totalMinutes: {
+    label: 'Total Minutes',
+    definition: 'Career total minutes the keeper was on the field across all games in the current view.',
+    countingRule: 'Sums per-game Minutes Played from real half timers when available, falling back to halves played × half length for games tracked before the timer was added.',
+    typicalRange: {
+      u10: '40–50 min per game (career sums grow quickly)',
+      u12: '50–60 min per game',
+      u15: '70–80 min per game',
+      u18: '80–90 min per game',
+      adult: '90 min per full game',
+    },
+  },
   minutesPlayed: {
     label: 'Minutes Played',
     definition: 'Total minutes the keeper was on the field during this game.',

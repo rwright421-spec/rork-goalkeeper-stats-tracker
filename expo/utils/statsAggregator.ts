@@ -1,4 +1,4 @@
-import { SavedGame, KeeperData, DistributionStats, PenaltyStats, HalfStats, ShootoutStats, calculateSavePercentage, normalizeKeeper, resolveHalfLength, defaultHalfStats, DEFAULT_HALF_LENGTH, getPkGoalsConceded } from '@/types/game';
+import { SavedGame, KeeperData, DistributionStats, PenaltyStats, HalfStats, ShootoutStats, calculateSavePercentage, normalizeKeeper, resolveHalfLength, defaultHalfStats, DEFAULT_HALF_LENGTH, getPkGoalsConceded, getMinutesPlayed } from '@/types/game';
 import { Team } from '@/types/game';
 
 export interface AggregatedStats {
@@ -21,6 +21,7 @@ export interface AggregatedStats {
   oneVsOneSavePercentage: number | null;
   oneVsOneOnTarget: number;
   totalEstimatedMinutes: number;
+  totalMinutes: number;
   gaa: number | null;
   pkSavePercentage: number | null;
   pkOnTarget: number;
@@ -86,6 +87,7 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
   let oneVsOneMissed = 0;
   let gamesPlayed = 0;
   let totalEstimatedMinutes = 0;
+  let totalMinutes = 0;
 
   for (const game of games) {
     const keeper = getKeeperFromGame(game);
@@ -107,6 +109,7 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
     const halfLength = resolveHalfLength(game.setup);
     const halvesPlayed = keeper.halvesPlayed ?? 2;
     totalEstimatedMinutes += halvesPlayed * halfLength;
+    totalMinutes += getMinutesPlayed(game, keeper).minutes;
 
     let gameSaves = 0;
     let gameGA = 0;
@@ -178,6 +181,7 @@ export function aggregateGames(games: SavedGame[], profileName?: string, profile
     oneVsOneSavePercentage,
     oneVsOneOnTarget,
     totalEstimatedMinutes,
+    totalMinutes,
     gaa: totalEstimatedMinutes > 0 ? Math.round((totalGoalsAgainst / totalEstimatedMinutes) * 90 * 100) / 100 : null,
     pkSavePercentage,
     pkOnTarget,

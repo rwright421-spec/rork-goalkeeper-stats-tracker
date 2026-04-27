@@ -2,7 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Share, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { TrendingUp, Shield, Target, Award, ChevronDown, ChevronUp, Check, Square, Share2, FileText, FileSpreadsheet, Image, ArrowLeftRight, MoreHorizontal } from 'lucide-react-native';
+import { TrendingUp, Shield, Target, Award, ChevronDown, ChevronUp, Check, Square, Share2, FileText, FileSpreadsheet, Image, ArrowLeftRight, MoreHorizontal, Clock } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { ThemeColors } from '@/constants/themes';
 import { useColors } from '@/contexts/ThemeContext';
@@ -239,6 +239,15 @@ function StatsBlock({ stats, expanded, colors, ageBand }: { stats: AggregatedSta
       </View>
 
       <View style={s.topRow}>
+        <StatCard
+          label="Total Minutes"
+          value={stats.totalMinutes}
+          color="#0EA5E9"
+          icon={<Clock size={18} color="#0EA5E9" />}
+          colors={colors}
+          statKey="totalMinutes"
+          ageBand={ageBand}
+        />
         <StatCard
           label="All Save %"
           value={stats.allSavePercentage !== null ? `${stats.allSavePercentage}%` : '—'}

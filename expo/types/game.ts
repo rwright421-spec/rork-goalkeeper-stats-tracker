@@ -150,6 +150,15 @@ export function normalizeGameSetup(setup: Partial<GameSetup> | undefined): GameS
   };
 }
 
+export type TimerPhase =
+  | 'pre-1st'
+  | 'in-1st'
+  | 'paused-1st'
+  | 'between'
+  | 'in-2nd'
+  | 'paused-2nd'
+  | 'post-2nd';
+
 export interface SavedGame {
   id: string;
   teamId?: string;
@@ -160,6 +169,43 @@ export interface SavedGame {
   createdAt: string;
   pendingSync?: boolean;
   includeShootoutPKs?: boolean;
+  firstHalfSeconds?: number;
+  secondHalfSeconds?: number;
+  timerPhase?: TimerPhase;
+}
+
+export function getMinutesPlayed(game: SavedGame, keeper: KeeperData): { minutes: number; estimated: boolean; firstMinutes?: number; secondMinutes?: number } {
+  const fhSec = game.firstHalfSeconds;
+  const shSec = game.secondHalfSeconds;
+  const hasReal = (fhSec !== undefined && fhSec > 0) || (shSec !== undefined && shSec > 0);
+  const halvesPlayed = keeper.halvesPlayed ?? 2;
+
+  const sameKeeperBothHalves = (() => {
+    const firstPid = keeper.keeperProfileId ?? null;
+    const secondPid = keeper.secondHalfKeeperProfileId ?? null;
+    if (firstPid && secondPid) return firstPid === secondPid;
+    const firstName = (keeper.name ?? '').trim().toLowerCase();
+    const secondName = (keeper.secondHalfName ?? '').trim().toLowerCase();
+    if (!secondName) return true;
+    return firstName === secondName;
+  })();
+
+  if (hasReal) {
+    const f = Math.max(0, fhSec ?? 0);
+    const s = Math.max(0, shSec ?? 0);
+    const fMin = Math.round(f / 60);
+    const sMin = Math.round(s / 60);
+    if (sameKeeperBothHalves) {
+      return { minutes: Math.round((f + s) / 60), estimated: false, firstMinutes: fMin, secondMinutes: sMin };
+    }
+    if (halvesPlayed === 1) {
+      return { minutes: fMin, estimated: false, firstMinutes: fMin };
+    }
+    return { minutes: Math.round((f + s) / 60), estimated: false, firstMinutes: fMin, secondMinutes: sMin };
+  }
+
+  const halfLen = resolveHalfLength(game.setup);
+  return { minutes: halvesPlayed * halfLen, estimated: true };
 }
 
 function createEmptyDistribution(): DistributionStats {

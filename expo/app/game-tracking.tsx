@@ -2,11 +2,13 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, Switch, AppState, AppStateStatus } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Play, Square, RotateCcw } from 'lucide-react-native';
+import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
-import { KeeperSelection, KeeperData, FinalScore, createEmptyKeeperData, SavedGame, GoalkeeperProfile, getTotalGoalsAgainst, normalizeKeeper, deriveKeeperSelection, resolveHalfLength, getHalfLengthForAgeGroup, deriveHalvesPlayed } from '@/types/game';
+import { KeeperSelection, KeeperData, FinalScore, createEmptyKeeperData, SavedGame, GoalkeeperProfile, getTotalGoalsAgainst, normalizeKeeper, deriveKeeperSelection, resolveHalfLength, getHalfLengthForAgeGroup, deriveHalvesPlayed, TimerPhase } from '@/types/game';
+import GameTimerWidget from '@/components/GameTimerWidget';
+import { useGameTimer } from '@/hooks/useGameTimer';
 import { useGames, FREE_GAME_LIMIT } from '@/contexts/GameContext';
 import { usePurchases } from '@/contexts/PurchasesContext';
 import { generateServerGameId, createLocalGameId } from '@/lib/sync';
@@ -137,56 +139,13 @@ export default function GameTrackingScreen() {
   const [pendingIsHome, setPendingIsHome] = useState<boolean | null>(null);
   const [swapStatsModalVisible, setSwapStatsModalVisible] = useState<boolean>(false);
 
-  const [timerRunning, setTimerRunning] = useState<boolean>(false);
-  const [elapsedMs, setElapsedMs] = useState<number>(0);
-  const timerStartRef = useRef<number | null>(null);
-  const timerBaseRef = useRef<number>(0);
+  const timer = useGameTimer();
 
   const [draftLoaded, setDraftLoaded] = useState<boolean>(isEditMode);
   const [pendingDraft, setPendingDraft] = useState<DraftPayload | null>(null);
   const skipDraftWriteRef = useRef<boolean>(false);
 
-  useEffect(() => {
-    if (!timerRunning) return;
-    const tick = () => {
-      if (timerStartRef.current !== null) {
-        setElapsedMs(timerBaseRef.current + (Date.now() - timerStartRef.current));
-      }
-    };
-    const id = setInterval(tick, 100);
-    return () => clearInterval(id);
-  }, [timerRunning]);
 
-  const handleTimerStart = useCallback(() => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    timerStartRef.current = Date.now();
-    setTimerRunning(true);
-  }, []);
-
-  const handleTimerStop = useCallback(() => {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (timerStartRef.current !== null) {
-      timerBaseRef.current = timerBaseRef.current + (Date.now() - timerStartRef.current);
-      timerStartRef.current = null;
-    }
-    setTimerRunning(false);
-  }, []);
-
-  const handleTimerReset = useCallback(() => {
-    if (timerRunning) return;
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    timerStartRef.current = null;
-    timerBaseRef.current = 0;
-    setElapsedMs(0);
-  }, [timerRunning]);
-
-  const timerDisplay = useMemo(() => {
-    const totalSeconds = elapsedMs / 1000;
-    const minutes = Math.floor(totalSeconds / 60);
-    const secondsWhole = Math.floor(totalSeconds - minutes * 60);
-    const paddedSeconds = secondsWhole.toString().padStart(2, '0');
-    return `${minutes}:${paddedSeconds}`;
-  }, [elapsedMs]);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -420,19 +379,35 @@ export default function GameTrackingScreen() {
     setHomeScoreOverride(draft.homeScoreOverride);
     setAwayScoreOverride(draft.awayScoreOverride);
     const t = draft.timer;
-    if (t.running && t.startedAt !== null) {
-      timerBaseRef.current = t.baseMs;
-      timerStartRef.current = Date.now();
-      const already = Date.now() - t.startedAt;
-      timerBaseRef.current = t.baseMs + Math.max(0, already);
-      timerStartRef.current = Date.now();
-      setElapsedMs(timerBaseRef.current);
-      setTimerRunning(true);
+    if (t.phase) {
+      const now = Date.now();
+      const isRunning = t.phase === 'in-1st' || t.phase === 'in-2nd';
+      let lastStart: number | null = t.lastStartTimestamp ?? null;
+      let firstOff = t.firstHalfPausedOffset ?? 0;
+      let secondOff = t.secondHalfPausedOffset ?? 0;
+      if (isRunning && lastStart !== null) {
+        const delta = Math.max(0, now - lastStart);
+        if (t.phase === 'in-1st') firstOff += delta;
+        else if (t.phase === 'in-2nd') secondOff += delta;
+        lastStart = now;
+      }
+      timer.hydrate({
+        phase: t.phase,
+        firstHalfSeconds: t.firstHalfSeconds ?? 0,
+        secondHalfSeconds: t.secondHalfSeconds ?? 0,
+        firstHalfPausedOffset: firstOff,
+        secondHalfPausedOffset: secondOff,
+        lastStartTimestamp: isRunning ? lastStart : null,
+      });
     } else {
-      timerBaseRef.current = t.baseMs;
-      timerStartRef.current = null;
-      setElapsedMs(t.baseMs);
-      setTimerRunning(false);
+      timer.hydrate({
+        phase: 'pre-1st',
+        firstHalfSeconds: 0,
+        secondHalfSeconds: 0,
+        firstHalfPausedOffset: t.baseMs ?? 0,
+        secondHalfPausedOffset: 0,
+        lastStartTimestamp: t.running ? t.startedAt : null,
+      });
     }
     if (draft.profileId && draft.profileId !== activeProfile?.id) {
       try { selectProfile(draft.profileId); } catch (e) { console.log('[Draft] selectProfile failed:', e); }
@@ -465,9 +440,18 @@ export default function GameTrackingScreen() {
   }, []);
 
   const buildDraft = useCallback((): DraftPayload => {
-    const timerState = timerRunning && timerStartRef.current !== null
-      ? { running: true, baseMs: timerBaseRef.current, startedAt: timerStartRef.current }
-      : { running: false, baseMs: timerBaseRef.current, startedAt: null };
+    const snap = timer.snapshot();
+    const timerState = {
+      running: snap.phase === 'in-1st' || snap.phase === 'in-2nd',
+      baseMs: 0,
+      startedAt: snap.lastStartTimestamp,
+      phase: snap.phase,
+      firstHalfSeconds: snap.firstHalfSeconds,
+      secondHalfSeconds: snap.secondHalfSeconds,
+      firstHalfPausedOffset: snap.firstHalfPausedOffset,
+      secondHalfPausedOffset: snap.secondHalfPausedOffset,
+      lastStartTimestamp: snap.lastStartTimestamp,
+    };
     return {
       version: 1 as const,
       savedAt: Date.now(),
@@ -490,7 +474,7 @@ export default function GameTrackingScreen() {
       awayScoreOverride,
       timer: timerState,
     };
-  }, [activeProfile, editEventName, editDate, editGameName, editAgeGroup, isHomeGame, editHalfLengthMinutes, keeperSelection, isQuickStart, homeKeeper, awayKeeper, activeTab, homeScoreOverride, awayScoreOverride, timerRunning]);
+  }, [activeProfile, editEventName, editDate, editGameName, editAgeGroup, isHomeGame, editHalfLengthMinutes, keeperSelection, isQuickStart, homeKeeper, awayKeeper, activeTab, homeScoreOverride, awayScoreOverride, timer]);
 
   useEffect(() => {
     if (isEditMode) return;
@@ -736,35 +720,17 @@ export default function GameTrackingScreen() {
         </View>
       )}
 
-      <View style={styles.timerCard}>
-        <View style={styles.timerLeft}>
-          <View style={styles.timerHeaderRow}>
-            <Text style={styles.timerLabel}>Timer</Text>
-            <TouchableOpacity
-              testID="timer-reset"
-              onPress={handleTimerReset}
-              disabled={timerRunning}
-              style={styles.timerResetBtn}
-              activeOpacity={0.7}
-            >
-              <RotateCcw size={10} color={timerRunning ? colors.textMuted : colors.textSecondary} />
-              <Text style={[styles.timerResetText, timerRunning && { color: colors.textMuted }]}>Reset</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.timerDisplay} testID="timer-display">{timerDisplay}</Text>
-        </View>
-        {!timerRunning ? (
-          <TouchableOpacity testID="timer-start" style={[styles.timerButton, { backgroundColor: colors.primary }]} onPress={handleTimerStart} activeOpacity={0.85}>
-            <Play size={14} color={colors.white} fill={colors.white} />
-            <Text style={styles.timerButtonText}>START</Text>
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity testID="timer-stop" style={[styles.timerButton, { backgroundColor: colors.danger }]} onPress={handleTimerStop} activeOpacity={0.85}>
-            <Square size={12} color={colors.white} fill={colors.white} />
-            <Text style={styles.timerButtonText}>STOP</Text>
-          </TouchableOpacity>
-        )}
-      </View>
+      <GameTimerWidget
+        phase={timer.phase}
+        firstHalfSeconds={timer.firstHalfSeconds}
+        secondHalfSeconds={timer.secondHalfSeconds}
+        liveElapsedSeconds={timer.liveElapsedSeconds}
+        onStart={timer.start}
+        onPause={timer.pause}
+        onEndHalf={timer.endHalf}
+        onResetCurrentHalf={timer.resetCurrentHalf}
+        onEditHalfTimes={timer.setHalfDurations}
+      />
 
       {showTabs ? (
         <View style={styles.tabBar}>
@@ -933,15 +899,6 @@ function createStyles(c: ThemeColors) {
     halfLengthOptionTextActive: { color: c.primary, fontWeight: '700' as const },
     suggestionItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
     suggestionText: { fontSize: fontSize.body, color: c.text, fontWeight: '500' as const },
-    timerCard: { marginHorizontal: 20, marginBottom: 12, backgroundColor: c.surface, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, borderWidth: 1, borderColor: c.border, flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, gap: 12 },
-    timerLeft: { flex: 1, flexDirection: 'column' as const, alignItems: 'flex-start' as const },
-    timerHeaderRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
-    timerLabel: { fontSize: fontSize.caption, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 1 },
-    timerResetBtn: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 3, paddingVertical: 2, paddingHorizontal: 4 },
-    timerResetText: { fontSize: fontSize.caption, color: c.textSecondary, fontWeight: '600' as const },
-    timerDisplay: { fontSize: 28, fontWeight: '800' as const, color: c.text, fontVariant: ['tabular-nums'] as const, marginTop: 2, letterSpacing: 1 },
-    timerButton: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, paddingVertical: 10, paddingHorizontal: 18, borderRadius: 10, minWidth: 96 },
-    timerButtonText: { color: c.white, fontSize: fontSize.body2, fontWeight: '800' as const, letterSpacing: 1 },
     resumeBanner: { position: 'absolute' as const, left: 0, right: 0, bottom: 0, padding: 16, backgroundColor: 'rgba(0,0,0,0.55)' },
     resumeBannerInner: { backgroundColor: c.surface, borderRadius: 16, padding: 16, borderWidth: 1.5, borderColor: c.primary, gap: 8 },
     resumeBannerTitle: { fontSize: fontSize.h4, fontWeight: '800' as const, color: c.text },

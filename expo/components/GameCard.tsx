@@ -1,11 +1,11 @@
 import React, { useState, useRef, useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
-import { ChevronDown, ChevronUp, Calendar, Trophy, Trash2, MoreVertical, ArrowRightLeft } from 'lucide-react-native';
+import { ChevronDown, ChevronUp, Calendar, Trophy, Trash2, MoreVertical, ArrowRightLeft, Clock } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { fontSize } from '@/constants/typography';
-import { SavedGame, KeeperData, getOverallSavePercentage, getTotalSaves, getTotalGoalsAgainst, getTotalDistribution, defaultHalfStats } from '@/types/game';
+import { SavedGame, KeeperData, getOverallSavePercentage, getTotalSaves, getTotalGoalsAgainst, getTotalDistribution, defaultHalfStats, getMinutesPlayed } from '@/types/game';
 
 interface GameCardProps {
   game: SavedGame;
@@ -79,7 +79,20 @@ export default React.memo(function GameCard({ game, onPress, onDelete, onMove }:
     <View style={styles.card}>
       <TouchableOpacity style={styles.cardHeader} onPress={toggleExpand} activeOpacity={0.7}>
         <View style={styles.cardHeaderLeft}>
-          <View style={styles.dateRow}><Calendar size={13} color={colors.textMuted} /><Text style={styles.dateText}>{game.setup.date}</Text></View>
+          <View style={styles.dateRow}>
+            <Calendar size={13} color={colors.textMuted} /><Text style={styles.dateText}>{game.setup.date}</Text>
+            {(() => {
+              const k = game.homeKeeper ?? game.awayKeeper;
+              if (!k) return null;
+              const mp = getMinutesPlayed(game, k);
+              return (
+                <View style={styles.minutesPill}>
+                  <Clock size={11} color={colors.textMuted} />
+                  <Text style={styles.minutesText}>{mp.minutes} min{mp.estimated ? ' est.' : ''}</Text>
+                </View>
+              );
+            })()}
+          </View>
           <Text style={styles.eventName}>{game.setup.eventName}</Text>
           <View style={styles.gameRow}><Trophy size={12} color={colors.primary} /><Text style={styles.gameName}>{game.setup.gameName}</Text></View>
         </View>
@@ -172,7 +185,9 @@ function createStyles(c: ThemeColors) {
     cardHeader: { flexDirection: 'row', alignItems: 'center', padding: 16 },
     cardHeaderLeft: { flex: 1 },
     cardHeaderRight: { paddingLeft: 12 },
-    dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+    dateRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4, flexWrap: 'wrap' as const },
+    minutesPill: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: c.surfaceLight },
+    minutesText: { fontSize: fontSize.xs, color: c.textMuted, fontWeight: '600' as const },
     dateText: { fontSize: fontSize.caption, color: c.textMuted, fontWeight: '500' as const },
     eventName: { fontSize: fontSize.subtitle, fontWeight: '700' as const, color: c.text, marginBottom: 4 },
     gameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },

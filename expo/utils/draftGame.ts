@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { KeeperData, KeeperSelection } from '@/types/game';
+import { KeeperData, KeeperSelection, TimerPhase } from '@/types/game';
 
 export const DRAFT_KEY = 'trackGame:draft:v1';
 
@@ -7,6 +7,12 @@ export interface DraftTimerState {
   running: boolean;
   baseMs: number;
   startedAt: number | null;
+  phase?: TimerPhase;
+  firstHalfSeconds?: number;
+  secondHalfSeconds?: number;
+  firstHalfPausedOffset?: number;
+  secondHalfPausedOffset?: number;
+  lastStartTimestamp?: number | null;
 }
 
 export interface DraftPayload {

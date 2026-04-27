@@ -3,12 +3,13 @@ import React, { useMemo, useCallback, useState } from 'react';
 
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share, Platform, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { Share2, FileText, FileSpreadsheet, Calendar, Trophy, Pencil, MoreVertical, ArrowRightLeft } from 'lucide-react-native';
+import { Share2, FileText, FileSpreadsheet, Calendar, Trophy, Pencil, MoreVertical, ArrowRightLeft, Clock } from 'lucide-react-native';
 
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { useGames } from '@/contexts/GameContext';
-import { KeeperData, SavedGame, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getTotalOneVsOneGoals, getTotalOneVsOneMissed, getOneVsOneSavePercentage, resolveHalfLength, getPkSavePercentage, isLegacyPenaltyData, isLegacyOneVsOneKeeperData, getAllSavePercentage, getRunOfPlaySavePercentage } from '@/types/game';
+import { KeeperData, SavedGame, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getTotalOneVsOneGoals, getTotalOneVsOneMissed, getOneVsOneSavePercentage, resolveHalfLength, getPkSavePercentage, isLegacyPenaltyData, isLegacyOneVsOneKeeperData, getAllSavePercentage, getRunOfPlaySavePercentage, getMinutesPlayed } from '@/types/game';
+import { HalfTimesEditModal } from '@/components/GameTimerWidget';
 import { formatGameAsText, formatGameAsCSV } from '@/utils/export';
 import MoveGameModal from '@/components/MoveGameModal';
 import { fontSize } from '@/constants/typography';
@@ -241,6 +242,8 @@ export default function GameDetailScreen() {
 
   const game = useMemo(() => getGame(id || ''), [getGame, id]);
   const styles = useMemo(() => createDetailStyles(colors), [colors]);
+  const { updateGame } = useGames();
+  const [editTimesVisible, setEditTimesVisible] = useState<boolean>(false);
 
   const handleShareText = useCallback(async () => {
     if (!game) return;
@@ -338,6 +341,29 @@ export default function GameDetailScreen() {
           <View style={styles.gameInfoRow}><Calendar size={14} color={colors.textMuted} /><Text style={styles.gameInfoText}>{game.setup.date}</Text></View>
           <Text style={styles.gameInfoEvent}>{game.setup.eventName}</Text>
           <View style={styles.gameInfoRow}><Trophy size={14} color={colors.primary} /><Text style={styles.gameInfoGame}>vs {game.setup.gameName}</Text></View>
+          {(() => {
+            const k = game.homeKeeper ?? game.awayKeeper;
+            if (!k) return null;
+            const mp = getMinutesPlayed(game, k);
+            const breakdown = (mp.firstMinutes !== undefined && mp.secondMinutes !== undefined)
+              ? `${mp.minutes} min (1st: ${mp.firstMinutes} · 2nd: ${mp.secondMinutes})`
+              : mp.estimated
+                ? `${mp.minutes} min (estimated)`
+                : `${mp.minutes} min`;
+            return (
+              <TouchableOpacity
+                testID="minutes-played-row"
+                style={styles.minutesRow}
+                onPress={() => setEditTimesVisible(true)}
+                activeOpacity={0.7}
+              >
+                <Clock size={14} color={colors.textMuted} />
+                <Text style={styles.minutesLabel}>Minutes Played</Text>
+                <Text style={styles.minutesValue}>{breakdown}</Text>
+                <Pencil size={12} color={colors.textMuted} />
+              </TouchableOpacity>
+            );
+          })()}
         </View>
 
         {game.homeKeeper ? <KeeperDetailBlock keeper={game.homeKeeper} label="HOME" color={colors.cardHome} colors={colors} game={game} /> : null}
@@ -376,6 +402,17 @@ export default function GameDetailScreen() {
         onClose={() => setShowMoveModal(false)}
         game={game}
         onMoveComplete={handleMoveComplete}
+      />
+
+      <HalfTimesEditModal
+        visible={editTimesVisible}
+        firstHalfSeconds={game.firstHalfSeconds ?? 0}
+        secondHalfSeconds={game.secondHalfSeconds ?? 0}
+        onCancel={() => setEditTimesVisible(false)}
+        onSave={(f, s) => {
+          updateGame({ ...game, firstHalfSeconds: f, secondHalfSeconds: s });
+          setEditTimesVisible(false);
+        }}
       />
     </View>
   );
@@ -437,6 +474,9 @@ function createDetailStyles(c: ThemeColors) {
     exportButtonText: { flex: 1, fontSize: fontSize.bodyLg, fontWeight: '600' as const, color: c.text },
     editButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 10, backgroundColor: c.primaryDark, borderRadius: 14, paddingVertical: 16, marginBottom: 20 },
     editButtonText: { color: c.white, fontSize: fontSize.h4, fontWeight: '700' as const },
+    minutesRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, marginTop: 10, paddingTop: 10, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border },
+    minutesLabel: { fontSize: fontSize.body2, color: c.textSecondary, fontWeight: '600' as const },
+    minutesValue: { flex: 1, textAlign: 'right' as const, fontSize: fontSize.body2, color: c.text, fontWeight: '700' as const },
     headerMenu: { position: 'absolute' as const, top: 0, right: 12, zIndex: 100, backgroundColor: c.surfaceLight, borderRadius: 10, borderWidth: 1, borderColor: c.border, overflow: 'hidden', minWidth: 240 },
     headerMenuItem: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10, paddingHorizontal: 14, paddingVertical: 12 },
     headerMenuText: { fontSize: fontSize.body, fontWeight: '600' as const, color: c.text },
