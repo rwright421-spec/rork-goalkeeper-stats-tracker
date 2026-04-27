@@ -34,7 +34,11 @@ function StatInfoBubble({ statKey, ageBand = 'u15', size = 14, color, testID }: 
   if (!info) return null;
 
   const bandLabel = AGE_BAND_LABELS[ageBand];
-  const typicalText = typeof info.typicalRange === 'string' ? info.typicalRange : info.typicalRange[ageBand];
+  const typicalText = info.typicalRange === undefined
+    ? null
+    : typeof info.typicalRange === 'string'
+      ? info.typicalRange
+      : info.typicalRange[ageBand];
 
   return (
     <>
@@ -61,8 +65,12 @@ function StatInfoBubble({ statKey, ageBand = 'u15', size = 14, color, testID }: 
             <Text style={styles.sectionHeader}>How to count it</Text>
             <Text style={styles.body}>{info.countingRule}</Text>
 
-            <Text style={styles.sectionHeader}>Typical range for {bandLabel}</Text>
-            <Text style={styles.body}>{typicalText}</Text>
+            {typicalText !== null ? (
+              <>
+                <Text style={styles.sectionHeader}>Typical range for {bandLabel}</Text>
+                <Text style={styles.body}>{typicalText}</Text>
+              </>
+            ) : null}
 
             <TouchableOpacity
               testID={`info-${statKey}-dismiss`}

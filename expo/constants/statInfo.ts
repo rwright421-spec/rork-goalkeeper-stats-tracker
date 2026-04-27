@@ -4,7 +4,7 @@ export type StatInfo = {
   label: string;
   definition: string;
   countingRule: string;
-  typicalRange: string | Record<AgeBand, string>;
+  typicalRange?: string | Record<AgeBand, string>;
 };
 
 export const STAT_INFO: Record<string, StatInfo> = {
@@ -128,41 +128,35 @@ export const STAT_INFO: Record<string, StatInfo> = {
       adult: '55–70% at competitive adult levels',
     },
   },
-  distributionAttempts: {
-    label: 'Distribution Attempts',
-    definition: 'Total punts, throws, drives, and drop-backs attempted by the keeper.',
-    countingRule: 'Sum of every distribution counter across both halves.',
-    typicalRange: '15–30 distribution attempts per game is typical at all levels.',
-  },
-  distributionSuccessful: {
-    label: 'Successful Distribution',
-    definition: 'A distribution attempt that reached a teammate and kept possession.',
-    countingRule: 'Each positive distribution counter tap (+1) logs a successful distribution. Failed attempts are not logged by default.',
-    typicalRange: 'Track what you attempt — accuracy is captured by Distribution %.',
-  },
-  distributionAccuracy: {
-    label: 'Distribution Accuracy',
-    definition: 'Percentage of distribution attempts that reached a teammate.',
-    countingRule: 'Auto-calculated across all distribution types for the game.',
-    typicalRange: {
-      u10: '50–65% is typical',
-      u12: '55–70% is typical',
-      u15: '60–75% is competitive',
-      u18: '65–80% is college-recruitable',
-      adult: '70–85% at competitive levels',
-    },
+  ballInteractionsTotal: {
+    label: 'Ball Interactions',
+    definition: "Every keeper interaction with the ball that isn't a shot faced. Tracked as a count per game across five types: Crosses/Interceptions, Punts, Throwouts/Rollouts, Drives, and Drop Backs. The headline number is the sum of all five.",
+    countingRule: "Count one per discrete touch sequence under the type that best describes the action. A shot save is not a ball interaction — that's tracked under Saves.",
   },
   crossesClaimed: {
-    label: 'Crosses Claimed / Intercepted',
+    label: 'Crosses / Interceptions',
     definition: 'A crossed ball the keeper caught, punched, or intercepted cleanly.',
-    countingRule: 'Tap + for each successful claim. Drops or failed attempts should not be logged here.',
-    typicalRange: {
-      u10: '0–2 per game',
-      u12: '1–3 per game',
-      u15: '2–4 per game',
-      u18: '2–5 per game',
-      adult: '2–5 per game',
-    },
+    countingRule: 'Tap + for each successful claim or interception of a cross into the box.',
+  },
+  punts: {
+    label: 'Punts',
+    definition: 'A long kick from the keeper\'s hands to clear or restart play.',
+    countingRule: 'Tap + for each punt attempted, regardless of outcome.',
+  },
+  throwouts: {
+    label: 'Throwouts / Rollouts',
+    definition: 'A throw or roll-out distribution from the keeper to a teammate.',
+    countingRule: 'Tap + for each throw or roll-out distribution.',
+  },
+  drives: {
+    label: 'Drives',
+    definition: 'A driven kick from the ground or out of the keeper\'s hands.',
+    countingRule: 'Tap + for each drive attempted, regardless of outcome.',
+  },
+  dropBacks: {
+    label: 'Drop Backs',
+    definition: 'A back-pass or drop-back received and played by the keeper.',
+    countingRule: 'Tap + each time the keeper plays a back-pass from a teammate.',
   },
   crossesPunched: {
     label: 'Crosses Punched',

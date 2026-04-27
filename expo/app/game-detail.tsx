@@ -175,7 +175,7 @@ function KeeperDetailBlock({ keeper, label, color, colors, game }: { keeper: Kee
       </View>
 
       <View style={styles.distSection}>
-        <Text style={styles.distTitle}>Total Distribution</Text>
+        <Text style={styles.distTitle}>Total Ball Interactions</Text>
         <View style={styles.distGrid}>
           <View style={styles.distItem}><Text style={styles.distValue}>{getTotalDistribution(keeper).handledCrosses}</Text><Text style={styles.distLabel}>Crosses / Int.</Text></View>
           <View style={styles.distItem}><Text style={styles.distValue}>{getTotalDistribution(keeper).punts}</Text><Text style={styles.distLabel}>Punts</Text></View>

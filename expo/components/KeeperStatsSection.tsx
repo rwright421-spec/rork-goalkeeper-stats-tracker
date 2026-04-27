@@ -336,29 +336,49 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
           <StatInfoBubble statKey="savePercentage" ageBand={ageBand} />
         </View>
         <View style={styles.halfDivider} />
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.subSectionTitleInline}>Distribution</Text>
-          <StatInfoBubble statKey="distributionAccuracy" ageBand={ageBand} />
+        <View style={styles.ballInteractionsHeader}>
+          <View style={styles.ballInteractionsHeaderLeft}>
+            <Text style={styles.subSectionTitleInline}>Ball Interactions</Text>
+            <StatInfoBubble statKey="ballInteractionsTotal" ageBand={ageBand} />
+          </View>
+          <Text style={styles.ballInteractionsTotal} testID={`${halfKey}-ball-interactions-total`}>
+            {half.distribution.handledCrosses + half.distribution.punts + half.distribution.throwouts + half.distribution.drives + half.distribution.dropBacks}
+          </Text>
         </View>
         <View style={styles.distributionGrid}>
           <View style={styles.distributionGridRow}>
             <View style={styles.distributionCell}>
+              <View style={styles.ballInteractionLabelRow}>
+                <StatInfoBubble statKey="crossesClaimed" ageBand={ageBand} size={12} />
+              </View>
               <StatCounter label="Crosses / Int." value={half.distribution.handledCrosses} onIncrement={() => updateHalfDistribution(halfKey, 'handledCrosses', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'handledCrosses', -1)} labelMinHeight={34} alignLabelTop />
             </View>
             <View style={styles.distributionCell}>
+              <View style={styles.ballInteractionLabelRow}>
+                <StatInfoBubble statKey="punts" ageBand={ageBand} size={12} />
+              </View>
               <StatCounter label="Punts" value={half.distribution.punts} onIncrement={() => updateHalfDistribution(halfKey, 'punts', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'punts', -1)} labelMinHeight={34} alignLabelTop />
             </View>
           </View>
           <View style={styles.distributionGridRow}>
             <View style={styles.distributionCell}>
+              <View style={styles.ballInteractionLabelRow}>
+                <StatInfoBubble statKey="throwouts" ageBand={ageBand} size={12} />
+              </View>
               <StatCounter label="Throwouts / Rollouts" value={half.distribution.throwouts} onIncrement={() => updateHalfDistribution(halfKey, 'throwouts', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'throwouts', -1)} labelMinHeight={34} alignLabelTop />
             </View>
             <View style={styles.distributionCell}>
+              <View style={styles.ballInteractionLabelRow}>
+                <StatInfoBubble statKey="drives" ageBand={ageBand} size={12} />
+              </View>
               <StatCounter label="Drives" value={half.distribution.drives} onIncrement={() => updateHalfDistribution(halfKey, 'drives', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'drives', -1)} labelMinHeight={34} alignLabelTop />
             </View>
           </View>
           <View style={styles.distributionGridRow}>
             <View style={styles.distributionCell}>
+              <View style={styles.ballInteractionLabelRow}>
+                <StatInfoBubble statKey="dropBacks" ageBand={ageBand} size={12} />
+              </View>
               <StatCounter label="Drop Backs" value={half.distribution.dropBacks} onIncrement={() => updateHalfDistribution(halfKey, 'dropBacks', 1)} onDecrement={() => updateHalfDistribution(halfKey, 'dropBacks', -1)} labelMinHeight={34} alignLabelTop />
             </View>
             <View style={styles.distributionCellEmpty} />
@@ -577,7 +597,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
           <View style={styles.totalStatItem}><Text style={[styles.totalStatValue, { color: overallPct >= 50 ? colors.primary : colors.warning }]}>{overallPct}%</Text><Text style={styles.totalStatLabel}>Save %</Text></View>
         </View>
         <View style={styles.halfDivider} />
-        <Text style={styles.subSectionTitle}>Total Distribution</Text>
+        <Text style={styles.subSectionTitle}>Total Ball Interactions</Text>
         <View style={styles.totalDistRow}>
           <View style={styles.totalDistItem}><Text style={styles.totalDistValue}>{totalDist.handledCrosses}</Text><Text style={styles.totalDistLabel}>Crosses/Int.</Text></View>
           <View style={styles.totalDistItem}><Text style={styles.totalDistValue}>{totalDist.punts}</Text><Text style={styles.totalDistLabel}>Punts</Text></View>
@@ -731,5 +751,9 @@ function createStyles(c: ThemeColors) {
     collapseHeaderTitle: { fontSize: fontSize.caption, fontWeight: '700' as const, color: c.textMuted, textTransform: 'uppercase' as const, letterSpacing: 0.8 },
     collapseHeaderRight: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, flexShrink: 1 },
     collapseHeaderSummary: { fontSize: fontSize.caption, color: c.textSecondary, fontWeight: '500' as const, maxWidth: 160 },
+    ballInteractionsHeader: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, marginBottom: 14, paddingHorizontal: 4 },
+    ballInteractionsHeaderLeft: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
+    ballInteractionsTotal: { fontSize: fontSize.h2, fontWeight: '800' as const, color: c.primary },
+    ballInteractionLabelRow: { flexDirection: 'row' as const, justifyContent: 'flex-end' as const, alignSelf: 'stretch' as const, marginBottom: -4, paddingRight: 4 },
   });
 }

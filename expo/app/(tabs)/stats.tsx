@@ -337,36 +337,55 @@ function StatsBlock({ stats, expanded, colors, ageBand }: { stats: AggregatedSta
 
       {(expanded !== false) && (
         <>
-          <View style={s.distSection}>
-            <Text style={s.distTitle}>Distribution</Text>
-            <View style={s.distGrid}>
-              <View style={s.distRow}>
-                <View style={s.distItem}>
-                  <Text style={s.distValue}>{stats.distribution.handledCrosses}</Text>
-                  <Text style={s.distLabel}>Crosses/Int.</Text>
+          {(() => {
+            const totalBI =
+              stats.distribution.handledCrosses +
+              stats.distribution.punts +
+              stats.distribution.throwouts +
+              stats.distribution.drives +
+              stats.distribution.dropBacks;
+            const games = stats.gamesPlayed > 0 ? stats.gamesPlayed : 1;
+            const fmt = (n: number): string => {
+              const v = n / games;
+              return Number.isInteger(v) ? v.toFixed(0) : v.toFixed(1);
+            };
+            const perTypes: { key: string; label: string; value: number }[] = [
+              { key: 'crossesClaimed', label: 'Crosses / Int.', value: stats.distribution.handledCrosses },
+              { key: 'punts', label: 'Punts', value: stats.distribution.punts },
+              { key: 'throwouts', label: 'Throwouts / Rollouts', value: stats.distribution.throwouts },
+              { key: 'drives', label: 'Drives', value: stats.distribution.drives },
+              { key: 'dropBacks', label: 'Drop Backs', value: stats.distribution.dropBacks },
+            ];
+            return (
+              <View style={s.distSection}>
+                <View style={{ flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, marginBottom: 14 }}>
+                  <Text style={[s.distTitle, { marginBottom: 0 }]}>Ball Interactions</Text>
+                  <StatInfoBubble statKey="ballInteractionsTotal" ageBand={ageBand} />
                 </View>
-                <View style={s.distItem}>
-                  <Text style={s.distValue}>{stats.distribution.punts}</Text>
-                  <Text style={s.distLabel}>Punts</Text>
-                </View>
-                <View style={s.distItem}>
-                  <Text style={s.distValue}>{stats.distribution.throwouts}</Text>
-                  <Text style={s.distLabel}>Throwouts / Rollouts</Text>
+                <View style={s.distGrid}>
+                  <View style={s.distRow}>
+                    <View style={s.distItem}>
+                      <Text style={[s.distValue, { color: colors.primary }]}>{totalBI}</Text>
+                      <Text style={s.distLabel}>Total</Text>
+                    </View>
+                    <View style={s.distItem}>
+                      <Text style={s.distValue}>{stats.gamesPlayed > 0 ? fmt(totalBI) : '—'}</Text>
+                      <Text style={s.distLabel}>Avg / Game</Text>
+                    </View>
+                    <View style={s.distItem} />
+                  </View>
+                  {perTypes.map((row) => (
+                    <View key={row.key} style={{ flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10, paddingVertical: 4 }}>
+                      <Text style={{ flex: 1, fontSize: fontSize.body, fontWeight: '500' as const, color: colors.textSecondary }}>{row.label}</Text>
+                      <StatInfoBubble statKey={row.key} ageBand={ageBand} size={12} />
+                      <Text style={{ fontSize: fontSize.body, fontWeight: '700' as const, color: colors.text, minWidth: 36, textAlign: 'right' as const }}>{row.value}</Text>
+                      <Text style={{ fontSize: fontSize.caption, fontWeight: '500' as const, color: colors.textMuted, minWidth: 56, textAlign: 'right' as const }}>{stats.gamesPlayed > 0 ? `${fmt(row.value)}/g` : '—'}</Text>
+                    </View>
+                  ))}
                 </View>
               </View>
-              <View style={s.distRow}>
-                <View style={s.distItem}>
-                  <Text style={s.distValue}>{stats.distribution.drives}</Text>
-                  <Text style={s.distLabel}>Drives</Text>
-                </View>
-                <View style={s.distItem}>
-                  <Text style={s.distValue}>{stats.distribution.dropBacks}</Text>
-                  <Text style={s.distLabel}>Drop Backs</Text>
-                </View>
-                <View style={s.distItem} />
-              </View>
-            </View>
-          </View>
+            );
+          })()}
 
           <View style={s.distSection}>
             <Text style={s.distTitle}>Penalties</Text>
