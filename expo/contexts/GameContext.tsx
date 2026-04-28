@@ -8,6 +8,7 @@ import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useTeams } from '@/contexts/TeamContext';
 import { uploadProfileData, downloadProfileData, GAME_LIMIT_ERROR_KEY, syncPendingGame, isLocalGameId } from '@/lib/sync';
 import { useSyncStatus } from '@/contexts/SyncStatusContext';
+import { usePurchases } from '@/contexts/PurchasesContext';
 
 export const FREE_GAME_LIMIT = 5;
 
@@ -100,6 +101,7 @@ export const [GameProvider, useGames] = createContextHook(() => {
   const [gameLimitExceeded, setGameLimitExceeded] = useState<boolean>(false);
   const pendingSyncInProgress = useRef(false);
   const { markSyncing, markSuccess, markFailed } = useSyncStatus();
+  const { isPro } = usePurchases();
 
   const gamesQuery = useQuery({
     queryKey: ['games', storageKey],
@@ -273,12 +275,17 @@ export const [GameProvider, useGames] = createContextHook(() => {
     })();
   }, [allGames, storageKey, queryClient, isShared, sharedProfileId, supabaseReady]);
 
-  const addGame = useCallback((game: SavedGame) => {
+  const addGame = useCallback((game: SavedGame): { paywallRequired: true } | { paywallRequired: false; game: SavedGame } => {
+    const totalGames = globalGameCount;
+    if (!isPro && totalGames >= FREE_GAME_LIMIT) {
+      return { paywallRequired: true };
+    }
     const currentGames = queryClient.getQueryData<SavedGame[]>(['games', storageKey]) ?? [];
     const updated = [game, ...currentGames];
     queryClient.setQueryData(['games', storageKey], updated);
     saveMutation.mutate({ key: storageKey, updatedGames: updated });
-  }, [storageKey, saveMutation, queryClient]);
+    return { paywallRequired: false, game };
+  }, [storageKey, saveMutation, queryClient, isPro, globalGameCount]);
 
   const deleteGame = useCallback((gameId: string) => {
     const currentGames = queryClient.getQueryData<SavedGame[]>(['games', storageKey]) ?? [];

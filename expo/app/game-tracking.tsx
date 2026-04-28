@@ -517,12 +517,6 @@ export default function GameTrackingScreen() {
       void clearDraft();
       Alert.alert('Game Updated', 'Stats have been updated.', [{ text: 'OK', onPress: () => { router.replace('/(tabs)/dashboard'); } }]);
     } else {
-      if (!isPro && isAtFreeLimit) {
-        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        router.push('/paywall');
-        return;
-      }
-
       const finalEventName = isQuickStart ? (editEventName.trim() || params.eventName || '') : (params.eventName || '');
       const finalDate = isQuickStart ? (editDate.trim() || params.date || '') : (params.date || '');
       const finalGameName = isQuickStart ? (editGameName.trim() || params.gameName || '') : (params.gameName || '');
@@ -559,7 +553,13 @@ export default function GameTrackingScreen() {
         ...(pendingSync ? { pendingSync: true } : {}),
       };
 
-      addGame(game);
+      const result = addGame(game);
+      if (result && 'paywallRequired' in result && result.paywallRequired) {
+        setIsSaving(false);
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        router.push('/paywall');
+        return;
+      }
       void clearDraft();
       setIsSaving(false);
       const savedMsg = pendingSync
