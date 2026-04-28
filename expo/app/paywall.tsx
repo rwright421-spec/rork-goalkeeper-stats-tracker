@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, Linking } from 'react-native';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, Linking, ActivityIndicator } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { X, Shield, Check, Crown } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
@@ -24,15 +24,24 @@ const PRIVACY_URL = 'https://smiling-gorgonzola-c76.notion.site/Privacy-Policy-a
 export default function PaywallScreen() {
   const router = useRouter();
   const colors = useColors();
-  const { restorePurchases, isRestoring, currentOffering, purchasePackage, isPro, initAndFetchOfferings, isLoading } = usePurchases();
+  const { restorePurchases, isRestoring, currentOffering, purchaseMonthly, purchaseAnnual, isPro, initAndFetchOfferings, isLoading } = usePurchases();
   const [selectedPlan, setSelectedPlan] = useState<PlanType>('annual');
-  const [isPurchasing, setIsPurchasing] = useState<boolean>(false);
-  const [retrying, setRetrying] = useState<boolean>(false);
+  const [purchasing, setPurchasing] = useState<boolean>(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    if (isPro) {
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)/dashboard');
+      }
+    }
+  }, [isPro, router]);
+
+  useEffect(() => {
     if (!currentOffering && !isLoading) {
       console.log('[Paywall] No offering loaded, retrying fetch...');
-      initAndFetchOfferings(true);
+      void initAndFetchOfferings();
     }
   }, [currentOffering, isLoading, initAndFetchOfferings]);
 
@@ -56,52 +65,26 @@ export default function PaywallScreen() {
     setSelectedPlan(plan);
   }, []);
 
-  const handleRetry = useCallback(async () => {
-    setRetrying(true);
-    try {
-      await initAndFetchOfferings(true);
-    } finally {
-      setRetrying(false);
-    }
-  }, [initAndFetchOfferings]);
-
-  const handlePurchase = useCallback(async () => {
+  const handleSubscribe = useCallback(async () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (!currentOffering) {
-      Alert.alert(
-        'Loading Plans',
-        'Subscription options are still loading. Would you like to retry?',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Retry', onPress: () => initAndFetchOfferings(true) },
-        ]
-      );
-      return;
+    setPurchasing(true);
+    const success = selectedPlan === 'annual'
+      ? await purchaseAnnual()
+      : await purchaseMonthly();
+    setPurchasing(false);
+
+    if (success) {
+      goBackSafely();
     }
-    const targetId = selectedPlan === 'annual' ? ANNUAL_ID : MONTHLY_ID;
-    const pkg = currentOffering.availablePackages.find(
-      (p: any) => p.product.identifier === targetId
-    );
-    if (!pkg) {
-      Alert.alert('Unavailable', 'This plan is not available right now. Please try again later.');
-      console.warn('[Paywall] Package not found:', targetId, 'Available:', currentOffering.availablePackages.map((p: any) => p.product.identifier));
-      return;
-    }
-    setIsPurchasing(true);
-    try {
-      const success = await purchasePackage(pkg);
-      if (success) {
-        goBackSafely();
-      }
-    } finally {
-      setIsPurchasing(false);
-    }
-  }, [currentOffering, selectedPlan, purchasePackage, goBackSafely, initAndFetchOfferings]);
+  }, [selectedPlan, purchaseAnnual, purchaseMonthly, goBackSafely]);
 
   const handleRestore = useCallback(async () => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await restorePurchases();
-  }, [restorePurchases]);
+    const restored = await restorePurchases();
+    if (restored) {
+      goBackSafely();
+    }
+  }, [restorePurchases, goBackSafely]);
 
   const handlePrivacy = useCallback(() => {
     void Linking.openURL(PRIVACY_URL);
@@ -187,14 +170,16 @@ export default function PaywallScreen() {
 
         <TouchableOpacity
           testID="subscribe-button"
-          style={[styles.subscribeButton, isPurchasing && styles.subscribeButtonDisabled]}
-          onPress={handlePurchase}
+          style={[styles.subscribeButton, purchasing && styles.subscribeButtonDisabled]}
+          onPress={handleSubscribe}
           activeOpacity={0.8}
-          disabled={isPurchasing}
+          disabled={purchasing}
         >
-          <Text style={styles.subscribeButtonText}>
-            {isPurchasing ? 'Processing...' : 'Start Free Trial'}
-          </Text>
+          {purchasing ? (
+            <ActivityIndicator size="small" color={colors.white} />
+          ) : (
+            <Text style={styles.subscribeButtonText}>Try Free for 7 Days</Text>
+          )}
         </TouchableOpacity>
         <Text style={styles.captionText}>{captionText}</Text>
 
