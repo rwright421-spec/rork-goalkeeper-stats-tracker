@@ -1,52 +1,33 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, Platform } from 'react-native';
 import createContextHook from '@nkzw/create-context-hook';
+import Purchases, {
+  CustomerInfo,
+  PurchasesOffering,
+  PurchasesPackage,
+  LOG_LEVEL,
+} from 'react-native-purchases';
 import * as secureStorage from '@/utils/secureStorage';
 
-let Purchases: any = null;
-let rcConfigured = false;
-let rcConfigureError: string | null = null;
-
-const ENTITLEMENT_ID = 'pro';
+const RC_API_KEY = 'appl_IUuybOStRXqZRjspTXWwGuwjfLn';
+const PRO_ENTITLEMENT_ID = 'pro';
+const MONTHLY_PRODUCT_ID = 'com.snocoventures.gkstats.pro.monthly.v2';
+const ANNUAL_PRODUCT_ID = 'com.snocoventures.gkstats.pro.annual.v2';
 const DEV_PRO_OVERRIDE_KEY = 'gk_dev_pro_override';
-
-function getRCApiKey(): string | null {
-  if (Platform.OS === 'ios') return 'appl_tHhrbyQZcKyEfWVYDxxyxYaZGra';
-  return null;
-}
-
-async function configureRC() {
-  if (rcConfigured || Platform.OS === 'web') return;
-  const apiKey = getRCApiKey();
-  if (!apiKey) {
-    rcConfigureError = 'No API key configured';
-    console.log('[RevenueCat] No API key configured, skipping initialization');
-    return;
-  }
-  try {
-    const mod = await import('react-native-purchases');
-    Purchases = mod.default;
-    Purchases.configure({ apiKey });
-    rcConfigured = true;
-    rcConfigureError = null;
-    console.log('[RevenueCat] Configured successfully');
-  } catch (e: any) {
-    rcConfigureError = e?.message ?? String(e);
-    console.log('[RevenueCat] Configuration failed:', e);
-  }
-}
 
 export const [PurchasesProvider, usePurchases] = createContextHook(() => {
   const [rcIsPro, setRcIsPro] = useState<boolean>(false);
   const [devProOverride, setDevProOverrideState] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isRestoring, setIsRestoring] = useState<boolean>(false);
-  const [currentOffering, setCurrentOffering] = useState<any>(null);
+  const [currentOffering, setCurrentOffering] = useState<PurchasesOffering | null>(null);
+  const [rcAvailable, setRcAvailable] = useState<boolean>(false);
   const [rcLastError, setRcLastError] = useState<string | null>(null);
   const [rcCurrentOfferingId, setRcCurrentOfferingId] = useState<string | null>(null);
   const [rcOfferingCount, setRcOfferingCount] = useState<number>(0);
   const [rcPackageIds, setRcPackageIds] = useState<string[]>([]);
   const [rcAppUserId, setRcAppUserId] = useState<string | null>(null);
+  const configuredRef = useRef<boolean>(false);
 
   useEffect(() => {
     (async () => {
@@ -70,132 +51,158 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
 
   const isPro = rcIsPro || devProOverride;
 
-  const checkEntitlementFromInfo = useCallback((info: any) => {
+  const applyCustomerInfo = useCallback((info: CustomerInfo): boolean => {
+    const isActive = !!info.entitlements.active[PRO_ENTITLEMENT_ID];
+    setRcIsPro(isActive);
+    return isActive;
+  }, []);
+
+  const checkEntitlement = useCallback(async (): Promise<void> => {
+    if (Platform.OS !== 'ios') return;
     try {
-      const entitlement = info?.entitlements?.active?.[ENTITLEMENT_ID];
-      const hasPro = !!entitlement;
-      setRcIsPro(hasPro);
-      return hasPro;
-    } catch (e) {
-      console.log('[RevenueCat] Error checking entitlements:', e);
-      setRcIsPro(false);
-      return false;
+      const info = await Purchases.getCustomerInfo();
+      applyCustomerInfo(info);
+    } catch (e: any) {
+      console.error('RevenueCat entitlement check failed:', e);
+      setRcLastError(`getCustomerInfo: ${e?.message ?? String(e)}`);
+    }
+  }, [applyCustomerInfo]);
+
+  const fetchOfferings = useCallback(async (): Promise<PurchasesOffering | null> => {
+    if (Platform.OS !== 'ios') return null;
+    try {
+      const offerings = await Purchases.getOfferings();
+      const allCount = Object.keys(offerings.all ?? {}).length;
+      setRcOfferingCount(allCount);
+      setRcCurrentOfferingId(offerings.current?.identifier ?? null);
+      const pkgIds: string[] = offerings.current?.availablePackages?.map(
+        (p: PurchasesPackage) => p.product.identifier,
+      ).filter(Boolean) ?? [];
+      setRcPackageIds(pkgIds);
+      const current = offerings.current ?? null;
+      setCurrentOffering(current);
+      if (!current) {
+        setRcLastError(prev => prev ?? `No current offering (offerings.all has ${allCount} entries)`);
+      }
+      return current;
+    } catch (e: any) {
+      console.error('[RevenueCat] getOfferings failed:', e);
+      setRcLastError(`getOfferings: ${e?.message ?? String(e)}`);
+      return null;
     }
   }, []);
 
-  const initAndFetchOfferings = useCallback(async (forceRetry = false) => {
-    if (Platform.OS === 'web') {
+  const initAndFetchOfferings = useCallback(async (): Promise<PurchasesOffering | null> => {
+    if (Platform.OS !== 'ios') {
       setIsLoading(false);
       return null;
     }
-
     try {
       setIsLoading(true);
       setRcLastError(null);
-      await configureRC();
-
-      if (!Purchases || !rcConfigured) {
-        const msg = rcConfigureError ?? 'SDK not configured';
-        setRcLastError(msg);
-        console.log('[RevenueCat] Not configured, skipping fetch.', msg);
-        return null;
+      if (!configuredRef.current) {
+        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+        Purchases.configure({ apiKey: RC_API_KEY });
+        configuredRef.current = true;
+        setRcAvailable(true);
+        Purchases.addCustomerInfoUpdateListener((info: CustomerInfo) => {
+          applyCustomerInfo(info);
+        });
       }
-
       try {
         const appUserId = await Purchases.getAppUserID();
         setRcAppUserId(appUserId ?? null);
-      } catch (e: any) {
-        console.log('[RevenueCat] Error fetching appUserId:', e);
+      } catch (e) {
+        console.log('[RevenueCat] getAppUserID failed:', e);
       }
-
-      try {
-        const customerInfo = await Purchases.getCustomerInfo();
-        checkEntitlementFromInfo(customerInfo);
-      } catch (infoErr: any) {
-        const msg = infoErr?.message ?? String(infoErr);
-        setRcLastError(`getCustomerInfo: ${msg}`);
-        console.log('[RevenueCat] Error fetching customer info:', infoErr);
-      }
-
-      try {
-        const offerings = await Purchases.getOfferings();
-        const allCount = Object.keys(offerings?.all ?? {}).length;
-        setRcOfferingCount(allCount);
-        setRcCurrentOfferingId(offerings?.current?.identifier ?? null);
-        const pkgIds: string[] = offerings?.current?.availablePackages?.map(
-          (p: any) => p?.product?.identifier
-        ).filter(Boolean) ?? [];
-        setRcPackageIds(pkgIds);
-        if (offerings?.current) {
-          setCurrentOffering(offerings.current);
-        } else {
-          setRcLastError(prev => prev ?? `No current offering (offerings.all has ${allCount} entries)`);
-        }
-        return offerings?.current ?? null;
-      } catch (offerErr: any) {
-        const msg = offerErr?.message ?? String(offerErr);
-        setRcLastError(`getOfferings: ${msg}`);
-        console.log('[RevenueCat] Error fetching offerings:', offerErr);
-        return null;
-      }
+      await checkEntitlement();
+      return await fetchOfferings();
     } catch (e: any) {
-      const msg = e?.message ?? String(e);
-      setRcLastError(`init: ${msg}`);
-      console.log('[RevenueCat] Error in initAndFetchOfferings:', e);
+      console.error('[RevenueCat] init failed:', e);
+      setRcLastError(`init: ${e?.message ?? String(e)}`);
       return null;
     } finally {
       setIsLoading(false);
     }
-  }, [checkEntitlementFromInfo]);
+  }, [applyCustomerInfo, checkEntitlement, fetchOfferings]);
 
-  const purchasePackage = useCallback(async (pkg: any) => {
-    if (!Purchases || !rcConfigured) {
-      Alert.alert('Not Available', 'Purchases are not configured.');
+  useEffect(() => {
+    void initAndFetchOfferings();
+  }, [initAndFetchOfferings]);
+
+  const purchasePackage = useCallback(async (pkg: PurchasesPackage): Promise<boolean> => {
+    if (Platform.OS !== 'ios') {
+      Alert.alert('Not Available', 'Purchases are only available on iOS.');
       return false;
     }
     try {
       const { customerInfo } = await Purchases.purchasePackage(pkg);
-      const hasPro = checkEntitlementFromInfo(customerInfo);
-      if (hasPro) {
+      const isActive = applyCustomerInfo(customerInfo);
+      if (isActive) {
         Alert.alert('Welcome to Pro!', 'You now have unlimited access to all features.');
       }
-      return hasPro;
+      return isActive;
     } catch (e: any) {
-      if (e.userCancelled) {
-        // User cancelled
-      } else {
-        console.log('[RevenueCat] Purchase error:', e);
+      if (!e?.userCancelled) {
+        console.error('Purchase error:', e);
         Alert.alert('Purchase Error', 'Something went wrong. Please try again.');
       }
       return false;
     }
-  }, [checkEntitlementFromInfo]);
+  }, [applyCustomerInfo]);
 
-  const restorePurchases = useCallback(async () => {
-    if (Platform.OS === 'web' || !Purchases || !rcConfigured) {
-      Alert.alert('Not Available', 'Restore is not available.');
-      return;
+  const purchaseByProductId = useCallback(async (productId: string): Promise<boolean> => {
+    if (Platform.OS !== 'ios') return false;
+    try {
+      const offerings = await Purchases.getOfferings();
+      const pkg = offerings.current?.availablePackages?.find(
+        (p: PurchasesPackage) => p.product.identifier === productId,
+      );
+      if (!pkg) throw new Error(`Package not found: ${productId}`);
+      const { customerInfo } = await Purchases.purchasePackage(pkg);
+      const isActive = applyCustomerInfo(customerInfo);
+      return isActive;
+    } catch (e: any) {
+      if (!e?.userCancelled) {
+        console.error('Purchase error:', e);
+      }
+      return false;
+    }
+  }, [applyCustomerInfo]);
+
+  const purchaseMonthly = useCallback(
+    () => purchaseByProductId(MONTHLY_PRODUCT_ID),
+    [purchaseByProductId],
+  );
+
+  const purchaseAnnual = useCallback(
+    () => purchaseByProductId(ANNUAL_PRODUCT_ID),
+    [purchaseByProductId],
+  );
+
+  const restorePurchases = useCallback(async (): Promise<boolean> => {
+    if (Platform.OS !== 'ios') {
+      Alert.alert('Not Available', 'Restore is not available on this platform.');
+      return false;
     }
     setIsRestoring(true);
     try {
-      const customerInfo = await Purchases.restorePurchases();
-      const hasPro = checkEntitlementFromInfo(customerInfo);
-      if (hasPro) {
+      const info = await Purchases.restorePurchases();
+      const isActive = applyCustomerInfo(info);
+      if (isActive) {
         Alert.alert('Restored!', 'Your Pro subscription has been restored.');
       } else {
         Alert.alert('No Purchases Found', 'We could not find any previous purchases to restore.');
       }
+      return isActive;
     } catch (e) {
-      console.log('[RevenueCat] Restore error:', e);
+      console.error('Restore failed:', e);
       Alert.alert('Restore Error', 'Something went wrong while restoring. Please try again.');
+      return false;
     } finally {
       setIsRestoring(false);
     }
-  }, [checkEntitlementFromInfo]);
-
-  useEffect(() => {
-    initAndFetchOfferings();
-  }, [initAndFetchOfferings]);
+  }, [applyCustomerInfo]);
 
   return useMemo(() => ({
     isPro,
@@ -203,17 +210,40 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
     devProOverride,
     setDevProOverride,
     isLoading,
-    currentOffering,
-    checkEntitlement: initAndFetchOfferings,
-    restorePurchases,
     isRestoring,
-    initAndFetchOfferings,
+    offerings: currentOffering,
+    currentOffering,
+    purchaseMonthly,
+    purchaseAnnual,
     purchasePackage,
-    rcAvailable: rcConfigured,
+    restorePurchases,
+    checkEntitlement,
+    initAndFetchOfferings,
+    rcAvailable,
     rcLastError,
     rcCurrentOfferingId,
     rcOfferingCount,
     rcPackageIds,
     rcAppUserId,
-  }), [isPro, rcIsPro, devProOverride, setDevProOverride, isLoading, currentOffering, restorePurchases, isRestoring, initAndFetchOfferings, purchasePackage, rcLastError, rcCurrentOfferingId, rcOfferingCount, rcPackageIds, rcAppUserId]);
+  }), [
+    isPro,
+    rcIsPro,
+    devProOverride,
+    setDevProOverride,
+    isLoading,
+    isRestoring,
+    currentOffering,
+    purchaseMonthly,
+    purchaseAnnual,
+    purchasePackage,
+    restorePurchases,
+    checkEntitlement,
+    initAndFetchOfferings,
+    rcAvailable,
+    rcLastError,
+    rcCurrentOfferingId,
+    rcOfferingCount,
+    rcPackageIds,
+    rcAppUserId,
+  ]);
 });
