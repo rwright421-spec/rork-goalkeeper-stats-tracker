@@ -1,7 +1,7 @@
 // Game Tracking - Live stat entry screen for game tracking
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, Switch, AppState, AppStateStatus } from 'react-native';
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, Switch, AppState, AppStateStatus, BackHandler } from 'react-native';
+import { useLocalSearchParams, useRouter, Stack, useFocusEffect } from 'expo-router';
 import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
@@ -144,8 +144,16 @@ export default function GameTrackingScreen() {
   const [draftLoaded, setDraftLoaded] = useState<boolean>(isEditMode);
   const [pendingDraft, setPendingDraft] = useState<DraftPayload | null>(null);
   const skipDraftWriteRef = useRef<boolean>(false);
+  const swapClosingRef = useRef<boolean>(false);
 
-
+  const goBackSafely = useCallback(() => {
+    Keyboard.dismiss();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)/dashboard');
+    }
+  }, [router]);
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
@@ -265,22 +273,34 @@ export default function GameTrackingScreen() {
     const awayStats = extractStats(awayKeeper);
     setHomeKeeper((prev) => ({ ...prev, ...awayStats }));
     setAwayKeeper((prev) => ({ ...prev, ...homeStats }));
-    applyGameTypeChange(pendingIsHome);
-    setSwapStatsModalVisible(false);
-    setPendingIsHome(null);
-  }, [pendingIsHome, homeKeeper, awayKeeper, extractStats, applyGameTypeChange]);
+    const target = pendingIsHome;
+    closeSwapStatsModal();
+    applyGameTypeChange(target);
+  }, [pendingIsHome, homeKeeper, awayKeeper, extractStats, applyGameTypeChange, closeSwapStatsModal]);
 
   const onKeepStats = useCallback(() => {
     if (pendingIsHome === null) return;
-    applyGameTypeChange(pendingIsHome);
-    setSwapStatsModalVisible(false);
-    setPendingIsHome(null);
-  }, [pendingIsHome, applyGameTypeChange]);
+    const target = pendingIsHome;
+    closeSwapStatsModal();
+    applyGameTypeChange(target);
+  }, [pendingIsHome, applyGameTypeChange, closeSwapStatsModal]);
+
+  const closeSwapStatsModal = useCallback(() => {
+    if (swapClosingRef.current) return;
+    swapClosingRef.current = true;
+    const forceCleanup = () => {
+      setSwapStatsModalVisible(false);
+      setPendingIsHome(null);
+      swapClosingRef.current = false;
+    };
+    const safety = setTimeout(forceCleanup, 400);
+    forceCleanup();
+    void safety;
+  }, []);
 
   const onCancelSwap = useCallback(() => {
-    setSwapStatsModalVisible(false);
-    setPendingIsHome(null);
-  }, []);
+    closeSwapStatsModal();
+  }, [closeSwapStatsModal]);
 
   const isHomeSeedMountRef = useRef<boolean>(true);
   useEffect(() => {
@@ -515,7 +535,7 @@ export default function GameTrackingScreen() {
       };
       updateGame(updated);
       void clearDraft();
-      Alert.alert('Game Updated', 'Stats have been updated.', [{ text: 'OK', onPress: () => { router.replace('/(tabs)/dashboard'); } }]);
+      Alert.alert('Game Updated', 'Stats have been updated.', [{ text: 'OK', onPress: () => { goBackSafely(); } }]);
     } else {
       const finalEventName = isQuickStart ? (editEventName.trim() || params.eventName || '') : (params.eventName || '');
       const finalDate = isQuickStart ? (editDate.trim() || params.date || '') : (params.date || '');
@@ -565,9 +585,56 @@ export default function GameTrackingScreen() {
       const savedMsg = pendingSync
         ? 'Stats saved locally. Will sync with server when online.'
         : 'Stats have been saved to Prior Games.';
-      Alert.alert('Game Saved', savedMsg, [{ text: 'OK', onPress: () => { router.replace('/(tabs)/dashboard'); } }]);
+      Alert.alert('Game Saved', savedMsg, [{ text: 'OK', onPress: () => { goBackSafely(); } }]);
     }
-  }, [isSaving, isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent, isPro, isAtFreeLimit, totalGameCount, isHomeGame, editHalfLengthMinutes, includeShootoutPKs]);
+  }, [isSaving, isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent, isPro, isAtFreeLimit, totalGameCount, isHomeGame, editHalfLengthMinutes, includeShootoutPKs, goBackSafely]);
+
+  // Android hardware back: route through goBackSafely and close any open modals first.
+  useFocusEffect(
+    useCallback(() => {
+      const sub = BackHandler.addEventListener('hardwareBackPress', () => {
+        if (swapStatsModalVisible) {
+          closeSwapStatsModal();
+          return true;
+        }
+        if (halfLengthPickerOpen) {
+          setHalfLengthPickerOpen(false);
+          return true;
+        }
+        if (showEditOpponentSuggestions) {
+          setShowEditOpponentSuggestions(false);
+          return true;
+        }
+        goBackSafely();
+        return true;
+      });
+      return () => sub.remove();
+    }, [goBackSafely, swapStatsModalVisible, closeSwapStatsModal, halfLengthPickerOpen, showEditOpponentSuggestions])
+  );
+
+  // Safety net: if save hangs (e.g. slow Supabase write), force-clear isSaving after 10s
+  // so the back button is never permanently locked behind a busy overlay.
+  useEffect(() => {
+    if (!isSaving) return;
+    const t = setTimeout(() => {
+      if (__DEV__) console.warn('[game-tracking] Save timeout - clearing isSaving');
+      setIsSaving(false);
+      Alert.alert('Save is taking longer than expected', 'Please try again.');
+    }, 10000);
+    return () => clearTimeout(t);
+  }, [isSaving]);
+
+  // DEV-only diagnostic: log modal/overlay state when it changes, to help diagnose stuck-back reports.
+  useEffect(() => {
+    if (!__DEV__) return;
+    console.log('[game-tracking] overlay state', {
+      swapStatsModalVisible,
+      halfLengthPickerOpen,
+      showEditOpponentSuggestions,
+      pendingDraftVisible: !!pendingDraft,
+      isSaving,
+    });
+  }, [swapStatsModalVisible, halfLengthPickerOpen, showEditOpponentSuggestions, pendingDraft, isSaving]);
 
   const headerSubtitle = useMemo(() => {
     if (isEditMode) return `${editEventName} · ${editDate}`;
