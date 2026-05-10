@@ -267,6 +267,19 @@ export default function GameTrackingScreen() {
     }
   }, [keeperSelection, handleKeeperSelectionChange]);
 
+  const closeSwapStatsModal = useCallback(() => {
+    if (swapClosingRef.current) return;
+    swapClosingRef.current = true;
+    const forceCleanup = () => {
+      setSwapStatsModalVisible(false);
+      setPendingIsHome(null);
+      swapClosingRef.current = false;
+    };
+    const safety = setTimeout(forceCleanup, 400);
+    forceCleanup();
+    void safety;
+  }, []);
+
   const onSwapStats = useCallback(() => {
     if (pendingIsHome === null) return;
     const homeStats = extractStats(homeKeeper);
@@ -284,19 +297,6 @@ export default function GameTrackingScreen() {
     closeSwapStatsModal();
     applyGameTypeChange(target);
   }, [pendingIsHome, applyGameTypeChange, closeSwapStatsModal]);
-
-  const closeSwapStatsModal = useCallback(() => {
-    if (swapClosingRef.current) return;
-    swapClosingRef.current = true;
-    const forceCleanup = () => {
-      setSwapStatsModalVisible(false);
-      setPendingIsHome(null);
-      swapClosingRef.current = false;
-    };
-    const safety = setTimeout(forceCleanup, 400);
-    forceCleanup();
-    void safety;
-  }, []);
 
   const onCancelSwap = useCallback(() => {
     closeSwapStatsModal();
