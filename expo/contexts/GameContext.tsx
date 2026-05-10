@@ -275,6 +275,58 @@ export const [GameProvider, useGames] = createContextHook(() => {
     })();
   }, [allGames, storageKey, queryClient, isShared, sharedProfileId, supabaseReady]);
 
+  const { profiles } = useGoalkeepers();
+  const [globalGameCount, setGlobalGameCount] = useState<number>(0);
+  const countDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const allGamesLengthRef = useRef(allGames.length);
+
+  useEffect(() => {
+    if (allGamesLengthRef.current === allGames.length && globalGameCount > 0) {
+      return;
+    }
+    allGamesLengthRef.current = allGames.length;
+
+    if (countDebounceRef.current) {
+      clearTimeout(countDebounceRef.current);
+    }
+
+    let cancelled = false;
+    countDebounceRef.current = setTimeout(() => {
+      async function countAllGames() {
+        try {
+          let total = 0;
+          const guestGames = await secureStorage.getItem<SavedGame[]>('gk_tracker_games_guest');
+          if (guestGames) {
+            total += guestGames.length;
+          }
+          for (const profile of profiles) {
+            const key = `gk_tracker_games_${profile.id}`;
+            const profileGames = await secureStorage.getItem<SavedGame[]>(key);
+            if (profileGames) {
+              total += profileGames.length;
+            }
+          }
+          if (!cancelled) {
+            setGlobalGameCount(total);
+          }
+        } catch (e) {
+          console.error('[Game] Error:', e);
+        }
+      }
+      void countAllGames();
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      if (countDebounceRef.current) {
+        clearTimeout(countDebounceRef.current);
+      }
+    };
+  }, [profiles, allGames.length, globalGameCount]);
+
+  const totalGameCount = globalGameCount;
+  const isAtFreeLimit = totalGameCount >= FREE_GAME_LIMIT;
+
   const addGame = useCallback((game: SavedGame): { paywallRequired: true } | { paywallRequired: false; game: SavedGame } => {
     const totalGames = globalGameCount;
     if (!isPro && totalGames >= FREE_GAME_LIMIT) {
@@ -343,58 +395,6 @@ export const [GameProvider, useGames] = createContextHook(() => {
     syncInProgress.current = false;
     await runGameSync(true);
   }, [isShared, sharedProfileId, supabaseReady, runGameSync]);
-
-  const { profiles } = useGoalkeepers();
-  const [globalGameCount, setGlobalGameCount] = useState<number>(0);
-  const countDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const allGamesLengthRef = useRef(allGames.length);
-
-  useEffect(() => {
-    if (allGamesLengthRef.current === allGames.length && globalGameCount > 0) {
-      return;
-    }
-    allGamesLengthRef.current = allGames.length;
-
-    if (countDebounceRef.current) {
-      clearTimeout(countDebounceRef.current);
-    }
-
-    let cancelled = false;
-    countDebounceRef.current = setTimeout(() => {
-      async function countAllGames() {
-        try {
-          let total = 0;
-          const guestGames = await secureStorage.getItem<SavedGame[]>('gk_tracker_games_guest');
-          if (guestGames) {
-            total += guestGames.length;
-          }
-          for (const profile of profiles) {
-            const key = `gk_tracker_games_${profile.id}`;
-            const profileGames = await secureStorage.getItem<SavedGame[]>(key);
-            if (profileGames) {
-              total += profileGames.length;
-            }
-          }
-          if (!cancelled) {
-            setGlobalGameCount(total);
-          }
-        } catch (e) {
-          console.error('[Game] Error:', e);
-        }
-      }
-      void countAllGames();
-    }, 500);
-
-    return () => {
-      cancelled = true;
-      if (countDebounceRef.current) {
-        clearTimeout(countDebounceRef.current);
-      }
-    };
-  }, [profiles, allGames.length, globalGameCount]);
-
-  const totalGameCount = globalGameCount;
-  const isAtFreeLimit = totalGameCount >= FREE_GAME_LIMIT;
 
   return useMemo(() => ({
     games,
