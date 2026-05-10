@@ -63,11 +63,11 @@ export default function RootLayout() {
                 <GoalkeeperProvider>
                   <OpponentProvider>
                     <TeamProvider>
-                      <GameProvider>
-                        <PurchasesProvider>
+                      <PurchasesProvider>
+                        <GameProvider>
                           <RootLayoutNav />
-                        </PurchasesProvider>
-                      </GameProvider>
+                        </GameProvider>
+                      </PurchasesProvider>
                     </TeamProvider>
                   </OpponentProvider>
                 </GoalkeeperProvider>

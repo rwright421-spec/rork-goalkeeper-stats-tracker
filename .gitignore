@@ -11,3 +11,4 @@ android/.gradle/
 android/app/build/
 .expo/
 dist/
+.rork
