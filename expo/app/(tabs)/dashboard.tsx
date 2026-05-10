@@ -38,7 +38,7 @@ import { useTeams } from '@/contexts/TeamContext';
 import { useGames, FREE_GAME_LIMIT } from '@/contexts/GameContext';
 import { usePurchases } from '@/contexts/PurchasesContext';
 import { useOpponents } from '@/contexts/OpponentContext';
-import { Team, AGE_GROUP_OPTIONS } from '@/types/game';
+import { Team, AGE_GROUP_OPTIONS, getAllSavePercentage } from '@/types/game';
 import SyncStatusBanner from '@/components/SyncStatusBanner';
 import { DashboardSkeleton, TeamListSkeleton } from '@/components/LoadingSkeleton';
 import { fontSize } from '@/constants/typography';
@@ -752,21 +752,10 @@ export default function DashboardScreen() {
             <View style={styles.recentGamesCard}>
               {recentGames.map((game, idx) => {
                 const dateStr = game.setup.date || '';
-                const saves =
-                  (game.homeKeeper
-                    ? game.homeKeeper.firstHalf.saves + game.homeKeeper.secondHalf.saves
-                    : 0) +
-                  (game.awayKeeper
-                    ? game.awayKeeper.firstHalf.saves + game.awayKeeper.secondHalf.saves
-                    : 0);
-                const ga =
-                  (game.homeKeeper
-                    ? game.homeKeeper.firstHalf.goalsAgainst + game.homeKeeper.secondHalf.goalsAgainst
-                    : 0) +
-                  (game.awayKeeper
-                    ? game.awayKeeper.firstHalf.goalsAgainst + game.awayKeeper.secondHalf.goalsAgainst
-                    : 0);
-                const pct = saves + ga > 0 ? Math.round((saves / (saves + ga)) * 100) : 0;
+                const keeper = game.homeKeeper ?? game.awayKeeper ?? null;
+                const pctRaw = keeper ? getAllSavePercentage(keeper) : null;
+                const hasPct = pctRaw !== null;
+                const pct = pctRaw ?? 0;
 
                 return (
                   <TouchableOpacity
@@ -785,9 +774,31 @@ export default function DashboardScreen() {
                         {game.setup.eventName ? ` · ${game.setup.eventName}` : ''}
                       </Text>
                     </View>
-                    <View style={[styles.recentGamePct, { backgroundColor: pct >= 50 ? colors.primaryGlow : colors.dangerGlow }]}>
-                      <Text style={[styles.recentGamePctText, { color: pct >= 50 ? colors.primary : colors.danger }]}>
-                        {pct}%
+                    <View
+                      style={[
+                        styles.recentGamePct,
+                        {
+                          backgroundColor: !hasPct
+                            ? colors.surfaceLight
+                            : pct >= 50
+                            ? colors.primaryGlow
+                            : colors.dangerGlow,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.recentGamePctText,
+                          {
+                            color: !hasPct
+                              ? colors.textMuted
+                              : pct >= 50
+                              ? colors.primary
+                              : colors.danger,
+                          },
+                        ]}
+                      >
+                        {hasPct ? `${pct}%` : '—'}
                       </Text>
                     </View>
                     <ChevronRight size={14} color={colors.textMuted} />
