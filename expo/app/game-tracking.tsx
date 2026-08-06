@@ -2,7 +2,7 @@
 import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, TextInput, Platform, Keyboard, Switch, AppState, AppStateStatus, BackHandler } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack, useFocusEffect } from 'expo-router';
-import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { Save, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Plus, Check, X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
@@ -41,7 +41,7 @@ export default function GameTrackingScreen() {
   const isEditMode = !!params.gameId;
   const existingGame = isEditMode ? getGame(params.gameId!) : undefined;
   const { activeProfile, profiles, createProfile, selectProfile } = useGoalkeepers();
-  const { activeTeam, activeTeamId } = useTeams();
+  const { teams, activeTeam, activeTeamId, createTeam } = useTeams();
   const { addOpponent, getSuggestions } = useOpponents();
 
   useEffect(() => {
@@ -74,10 +74,16 @@ export default function GameTrackingScreen() {
   })();
   const [editHalfLengthMinutes, setEditHalfLengthMinutes] = useState<number | undefined>(initialHalfLengthMinutes);
   const [halfLengthPickerOpen, setHalfLengthPickerOpen] = useState<boolean>(false);
+  const [editTeamId, setEditTeamId] = useState<string | undefined>(() => existingGame?.teamId ?? undefined);
+  const [teamPickerOpen, setTeamPickerOpen] = useState(false);
+  const [showCreateTeamInEdit, setShowCreateTeamInEdit] = useState(false);
+  const [newTeamNameInEdit, setNewTeamNameInEdit] = useState('');
+  const [newTeamYearInEdit, setNewTeamYearInEdit] = useState('');
 
   const profileName = activeProfile?.name ?? '';
   const teamYear = activeTeam?.year ?? '';
   const teamName = activeTeam?.teamName ?? '';
+  const selectedEditTeam = teams.find(t => t.id === editTeamId) ?? null;
 
   const hasHome = keeperSelection === 'home' || keeperSelection === 'both';
   const hasAway = keeperSelection === 'away' || keeperSelection === 'both';
@@ -527,6 +533,7 @@ export default function GameTrackingScreen() {
       if (opponentName) addOpponent(opponentName);
       const updated: SavedGame = {
         ...existingGame,
+        teamId: editTeamId,
         setup: { eventName: editEventName.trim() || existingGame.setup.eventName, date: editDate.trim() || existingGame.setup.date, gameName: opponentName, keeperSelection, ageGroup: (editAgeGroup || existingGame.setup.ageGroup || '') as any, isHome: isHomeGame, halfLengthMinutes: editHalfLengthMinutes },
         homeKeeper: hasHome ? { ...homeKeeper, halvesPlayed: existingGame.homeKeeper?.halvesPlayed ?? deriveHalvesPlayed(homeKeeper) } : undefined,
         awayKeeper: hasAway ? { ...awayKeeper, halvesPlayed: existingGame.awayKeeper?.halvesPlayed ?? deriveHalvesPlayed(awayKeeper) } : undefined,
@@ -587,7 +594,7 @@ export default function GameTrackingScreen() {
         : 'Stats have been saved to Prior Games.';
       Alert.alert('Game Saved', savedMsg, [{ text: 'OK', onPress: () => { goBackSafely(); } }]);
     }
-  }, [isSaving, isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent, isPro, isAtFreeLimit, totalGameCount, isHomeGame, editHalfLengthMinutes, includeShootoutPKs, goBackSafely]);
+  }, [isSaving, isEditMode, isQuickStart, existingGame, params, keeperSelection, hasHome, hasAway, homeKeeper, awayKeeper, computedFinalScore, addGame, updateGame, router, editEventName, editDate, editGameName, editAgeGroup, activeTeamId, addOpponent, isPro, isAtFreeLimit, totalGameCount, isHomeGame, editHalfLengthMinutes, includeShootoutPKs, goBackSafely, editTeamId, teams, createTeam]);
 
   // Android hardware back: route through goBackSafely and close any open modals first.
   useFocusEffect(
@@ -595,6 +602,14 @@ export default function GameTrackingScreen() {
       const sub = BackHandler.addEventListener('hardwareBackPress', () => {
         if (swapStatsModalVisible) {
           closeSwapStatsModal();
+          return true;
+        }
+        if (teamPickerOpen) {
+          setTeamPickerOpen(false);
+          return true;
+        }
+        if (showCreateTeamInEdit) {
+          setShowCreateTeamInEdit(false);
           return true;
         }
         if (halfLengthPickerOpen) {
@@ -609,7 +624,7 @@ export default function GameTrackingScreen() {
         return true;
       });
       return () => sub.remove();
-    }, [goBackSafely, swapStatsModalVisible, closeSwapStatsModal, halfLengthPickerOpen, showEditOpponentSuggestions])
+    }, [goBackSafely, swapStatsModalVisible, closeSwapStatsModal, halfLengthPickerOpen, showEditOpponentSuggestions, teamPickerOpen, showCreateTeamInEdit])
   );
 
   // Safety net: if save hangs (e.g. slow Supabase write), force-clear isSaving after 10s
@@ -631,10 +646,12 @@ export default function GameTrackingScreen() {
       swapStatsModalVisible,
       halfLengthPickerOpen,
       showEditOpponentSuggestions,
+      teamPickerOpen,
+      showCreateTeamInEdit,
       pendingDraftVisible: !!pendingDraft,
       isSaving,
     });
-  }, [swapStatsModalVisible, halfLengthPickerOpen, showEditOpponentSuggestions, pendingDraft, isSaving]);
+  }, [swapStatsModalVisible, halfLengthPickerOpen, showEditOpponentSuggestions, teamPickerOpen, showCreateTeamInEdit, pendingDraft, isSaving]);
 
   const headerSubtitle = useMemo(() => {
     if (isEditMode) return `${editEventName} · ${editDate}`;
@@ -681,6 +698,125 @@ export default function GameTrackingScreen() {
               <View style={styles.editInputGroup}>
                 <Text style={styles.editInputLabel}>Date</Text>
                 <TextInput testID="edit-date" style={styles.editInput} value={editDate} onChangeText={setEditDate} placeholder="MM/DD/YYYY" placeholderTextColor={colors.textMuted} keyboardType={Platform.OS === 'web' ? 'default' : 'numbers-and-punctuation'} returnKeyType="done" inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined} />
+              </View>
+              <View style={[styles.editInputGroup, (teamPickerOpen || showCreateTeamInEdit) && { zIndex: 20, elevation: 20 }]}>
+                <Text style={styles.editInputLabel}>Team</Text>
+                <TouchableOpacity
+                  testID="edit-team-selector"
+                  style={[styles.editInput, { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const }]}
+                  onPress={() => {
+                    setTeamPickerOpen(!teamPickerOpen);
+                    setShowCreateTeamInEdit(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={{ fontSize: fontSize.bodyLg, color: selectedEditTeam ? colors.text : colors.textMuted }}>
+                    {selectedEditTeam ? `${selectedEditTeam.teamName} (${selectedEditTeam.year})` : 'No team'}
+                  </Text>
+                  <ChevronDown size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+                {teamPickerOpen && (
+                  <View style={styles.teamDropdownList}>
+                    <TouchableOpacity
+                      style={[styles.teamDropdownOption, !editTeamId && styles.teamDropdownOptionActive]}
+                      onPress={() => {
+                        setEditTeamId(undefined);
+                        setTeamPickerOpen(false);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={[styles.teamDropdownOptionText, !editTeamId && styles.teamDropdownOptionTextActive]}>
+                        No team
+                      </Text>
+                    </TouchableOpacity>
+                    {teams.map((team) => (
+                      <TouchableOpacity
+                        key={team.id}
+                        style={[styles.teamDropdownOption, editTeamId === team.id && styles.teamDropdownOptionActive]}
+                        onPress={() => {
+                          setEditTeamId(team.id);
+                          setTeamPickerOpen(false);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[styles.teamDropdownOptionText, editTeamId === team.id && styles.teamDropdownOptionTextActive]}>
+                          {team.teamName} ({team.year})
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                    <TouchableOpacity
+                      testID="edit-create-new-team-option"
+                      style={styles.teamCreateOption}
+                      onPress={() => {
+                        setShowCreateTeamInEdit(true);
+                        setTeamPickerOpen(false);
+                        setNewTeamNameInEdit('');
+                        setNewTeamYearInEdit('');
+                        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <Plus size={16} color={colors.primary} />
+                      <Text style={styles.teamCreateOptionText}>Create New Team</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+                {showCreateTeamInEdit && (
+                  <View style={styles.teamCreateForm}>
+                    <Text style={styles.teamCreateFormTitle}>New Team</Text>
+                    <TextInput
+                      testID="edit-new-team-name-input"
+                      style={styles.teamCreateInput}
+                      value={newTeamNameInEdit}
+                      onChangeText={setNewTeamNameInEdit}
+                      placeholder="Team name"
+                      placeholderTextColor={colors.textMuted}
+                      autoFocus
+                      returnKeyType="done"
+                      inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined}
+                    />
+                    <TextInput
+                      testID="edit-new-team-year-input"
+                      style={styles.teamCreateInput}
+                      value={newTeamYearInEdit}
+                      onChangeText={setNewTeamYearInEdit}
+                      placeholder="Year (e.g. 2026)"
+                      placeholderTextColor={colors.textMuted}
+                      keyboardType={Platform.OS === 'web' ? 'default' : 'number-pad'}
+                      returnKeyType="done"
+                      inputAccessoryViewID={Platform.OS === 'ios' ? KEYBOARD_DONE_BAR_ID : undefined}
+                    />
+                    <View style={styles.teamCreateActions}>
+                      <TouchableOpacity
+                        testID="edit-cancel-create-team"
+                        style={styles.teamCreateCancel}
+                        onPress={() => setShowCreateTeamInEdit(false)}
+                        activeOpacity={0.7}
+                      >
+                        <X size={16} color={colors.textMuted} />
+                        <Text style={styles.teamCreateCancelText}>Cancel</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        testID="edit-confirm-create-team"
+                        style={[styles.teamCreateConfirm, (!newTeamNameInEdit.trim() || !newTeamYearInEdit.trim()) && styles.teamCreateConfirmDisabled]}
+                        onPress={() => {
+                          if (!newTeamNameInEdit.trim() || !newTeamYearInEdit.trim()) return;
+                          const newTeam = createTeam(newTeamYearInEdit.trim(), newTeamNameInEdit.trim());
+                          setEditTeamId(newTeam.id);
+                          setShowCreateTeamInEdit(false);
+                          setNewTeamNameInEdit('');
+                          setNewTeamYearInEdit('');
+                          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                        }}
+                        disabled={!newTeamNameInEdit.trim() || !newTeamYearInEdit.trim()}
+                        activeOpacity={0.7}
+                      >
+                        <Check size={16} color={colors.white} />
+                        <Text style={styles.teamCreateConfirmText}>Create & Select</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                )}
               </View>
               <View style={[styles.editInputGroup, { zIndex: 10 }]}>
                 <Text style={styles.editInputLabel}>Opponent</Text>
@@ -975,5 +1111,21 @@ function createStyles(c: ThemeColors) {
     resumeBannerBtnSecondaryText: { fontSize: fontSize.body, fontWeight: '700' as const, color: c.textSecondary },
     resumeBannerBtnPrimary: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center' as const, backgroundColor: c.primaryDark },
     resumeBannerBtnPrimaryText: { fontSize: fontSize.body, fontWeight: '800' as const, color: c.white },
+    teamDropdownList: { backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.border, marginTop: 4, overflow: 'hidden' as const },
+    teamDropdownOption: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: c.border },
+    teamDropdownOptionActive: { backgroundColor: c.primaryGlow },
+    teamDropdownOptionText: { fontSize: fontSize.body, color: c.text, fontWeight: '500' as const },
+    teamDropdownOptionTextActive: { color: c.primary, fontWeight: '700' as const },
+    teamCreateOption: { paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, borderTopWidth: 1, borderTopColor: c.border, backgroundColor: c.primaryGlow },
+    teamCreateOptionText: { fontSize: fontSize.body, color: c.primary, fontWeight: '600' as const },
+    teamCreateForm: { backgroundColor: c.background, borderRadius: 10, borderWidth: 1, borderColor: c.primary, marginTop: 8, padding: 12, gap: 10 },
+    teamCreateFormTitle: { fontSize: fontSize.body, fontWeight: '700' as const, color: c.primary, marginBottom: 2 },
+    teamCreateInput: { backgroundColor: c.surface, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, color: c.text, fontSize: fontSize.body, borderWidth: 1, borderColor: c.border },
+    teamCreateActions: { flexDirection: 'row' as const, gap: 10, marginTop: 4 },
+    teamCreateCancel: { flex: 1, flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, paddingVertical: 10, borderRadius: 10, borderWidth: 1, borderColor: c.border },
+    teamCreateCancelText: { fontSize: fontSize.body, color: c.textMuted, fontWeight: '600' as const },
+    teamCreateConfirm: { flex: 1, flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 6, paddingVertical: 10, borderRadius: 10, backgroundColor: c.primaryDark },
+    teamCreateConfirmDisabled: { opacity: 0.4 },
+    teamCreateConfirmText: { fontSize: fontSize.body, color: c.white, fontWeight: '600' as const },
   });
 }

@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, Platform, Switch } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { ChevronDown, ChevronUp, Plus, Minus } from 'lucide-react-native';
 import StatCounter from '@/components/StatCounter';
@@ -35,6 +35,9 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
   const [yearPickerOpen, setYearPickerOpen] = React.useState(false);
   const [secondHalfYearPickerOpen, setSecondHalfYearPickerOpen] = React.useState(false);
   const [secondHalfInfoCollapsed, setSecondHalfInfoCollapsed] = React.useState(true);
+  const [sameKeeperBothHalves, setSameKeeperBothHalves] = useState(() => {
+    return keeper.secondHalfKeeperProfileId === keeper.keeperProfileId && keeper.secondHalfName === keeper.name;
+  });
   const [notesCollapsed, setNotesCollapsed] = React.useState(true);
   const [firstHalfSelectorOpen, setFirstHalfSelectorOpen] = useState(false);
   const [secondHalfSelectorOpen, setSecondHalfSelectorOpen] = useState(false);
@@ -101,6 +104,21 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
 
   const handleSecondHalfManualEntry = useCallback((name: string) => {
     onUpdate({ ...keeper, secondHalfName: name, secondHalfKeeperProfileId: null, secondHalfKeeperIsLinked: false });
+  }, [keeper, onUpdate]);
+
+  const handleSameKeeperToggle = useCallback((val: boolean) => {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setSameKeeperBothHalves(val);
+    if (val) {
+      onUpdate({
+        ...keeper,
+        secondHalfName: keeper.name,
+        secondHalfKeeperProfileId: keeper.keeperProfileId,
+        secondHalfKeeperIsLinked: keeper.keeperIsLinked,
+        secondHalfYear: keeper.year,
+        secondHalfTeamName: keeper.teamName,
+      });
+    }
   }, [keeper, onUpdate]);
 
   const updateField = useCallback((field: keyof KeeperData, value: string) => {
@@ -466,17 +484,31 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         ) : null}
       </View>
 
+      <View style={styles.sameKeeperToggleRow}>
+        <View style={styles.sameKeeperToggleTextWrap}>
+          <Text style={styles.sameKeeperToggleLabel}>Same keeper played both halves</Text>
+          <Text style={styles.sameKeeperToggleHint}>Turn off if a different keeper played the 2nd half</Text>
+        </View>
+        <Switch
+          testID={`${label}-same-keeper-both-halves`}
+          value={sameKeeperBothHalves}
+          onValueChange={handleSameKeeperToggle}
+          trackColor={{ false: colors.border, true: colors.primary }}
+          thumbColor={colors.white}
+        />
+      </View>
+
       {renderHalfSection('firstHalf', '1st Half')}
 
       <View style={styles.secondHalfInfoSection}>
         <TouchableOpacity style={styles.secondHalfInfoHeader} onPress={() => setSecondHalfInfoCollapsed(!secondHalfInfoCollapsed)} activeOpacity={0.7}>
           <Text style={styles.secondHalfInfoTitle}>2nd Half Keeper Info</Text>
           <View style={styles.secondHalfInfoHeaderRight}>
-            {secondHalfInfoCollapsed ? <Text style={styles.secondHalfInfoSummary} numberOfLines={1}>{keeper.secondHalfName || keeper.name || 'Same as 1st half'}</Text> : null}
-            {secondHalfInfoCollapsed ? <ChevronDown size={16} color={colors.textMuted} /> : <ChevronUp size={16} color={colors.textMuted} />}
+            {secondHalfInfoCollapsed && sameKeeperBothHalves ? <Text style={styles.secondHalfInfoSummary} numberOfLines={1}>{keeper.secondHalfName || keeper.name || 'Same as 1st half'}</Text> : null}
+            {secondHalfInfoCollapsed && sameKeeperBothHalves ? <ChevronDown size={16} color={colors.textMuted} /> : <ChevronUp size={16} color={colors.textMuted} />}
           </View>
         </TouchableOpacity>
-        {!secondHalfInfoCollapsed ? (
+        {(!secondHalfInfoCollapsed || !sameKeeperBothHalves) ? (
           <View style={styles.secondHalfInfoContent}>
             <View style={styles.inputRow}>
               {isOpponentKeeper ? (
@@ -755,5 +787,9 @@ function createStyles(c: ThemeColors) {
     ballInteractionsHeaderLeft: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
     ballInteractionsTotal: { fontSize: fontSize.h2, fontWeight: '800' as const, color: c.primary },
     ballInteractionLabelRow: { flexDirection: 'row' as const, justifyContent: 'flex-end' as const, alignSelf: 'stretch' as const, marginBottom: -4, paddingRight: 4 },
+    sameKeeperToggleRow: { flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'space-between' as const, gap: 12, backgroundColor: c.surface, borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: c.border },
+    sameKeeperToggleTextWrap: { flex: 1 },
+    sameKeeperToggleLabel: { fontSize: fontSize.body, fontWeight: '700' as const, color: c.text },
+    sameKeeperToggleHint: { fontSize: fontSize.caption, color: c.textMuted, marginTop: 2 },
   });
 }

@@ -79,9 +79,8 @@ export default React.memo(function KeeperSelectorSheet({
   }, [newName, newBirthYear, onCreateProfile, onClose]);
 
   const handleManualEntry = useCallback(() => {
-    if (!manualName.trim()) return;
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    onManualEntry(manualName.trim());
+    onManualEntry(manualName.trim() || 'Unknown');
     onClose();
   }, [manualName, onManualEntry, onClose]);
 
@@ -245,20 +244,19 @@ export default React.memo(function KeeperSelectorSheet({
                     style={styles.formInput}
                     value={manualName}
                     onChangeText={setManualName}
-                    placeholder="Type goalkeeper name"
+                    placeholder="Type name, or leave blank for Unknown"
                     placeholderTextColor={colors.textMuted}
                     autoFocus
                   />
                 </View>
                 <TouchableOpacity
                   testID="manual-entry-confirm"
-                  style={[styles.confirmButton, styles.confirmButtonManual, !manualName.trim() && styles.confirmButtonDisabled]}
+                  style={[styles.confirmButton, styles.confirmButtonManual]}
                   onPress={handleManualEntry}
                   activeOpacity={0.7}
-                  disabled={!manualName.trim()}
                 >
                   <Check size={16} color={colors.white} />
-                  <Text style={styles.confirmButtonText}>Use This Name</Text>
+                  <Text style={styles.confirmButtonText}>{manualName.trim() ? 'Use This Name' : 'Use "Unknown"'}</Text>
                 </TouchableOpacity>
               </View>
             )}
