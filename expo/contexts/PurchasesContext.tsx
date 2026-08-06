@@ -49,7 +49,14 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
     }
   }, []);
 
-  const isPro = rcIsPro || devProOverride;
+  // FREE_FOR_ALL: App made free for all users on 2026-08-06.
+  // Every paid gate in the app reads `isPro` from this context, so forcing it
+  // to true here disables all of them in one place. rcIsPro/devProOverride are
+  // left untouched below so real entitlement + dev-diagnostics still work in
+  // Settings > Build Info if we ever need to inspect RevenueCat status.
+  // TO RE-ENABLE MONETIZATION LATER: change this back to
+  //   const isPro = rcIsPro || devProOverride;
+  const isPro = true;
 
   const applyCustomerInfo = useCallback((info: CustomerInfo): boolean => {
     const isActive = !!info.entitlements.active[PRO_ENTITLEMENT_ID];

@@ -157,7 +157,7 @@ export default function SettingsScreen() {
   }, [rcAvailable, rcIsLoading, isPro, rcIsPro, devProOverride, rcAppUserId, rcOfferingCount, rcCurrentOfferingId, rcPackageIds, rcLastError]);
 
   const handleRcRefresh = useCallback(async () => {
-    await initAndFetchOfferings(true);
+    await initAndFetchOfferings();
   }, [initAndFetchOfferings]);
 
   const handleThemeSelect = useCallback((key: ThemeName) => {

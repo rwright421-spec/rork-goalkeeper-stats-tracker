@@ -594,7 +594,7 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
           <View style={styles.totalStatItem}><Text style={[styles.totalStatValue, { color: colors.primary }]}>{totalSaves}</Text><Text style={styles.totalStatLabel}>Saves</Text></View>
           <View style={styles.totalStatItem}><Text style={[styles.totalStatValue, { color: colors.danger }]}>{totalGA}</Text><Text style={styles.totalStatLabel}>Goals Against</Text></View>
           <View style={styles.totalStatItem}><Text style={[styles.totalStatValue, { color: colors.accent }]}>{totalShotsFaced}</Text><Text style={styles.totalStatLabel}>Shots on Target</Text></View>
-          <View style={styles.totalStatItem}><Text style={[styles.totalStatValue, { color: overallPct >= 50 ? colors.primary : colors.warning }]}>{overallPct}%</Text><Text style={styles.totalStatLabel}>Save %</Text></View>
+          <View style={styles.totalStatItem}><Text style={[styles.totalStatValue, { color: overallPct !== null && overallPct >= 50 ? colors.primary : colors.warning }]}>{overallPct !== null ? `${overallPct}%` : '—'}</Text><Text style={styles.totalStatLabel}>Save %</Text></View>
         </View>
         <View style={styles.halfDivider} />
         <Text style={styles.subSectionTitle}>Total Ball Interactions</Text>

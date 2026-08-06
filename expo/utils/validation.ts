@@ -237,7 +237,7 @@ export function validateAndSanitize<T extends SchemaType>(
 
     let errorDetails = 'Unknown validation error';
     try {
-      const issues = result.error?.issues ?? result.error?.errors ?? [];
+      const issues = result.error?.issues ?? [];
       errorDetails = (issues as Array<{ path?: string[]; message?: string }>)
         .map((i: { path?: string[]; message?: string }) => `${(i.path ?? []).join('.')}: ${i.message ?? 'invalid'}`)
         .join(', ');

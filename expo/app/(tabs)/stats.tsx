@@ -212,7 +212,7 @@ function createBlockStyles(c: ThemeColors) {
   });
 }
 
-function StatsBlock({ stats, expanded, colors, ageBand }: { stats: AggregatedStats; expanded?: boolean; colors: ThemeColors; ageBand: AgeBand }) {
+function StatsBlock({ stats, expanded, colors, ageBand }: { stats: AggregatedStats; expanded?: boolean; colors: ThemeColors; ageBand?: AgeBand }) {
   const s = useMemo(() => createBlockStyles(colors), [colors]);
   const savePctColor = stats.allSavePercentage === null ? colors.textMuted : stats.allSavePercentage >= 75 ? colors.primary : stats.allSavePercentage >= 50 ? colors.accent : colors.danger;
   const ropPctColor = stats.runOfPlaySavePercentage === null ? colors.textMuted : stats.runOfPlaySavePercentage >= 75 ? colors.primary : stats.runOfPlaySavePercentage >= 50 ? colors.accent : colors.danger;

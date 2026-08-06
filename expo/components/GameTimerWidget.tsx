@@ -126,7 +126,7 @@ export default function GameTimerWidget({
         ) : null}
       </View>
 
-      {(isSecond || phase === 'post-2nd') && firstHalfSeconds > 0 ? (
+      {isSecond && firstHalfSeconds > 0 ? (
         <View style={styles.firstHalfBadge}>
           <CheckCircle2 size={12} color={colors.primary} />
           <Text style={styles.firstHalfBadgeText}>1st Half: {formatMMSS(firstHalfSeconds)}</Text>

@@ -38,7 +38,7 @@ function KeeperSummary({ keeper, label, color, colors }: { keeper: KeeperData; l
           <Text style={styles.statLabel}>GA</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={[styles.statValue, { color: savePct >= 50 ? colors.primary : colors.warning }]}>{savePct}%</Text>
+          <Text style={[styles.statValue, { color: savePct !== null && savePct >= 50 ? colors.primary : colors.warning }]}>{savePct !== null ? `${savePct}%` : '—'}</Text>
           <Text style={styles.statLabel}>SV%</Text>
         </View>
       </View>

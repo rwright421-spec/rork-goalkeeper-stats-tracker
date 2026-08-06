@@ -219,32 +219,32 @@ export default function DashboardScreen() {
   const handleCreateTeam = useCallback(() => {
     if (!newTeamName.trim()) return;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    createTeam(newYear, newTeamName, newHalfLength);
+    createTeam(newYear, newTeamName);
     setNewTeamName('');
     setNewYear('U10');
     setNewHalfLength(undefined);
     setShowCreateTeam(false);
     setYearPickerOpen(false);
     setHalfLengthPickerOpen(false);
-  }, [newYear, newTeamName, newHalfLength, createTeam]);
+  }, [newYear, newTeamName, createTeam]);
 
   const handleEditTeam = useCallback((team: Team) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setEditingTeam(team);
     setEditYear(team.year);
     setEditTeamName(team.teamName);
-    setEditHalfLength(team.halfLengthMinutes);
+    // halfLengthMinutes is not on Team type; half-length is per-game, not per-team
     setEditHalfLengthPickerOpen(false);
   }, []);
 
   const handleSaveEditTeam = useCallback(() => {
     if (!editingTeam || !editTeamName.trim()) return;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    updateTeam(editingTeam.id, editYear, editTeamName, editHalfLength);
+    updateTeam(editingTeam.id, editYear, editTeamName);
     setEditingTeam(null);
     setEditYearPickerOpen(false);
     setEditHalfLengthPickerOpen(false);
-  }, [editingTeam, editYear, editTeamName, editHalfLength, updateTeam]);
+  }, [editingTeam, editYear, editTeamName, updateTeam]);
 
   const handleDeleteTeam = useCallback(
     (team: Team) => {
