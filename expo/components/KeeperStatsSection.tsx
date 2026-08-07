@@ -118,6 +118,15 @@ export default React.memo(function KeeperStatsSection({ label, keeper, onUpdate,
         secondHalfYear: keeper.year,
         secondHalfTeamName: keeper.teamName,
       });
+    } else {
+      onUpdate({
+        ...keeper,
+        secondHalfName: '',
+        secondHalfKeeperProfileId: null,
+        secondHalfKeeperIsLinked: false,
+        secondHalfYear: '',
+        secondHalfTeamName: '',
+      });
     }
   }, [keeper, onUpdate]);
 
