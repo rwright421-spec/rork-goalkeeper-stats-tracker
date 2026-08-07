@@ -3,11 +3,12 @@ import React, { useMemo, useCallback, useState } from 'react';
 
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Share, Platform, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { Share2, FileText, FileSpreadsheet, Calendar, Trophy, Pencil, MoreVertical, ArrowRightLeft, Clock } from 'lucide-react-native';
+import { Share2, FileText, FileSpreadsheet, Calendar, Trophy, Pencil, MoreVertical, ArrowRightLeft, Clock, Users } from 'lucide-react-native';
 
 import { useColors } from '@/contexts/ThemeContext';
 import { ThemeColors } from '@/constants/themes';
 import { useGames } from '@/contexts/GameContext';
+import { useTeams } from '@/contexts/TeamContext';
 import { KeeperData, SavedGame, calculateSavePercentage, getTotalSaves, getTotalGoalsAgainst, getTotalDistribution, getTotalPenalties, getTotalShotsFaced, getShotsFaced, getShootoutShotsFaced, getTotalOneVsOneFaced, getTotalOneVsOneSaved, getTotalOneVsOneGoals, getTotalOneVsOneMissed, getOneVsOneSavePercentage, resolveHalfLength, getPkSavePercentage, isLegacyPenaltyData, isLegacyOneVsOneKeeperData, getAllSavePercentage, getRunOfPlaySavePercentage, getMinutesPlayed } from '@/types/game';
 import { HalfTimesEditModal } from '@/components/GameTimerWidget';
 import { formatGameAsText, formatGameAsCSV } from '@/utils/export';
@@ -237,10 +238,12 @@ export default function GameDetailScreen() {
   const router = useRouter();
   const colors = useColors();
   const { getGame } = useGames();
+  const { teams } = useTeams();
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   const game = useMemo(() => getGame(id || ''), [getGame, id]);
+  const assignedTeam = useMemo(() => teams.find(t => t.id === game?.teamId) ?? null, [teams, game]);
   const styles = useMemo(() => createDetailStyles(colors), [colors]);
   const { updateGame } = useGames();
   const [editTimesVisible, setEditTimesVisible] = useState<boolean>(false);
@@ -341,6 +344,7 @@ export default function GameDetailScreen() {
           <View style={styles.gameInfoRow}><Calendar size={14} color={colors.textMuted} /><Text style={styles.gameInfoText}>{game.setup.date}</Text></View>
           <Text style={styles.gameInfoEvent}>{game.setup.eventName}</Text>
           <View style={styles.gameInfoRow}><Trophy size={14} color={colors.primary} /><Text style={styles.gameInfoGame}>vs {game.setup.gameName}</Text></View>
+          <View style={styles.gameInfoRow}><Users size={14} color={colors.textMuted} /><Text style={styles.gameInfoText}>{assignedTeam ? `${assignedTeam.teamName} (${assignedTeam.year})` : 'No team assigned'}</Text></View>
           {(() => {
             const k = game.homeKeeper ?? game.awayKeeper;
             if (!k) return null;
