@@ -9,7 +9,10 @@ import Purchases, {
 } from 'react-native-purchases';
 import * as secureStorage from '@/utils/secureStorage';
 
-const RC_API_KEY = 'appl_IUuybOStRXqZRjspTXWwGuwjfLn';
+// Development/preview builds get the Test Store key (test_…) and App Store
+// builds get the App Store key (appl_…) from the project's per-environment envs.
+// The preview runs RevenueCat in JS-only mode, which rejects appl_ keys.
+const RC_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY ?? '';
 const PRO_ENTITLEMENT_ID = 'pro';
 const MONTHLY_PRODUCT_ID = 'com.snocoventures.gkstats.pro.monthly.v2';
 const ANNUAL_PRODUCT_ID = 'com.snocoventures.gkstats.pro.annual.v2';
@@ -107,8 +110,12 @@ export const [PurchasesProvider, usePurchases] = createContextHook(() => {
     try {
       setIsLoading(true);
       setRcLastError(null);
+      if (!RC_API_KEY) {
+        console.log('[RevenueCat] No API key configured, skipping initialization');
+        return null;
+      }
       if (!configuredRef.current) {
-        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
+        Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.DEBUG : LOG_LEVEL.WARN);
         Purchases.configure({ apiKey: RC_API_KEY });
         configuredRef.current = true;
         setRcAvailable(true);
