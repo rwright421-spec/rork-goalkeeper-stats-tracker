@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking, Platform, ActivityIndicator, Switch } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking, Platform, ActivityIndicator } from 'react-native';
 import { Check, Palette, Users, Trash2, MessageSquare, ExternalLink, Upload, Download, Database, RefreshCw, Eye, AlertTriangle, Info, ChevronDown, ChevronUp, Copy } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,10 +19,7 @@ import { useGoalkeepers } from '@/contexts/GoalkeeperContext';
 import { useGames } from '@/contexts/GameContext';
 import { useTeams } from '@/contexts/TeamContext';
 import { fontSize } from '@/constants/typography';
-import { usePurchases } from '@/contexts/PurchasesContext';
-import * as secureStorage from '@/utils/secureStorage';
 
-const DEV_MODE_REVEALED_KEY = 'gk_dev_mode_revealed';
 
 export default function SettingsScreen() {
   const { themeName, setTheme } = useTheme();
@@ -40,58 +37,9 @@ export default function SettingsScreen() {
   const [buildInfoExpanded, setBuildInfoExpanded] = useState<boolean>(false);
   const [copyFeedback, setCopyFeedback] = useState<boolean>(false);
   const router = useRouter();
-  const {
-    devProOverride,
-    setDevProOverride,
-    rcIsPro,
-    isPro,
-    isLoading: rcIsLoading,
-    rcAvailable,
-    rcLastError,
-    rcCurrentOfferingId,
-    rcOfferingCount,
-    rcPackageIds,
-    rcAppUserId,
-    initAndFetchOfferings,
-  } = usePurchases();
-  const [devModeRevealed, setDevModeRevealed] = useState<boolean>(false);
-  const [buildInfoTapCount, setBuildInfoTapCount] = useState<number>(0);
-  const buildInfoTapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const raw = await secureStorage.getRawString(DEV_MODE_REVEALED_KEY);
-        if (raw === '1') setDevModeRevealed(true);
-      } catch (e) {
-        console.log('[Settings] Failed to load dev mode flag:', e);
-      }
-    })();
-  }, []);
-
   const handleBuildInfoHeaderTap = useCallback(() => {
     void Haptics.selectionAsync();
     setBuildInfoExpanded(prev => !prev);
-
-    setBuildInfoTapCount(prev => {
-      const next = prev + 1;
-
-      if (buildInfoTapTimerRef.current) clearTimeout(buildInfoTapTimerRef.current);
-      buildInfoTapTimerRef.current = setTimeout(() => {
-        setBuildInfoTapCount(0);
-      }, 3000);
-
-      if (next >= 5) {
-        setDevModeRevealed(true);
-        secureStorage.setRawString(DEV_MODE_REVEALED_KEY, '1').catch((e) => {
-          console.log('[Settings] Failed to persist dev mode flag:', e);
-        });
-        Alert.alert('Dev Mode Unlocked', 'Beta Pro Override is now available in Build Info.');
-        return 0;
-      }
-
-      return next;
-    });
   }, []);
 
   const buildInfo = useMemo(() => {
@@ -137,28 +85,6 @@ export default function SettingsScreen() {
       console.error('[Settings] Copy build info error:', e);
     }
   }, [buildInfo]);
-
-  const copyRcDiagnostics = useCallback(() => {
-    const lines = [
-      `RC Configured: ${rcAvailable ? 'Yes' : 'No'}`,
-      `RC Loading: ${rcIsLoading ? 'Yes' : 'No'}`,
-      `Effective Pro: ${isPro ? 'Yes' : 'No'}`,
-      `  • Real Entitlement: ${rcIsPro ? 'Active' : 'Inactive'}`,
-      `  • Dev Override: ${devProOverride ? 'ON' : 'OFF'}`,
-      `App User ID: ${rcAppUserId ?? '(none)'}`,
-      `Offerings (all): ${rcOfferingCount}`,
-      `Current Offering: ${rcCurrentOfferingId ?? '(none)'}`,
-      `Packages: ${rcPackageIds.length > 0 ? rcPackageIds.join(', ') : '(none)'}`,
-      `Last Error: ${rcLastError ?? 'None'}`,
-    ];
-    const text = lines.join('\n');
-    Clipboard.setStringAsync(text);
-    Alert.alert('Copied', 'RevenueCat diagnostics copied to clipboard.');
-  }, [rcAvailable, rcIsLoading, isPro, rcIsPro, devProOverride, rcAppUserId, rcOfferingCount, rcCurrentOfferingId, rcPackageIds, rcLastError]);
-
-  const handleRcRefresh = useCallback(async () => {
-    await initAndFetchOfferings();
-  }, [initAndFetchOfferings]);
 
   const handleThemeSelect = useCallback((key: ThemeName) => {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -630,7 +556,7 @@ export default function SettingsScreen() {
         >
           <Info size={14} color={colors.textMuted} />
           <Text style={styles.buildInfoHeaderText}>
-            {buildInfoTapCount > 0 ? `Build Info (${buildInfoTapCount}/5)` : 'Build Info'}
+            Build Info
           </Text>
           {buildInfoExpanded ? (
             <ChevronUp size={14} color={colors.textMuted} />
@@ -661,61 +587,6 @@ export default function SettingsScreen() {
               </Text>
             </TouchableOpacity>
 
-            <View style={styles.rcDiagnosticsSection}>
-              <View style={styles.rcDiagnosticsHeader}>
-                <Text style={styles.rcDiagnosticsTitle}>RevenueCat</Text>
-                <View style={styles.rcDiagnosticsButtons}>
-                  <TouchableOpacity
-                    testID="rc-refresh"
-                    onPress={handleRcRefresh}
-                    style={styles.rcDiagnosticsButton}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.rcDiagnosticsButtonText}>Refresh</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    testID="rc-copy"
-                    onPress={copyRcDiagnostics}
-                    style={styles.rcDiagnosticsButton}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.rcDiagnosticsButtonText}>Copy</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-              <BuildInfoRow label="Configured" value={rcAvailable ? 'Yes' : 'No'} styles={styles} />
-              <BuildInfoRow label="Loading" value={rcIsLoading ? 'Yes' : 'No'} styles={styles} />
-              <BuildInfoRow label="Effective Pro" value={isPro ? 'Yes' : 'No'} styles={styles} />
-              <BuildInfoRow label="Real Entitlement" value={rcIsPro ? 'Active' : 'Inactive'} styles={styles} />
-              <BuildInfoRow label="Dev Override" value={devProOverride ? 'ON' : 'OFF'} styles={styles} />
-              <BuildInfoRow label="App User ID" value={rcAppUserId ?? '(none)'} styles={styles} />
-              <BuildInfoRow label="Offerings" value={String(rcOfferingCount)} styles={styles} />
-              <BuildInfoRow label="Current Offering" value={rcCurrentOfferingId ?? '(none)'} styles={styles} />
-              <BuildInfoRow
-                label="Packages"
-                value={rcPackageIds.length > 0 ? rcPackageIds.join(', ') : '(none)'}
-                styles={styles}
-              />
-              <BuildInfoRow label="Last Error" value={rcLastError ?? 'None'} styles={styles} />
-            </View>
-
-            {devModeRevealed && (
-              <View style={styles.devOverrideRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.devOverrideLabel}>Beta Pro Override</Text>
-                  <Text style={styles.devOverrideHint}>
-                    {rcIsPro
-                      ? 'You already have a real Pro entitlement.'
-                      : 'Simulates an active Pro entitlement on this device.'}
-                  </Text>
-                </View>
-                <Switch
-                  value={devProOverride}
-                  onValueChange={setDevProOverride}
-                  testID="dev-pro-override-toggle"
-                />
-              </View>
-            )}
           </View>
         )}
 
