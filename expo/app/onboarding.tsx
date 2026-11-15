@@ -40,7 +40,7 @@ export default function OnboardingScreen() {
 
   const initialPage = hasProfiles ? (hasTeams ? 3 : 2) : 0;
 
-  const scrollRef = useRef<ScrollView>(null);
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const [currentPage, setCurrentPage] = useState(initialPage);
   const initialScrollDone = useRef(false);
 

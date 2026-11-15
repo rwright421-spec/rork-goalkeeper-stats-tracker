@@ -322,7 +322,7 @@ export default function GameDetailScreen() {
         <>
           <Pressable
             testID="game-detail-menu-overlay"
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
             onPress={() => setShowMenu(false)}
           />
           <View style={styles.headerMenu}>
